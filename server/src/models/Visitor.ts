@@ -1,0 +1,41 @@
+import { DataTypes, Model, Optional } from 'sequelize';
+import { sequelize } from '../lib/db';
+
+export interface VisitorAttributes {
+  id: number;
+  fullName: string;
+  contact?: string | null;
+  idNumber?: string | null;
+  relation?: string | null;
+  qrCode?: string | null;
+  blacklistStatus?: boolean | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+type VisitorCreation = Optional<VisitorAttributes, 'id'>;
+
+export class Visitor extends Model<VisitorAttributes, VisitorCreation> implements VisitorAttributes {
+  declare id: number;
+  declare fullName: string;
+  declare contact: string | null | undefined;
+  declare idNumber: string | null | undefined;
+  declare relation: string | null | undefined;
+  declare qrCode: string | null | undefined;
+  declare blacklistStatus: boolean | null | undefined;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
+}
+
+Visitor.init(
+  {
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    fullName: { type: DataTypes.STRING(150), allowNull: false, field: 'full_name' },
+    contact: { type: DataTypes.STRING(100), allowNull: true },
+    idNumber: { type: DataTypes.STRING(100), allowNull: true, unique: false, field: 'id_number' },
+    relation: { type: DataTypes.STRING(100), allowNull: true },
+    qrCode: { type: DataTypes.STRING(200), allowNull: true, unique: true, field: 'qr_code' },
+    blacklistStatus: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false, field: 'blacklist_status' },
+  },
+  { sequelize, tableName: 'visitors', underscored: true }
+);

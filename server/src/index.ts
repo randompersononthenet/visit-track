@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { sequelize } from './lib/db';
 import type { Request, Response } from 'express';
+import { syncSchema } from './models';
 
 const app = express();
 app.use(cors());
@@ -23,6 +24,7 @@ async function start() {
   try {
     await sequelize.authenticate();
     console.log('Database connection established');
+    await syncSchema();
     app.listen(PORT, () => {
       console.log(`Server listening on http://localhost:${PORT}`);
     });
