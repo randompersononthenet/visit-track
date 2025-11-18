@@ -1,0 +1,83 @@
+import { Router } from 'express';
+import { Op } from 'sequelize';
+import { Visitor } from '../models/Visitor';
+import { requireAuth } from '../middleware/auth';
+import { z } from 'zod';
+import { validate } from '../lib/validation';
+import { v4 as uuidv4 } from 'uuid';
+
+const router = Router();
+
+// All routes require auth
+router.use(requireAuth);
+
+// List visitors with simple filters and pagination
+router.get('/', async (req, res) => {
+  const { q, page = '1', pageSize = '20' } = req.query as Record<string, string>;
+  const p = Math.max(parseInt(page) || 1, 1);
+  const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
+  const where: any = {};
+  if (q) {
+    where.fullName = { [Op.iLike]: `%${q}%` };
+  }
+  const { rows, count } = await Visitor.findAndCountAll({
+    where,
+    order: [['id', 'DESC']],
+    offset: (p - 1) * ps,
+    limit: ps,
+  });
+  res.json({ data: rows, total: count, page: p, pageSize: ps });
+});
+
+// Create visitor
+const createVisitorSchema = z.object({
+  fullName: z.string().min(1),
+  contact: z.string().max(100).optional(),
+  idNumber: z.string().max(100).optional(),
+  relation: z.string().max(100).optional(),
+  qrCode: z.string().max(200).optional(),
+  blacklistStatus: z.boolean().optional(),
+});
+
+router.post('/', validate(createVisitorSchema), async (req, res) => {
+  const { fullName, contact, idNumber, relation, qrCode, blacklistStatus } = (req as any).parsed;
+  const v = await Visitor.create({
+    fullName,
+    contact,
+    idNumber,
+    relation,
+    qrCode: qrCode || uuidv4(),
+    blacklistStatus,
+  });
+  res.status(201).json(v);
+});
+
+// Get visitor by id
+router.get('/:id', async (req, res) => {
+  const v = await Visitor.findByPk(Number(req.params.id));
+  if (!v) return res.status(404).json({ error: 'Not found' });
+  res.json(v);
+});
+
+// Update visitor
+const updateVisitorSchema = createVisitorSchema.partial();
+
+router.patch('/:id', validate(updateVisitorSchema), async (req, res) => {
+  const id = Number(req.params.id);
+  const v = await Visitor.findByPk(id);
+  if (!v) return res.status(404).json({ error: 'Not found' });
+  const { fullName, contact, idNumber, relation, qrCode, blacklistStatus } = (req as any).parsed;
+  await v.update({ fullName, contact, idNumber, relation, qrCode, blacklistStatus });
+  res.json(v);
+});
+
+// Delete visitor
+router.delete('/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  const v = await Visitor.findByPk(id);
+  if (!v) return res.status(404).json({ error: 'Not found' });
+  await v.destroy();
+  res.status(204).send();
+});
+
+export default router;

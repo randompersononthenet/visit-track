@@ -1,17 +1,37 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { sequelize } from './lib/db';
 import type { Request, Response } from 'express';
 import { syncSchema } from './models';
 import authRouter from './routes/auth';
+import visitorsRouter from './routes/visitors';
+import personnelRouter from './routes/personnel';
+import scanRouter from './routes/scan';
 
 const app = express();
-app.use(cors());
+app.use(helmet());
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173',
+    ],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Routes
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+app.use('/api/auth/login', authLimiter);
 app.use('/api/auth', authRouter);
+app.use('/api/visitors', visitorsRouter);
+app.use('/api/personnel', personnelRouter);
+app.use('/api/scan', scanRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {
