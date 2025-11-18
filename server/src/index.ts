@@ -4,10 +4,14 @@ import cors from 'cors';
 import { sequelize } from './lib/db';
 import type { Request, Response } from 'express';
 import { syncSchema } from './models';
+import authRouter from './routes/auth';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Routes
+app.use('/api/auth', authRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {

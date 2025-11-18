@@ -20,6 +20,7 @@ export class User extends Model<UserAttributes, UserCreation> implements UserAtt
   declare roleId: number;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
+  declare role?: Role;
 }
 
 User.init(
