@@ -16,7 +16,12 @@ export class Role extends Model<RoleAttributes, RoleCreation> implements RoleAtt
 Role.init(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    name: { type: DataTypes.ENUM('admin', 'officer', 'staff'), allowNull: false, unique: true },
+    name: { type: DataTypes.ENUM('admin', 'officer', 'staff'), allowNull: false },
   },
-  { sequelize, tableName: 'roles', timestamps: false }
+  {
+    sequelize,
+    tableName: 'roles',
+    timestamps: false,
+    indexes: [{ unique: true, fields: ['name'] }],
+  }
 );

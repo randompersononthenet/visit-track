@@ -3,6 +3,9 @@ import { sequelize } from '../lib/db';
 
 export interface VisitorAttributes {
   id: number;
+  firstName?: string | null;
+  middleName?: string | null;
+  lastName?: string | null;
   fullName: string;
   contact?: string | null;
   idNumber?: string | null;
@@ -17,6 +20,9 @@ type VisitorCreation = Optional<VisitorAttributes, 'id'>;
 
 export class Visitor extends Model<VisitorAttributes, VisitorCreation> implements VisitorAttributes {
   declare id: number;
+  declare firstName: string | null | undefined;
+  declare middleName: string | null | undefined;
+  declare lastName: string | null | undefined;
   declare fullName: string;
   declare contact: string | null | undefined;
   declare idNumber: string | null | undefined;
@@ -30,6 +36,9 @@ export class Visitor extends Model<VisitorAttributes, VisitorCreation> implement
 Visitor.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    firstName: { type: DataTypes.STRING(80), allowNull: true, field: 'first_name' },
+    middleName: { type: DataTypes.STRING(80), allowNull: true, field: 'middle_name' },
+    lastName: { type: DataTypes.STRING(80), allowNull: true, field: 'last_name' },
     fullName: { type: DataTypes.STRING(150), allowNull: false, field: 'full_name' },
     contact: { type: DataTypes.STRING(100), allowNull: true },
     idNumber: { type: DataTypes.STRING(100), allowNull: true, unique: false, field: 'id_number' },

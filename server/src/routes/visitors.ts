@@ -31,7 +31,9 @@ router.get('/', async (req, res) => {
 
 // Create visitor
 const createVisitorSchema = z.object({
-  fullName: z.string().min(1),
+  firstName: z.string().min(1),
+  middleName: z.string().optional().or(z.literal('')).transform((v) => (v === '' ? undefined : v)),
+  lastName: z.string().min(1),
   contact: z.string().max(100).optional(),
   idNumber: z.string().max(100).optional(),
   relation: z.string().max(100).optional(),
@@ -40,8 +42,12 @@ const createVisitorSchema = z.object({
 });
 
 router.post('/', validate(createVisitorSchema), async (req, res) => {
-  const { fullName, contact, idNumber, relation, qrCode, blacklistStatus } = (req as any).parsed;
+  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, blacklistStatus } = (req as any).parsed;
+  const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
   const v = await Visitor.create({
+    firstName,
+    middleName,
+    lastName,
     fullName,
     contact,
     idNumber,
@@ -66,8 +72,13 @@ router.patch('/:id', validate(updateVisitorSchema), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
-  const { fullName, contact, idNumber, relation, qrCode, blacklistStatus } = (req as any).parsed;
-  await v.update({ fullName, contact, idNumber, relation, qrCode, blacklistStatus });
+  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, blacklistStatus } = (req as any).parsed;
+  const computedFullName = (
+    [firstName ?? v.firstName, middleName ?? v.middleName, lastName ?? v.lastName]
+      .filter(Boolean)
+      .join(' ')
+  );
+  await v.update({ firstName, middleName, lastName, fullName: computedFullName, contact, idNumber, relation, qrCode, blacklistStatus });
   res.json(v);
 });
 
