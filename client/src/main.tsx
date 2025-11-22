@@ -8,13 +8,21 @@ import { Login } from './views/Login'
 import { Register } from './views/Register'
 import { Scan } from './views/Scan'
 import { Reports } from './views/Reports'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<AppShell />}>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <AppShell />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/register" element={<Register />} />
