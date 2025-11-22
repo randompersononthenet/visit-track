@@ -3,6 +3,8 @@ import { Op } from 'sequelize';
 import { Personnel } from '../models/Personnel';
 import { requireAuth } from '../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
+import { validate } from '../lib/validation';
 
 const router = Router();
 
@@ -28,10 +30,18 @@ router.get('/', async (req, res) => {
 });
 
 // Create personnel
-router.post('/', async (req, res) => {
-  const { fullName, roleTitle, qrCode } = req.body || {};
-  if (!fullName) return res.status(400).json({ error: 'fullName is required' });
-  const rec = await Personnel.create({ fullName, roleTitle, qrCode: qrCode || uuidv4() });
+const createPersonnelSchema = z.object({
+  firstName: z.string().min(1),
+  middleName: z.string().optional().or(z.literal('')).transform((v) => (v === '' ? undefined : v)),
+  lastName: z.string().min(1),
+  roleTitle: z.string().max(100).optional(),
+  qrCode: z.string().max(200).optional(),
+});
+
+router.post('/', validate(createPersonnelSchema), async (req, res) => {
+  const { firstName, middleName, lastName, roleTitle, qrCode } = (req as any).parsed;
+  const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+  const rec = await Personnel.create({ firstName, middleName, lastName, fullName, roleTitle, qrCode: qrCode || uuidv4() });
   res.status(201).json(rec);
 });
 
@@ -43,12 +53,19 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update
-router.patch('/:id', async (req, res) => {
+const updatePersonnelSchema = createPersonnelSchema.partial();
+
+router.patch('/:id', validate(updatePersonnelSchema), async (req, res) => {
   const id = Number(req.params.id);
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });
-  const { fullName, roleTitle, qrCode } = req.body || {};
-  await rec.update({ fullName, roleTitle, qrCode });
+  const { firstName, middleName, lastName, roleTitle, qrCode } = (req as any).parsed;
+  const computedFullName = (
+    [firstName ?? rec.firstName, middleName ?? rec.middleName, lastName ?? rec.lastName]
+      .filter(Boolean)
+      .join(' ')
+  );
+  await rec.update({ firstName, middleName, lastName, fullName: computedFullName, roleTitle, qrCode });
   res.json(rec);
 });
 

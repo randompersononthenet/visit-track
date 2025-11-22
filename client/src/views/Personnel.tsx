@@ -4,7 +4,9 @@ import { api } from '../lib/api';
 import { QRCodeSVG } from 'qrcode.react';
 
 export function Personnel() {
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [roleTitle, setRoleTitle] = useState('');
   const [creating, setCreating] = useState(false);
   const [createdQR, setCreatedQR] = useState<string | null>(null);
@@ -34,11 +36,14 @@ export function Personnel() {
     setCreating(true);
     setCreatedQR(null);
     try {
-      const payload: any = { fullName };
+      const payload: any = { firstName, lastName };
+      if (middleName.trim() !== '') payload.middleName = middleName;
       if (roleTitle.trim() !== '') payload.roleTitle = roleTitle;
       const res = await api.post('/api/personnel', payload);
       setCreatedQR(res.data?.qrCode || null);
-      setFullName('');
+      setFirstName('');
+      setMiddleName('');
+      setLastName('');
       setRoleTitle('');
       await load();
     } catch (err: any) {
@@ -53,10 +58,14 @@ export function Personnel() {
       <section className="md:col-span-1 bg-slate-800/40 rounded-lg p-4">
         <h2 className="text-lg font-semibold mb-4">Register Personnel</h2>
         <form className="space-y-3" onSubmit={onCreate}>
-          <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          <div className="grid grid-cols-1 gap-3">
+            <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Middle name (optional)" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
+            <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          </div>
           <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Role title (e.g. Gate Officer)" value={roleTitle} onChange={(e) => setRoleTitle(e.target.value)} />
           {error && <div className="text-red-400 text-sm">{error}</div>}
-          <button disabled={creating || !fullName} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white px-3 py-2 rounded">
+          <button disabled={creating || !firstName || !lastName} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white px-3 py-2 rounded">
             {creating ? 'Creating...' : 'Create Personnel'}
           </button>
         </form>
