@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { Op } from 'sequelize';
 import { Personnel } from '../models/Personnel';
 import { requireAuth } from '../middleware/auth';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const { fullName, roleTitle, qrCode } = req.body || {};
   if (!fullName) return res.status(400).json({ error: 'fullName is required' });
-  const rec = await Personnel.create({ fullName, roleTitle, qrCode });
+  const rec = await Personnel.create({ fullName, roleTitle, qrCode: qrCode || uuidv4() });
   res.status(201).json(rec);
 });
 

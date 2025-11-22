@@ -6,6 +6,7 @@ export function AppShell() {
   const nav = [
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/register', label: 'Register' },
+    { to: '/personnel', label: 'Personnel' },
     { to: '/scan', label: 'Scan' },
     { to: '/reports', label: 'Reports' },
   ];
