@@ -15,6 +15,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const status = err?.response?.status;
+    if (status === 401 && typeof window !== 'undefined') {
+      setToken(null);
+      // Optionally preserve intended path via query
+      const href = window.location.href;
+      const next = encodeURIComponent(href);
+      window.location.assign(`/login?next=${next}`);
+    }
+    return Promise.reject(err);
+  }
+);
+
 export function setToken(token: string | null) {
   if (typeof window === 'undefined') return;
   if (token) localStorage.setItem('vt_token', token);

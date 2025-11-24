@@ -1,12 +1,19 @@
 import React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
+import jsQR from 'jsqr';
 
 export function Scan() {
   const [qrCode, setQrCode] = useState('');
   const [loading, setLoading] = useState<'checkin' | 'checkout' | null>(null);
   const [result, setResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'manual' | 'camera'>('manual');
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   async function doScan(action: 'checkin' | 'checkout') {
     setLoading(action);
@@ -22,18 +29,97 @@ export function Scan() {
     }
   }
 
+  function stopCamera() {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+  }
+
+  async function startCamera() {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        tick();
+      }
+    } catch (e: any) {
+      setCameraError(e?.message || 'Unable to access camera');
+    }
+  }
+
+  function tick() {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (w && h) {
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, w, h);
+        const img = ctx.getImageData(0, 0, w, h);
+        const code = jsQR(img.data, img.width, img.height);
+        if (code && code.data) {
+          setQrCode(code.data);
+        }
+      }
+    }
+    rafRef.current = requestAnimationFrame(tick);
+  }
+
+  useEffect(() => {
+    if (mode === 'camera') {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Scan</h2>
       <div className="grid md:grid-cols-3 gap-8">
         <section className="md:col-span-1 bg-slate-800/40 rounded-lg p-4">
           <div className="space-y-3">
+            <div className="flex gap-2 text-sm">
+              <button
+                className={`px-3 py-1 rounded ${mode === 'manual' ? 'bg-slate-700' : 'bg-slate-800 hover:bg-slate-700'}`}
+                onClick={() => setMode('manual')}
+              >
+                Manual
+              </button>
+              <button
+                className={`px-3 py-1 rounded ${mode === 'camera' ? 'bg-slate-700' : 'bg-slate-800 hover:bg-slate-700'}`}
+                onClick={() => setMode('camera')}
+              >
+                Camera
+              </button>
+            </div>
             <input
               className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2"
               placeholder="Paste or scan QR code value"
               value={qrCode}
               onChange={(e) => setQrCode(e.target.value)}
             />
+            {mode === 'camera' && (
+              <div className="space-y-2">
+                {cameraError && <div className="text-red-400 text-sm">{cameraError}</div>}
+                <video ref={videoRef} className="w-full rounded bg-black" muted playsInline />
+                <canvas ref={canvasRef} className="hidden" />
+              </div>
+            )}
             {error && <div className="text-red-400 text-sm">{error}</div>}
             <div className="flex gap-2">
               <button

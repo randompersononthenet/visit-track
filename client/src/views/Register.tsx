@@ -13,6 +13,17 @@ export function Register() {
   const [creating, setCreating] = useState(false);
   const [createdQR, setCreatedQR] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [previewQR, setPreviewQR] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editFirst, setEditFirst] = useState('');
+  const [editMiddle, setEditMiddle] = useState('');
+  const [editLast, setEditLast] = useState('');
+  const [editContact, setEditContact] = useState('');
+  const [editIdNumber, setEditIdNumber] = useState('');
+  const [editRelation, setEditRelation] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -80,9 +91,9 @@ export function Register() {
         {createdQR && (
           <div className="mt-6">
             <div className="text-sm text-slate-300 mb-2">QR Code (print this):</div>
-            <div className="bg-white inline-block p-3 rounded">
+            <button type="button" onClick={() => setPreviewQR(createdQR)} className="bg-white inline-block p-3 rounded hover:ring-2 ring-indigo-400">
               <QRCodeSVG value={createdQR} size={160} />
-            </div>
+            </button>
             <div className="mt-2 text-xs break-all text-slate-400">{createdQR}</div>
           </div>
         )}
@@ -110,6 +121,7 @@ export function Register() {
                 <th className="text-left px-3 py-2">Contact</th>
                 <th className="text-left px-3 py-2">ID #</th>
                 <th className="text-left px-3 py-2">QR</th>
+                <th className="text-left px-3 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -120,8 +132,38 @@ export function Register() {
                   <td className="px-3 py-2">{r.contact || '-'}</td>
                   <td className="px-3 py-2">{r.idNumber || '-'}</td>
                   <td className="px-3 py-2">
-                    <div className="bg-white inline-block p-1 rounded">
+                    <button type="button" onClick={() => setPreviewQR(r.qrCode)} className="bg-white inline-block p-1 rounded hover:ring-2 ring-indigo-400">
                       <QRCodeSVG value={r.qrCode} size={56} />
+                    </button>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex gap-2">
+                      <button
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700"
+                        onClick={() => {
+                          setEditing(r);
+                          setEditFirst(r.firstName || '');
+                          setEditMiddle(r.middleName || '');
+                          setEditLast(r.lastName || '');
+                          setEditContact(r.contact || '');
+                          setEditIdNumber(r.idNumber || '');
+                          setEditRelation(r.relation || '');
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600"
+                        onClick={async () => {
+                          if (!confirm('Delete this visitor?')) return;
+                          try {
+                            await api.delete(`/api/visitors/${r.id}`);
+                            await load();
+                          } catch {}
+                        }}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -142,6 +184,71 @@ export function Register() {
           </div>
         </div>
       </section>
+      {previewQR && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => { setPreviewQR(null); setCopied(false); }} />
+          <div className="relative bg-slate-900 border border-slate-700 rounded-lg p-4 z-10 w-[min(92vw,520px)]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm text-slate-300 break-all pr-4">{previewQR}</div>
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700"
+                  onClick={async () => { try { await navigator.clipboard.writeText(previewQR); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} }}
+                >
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+                <button className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700" onClick={() => { setPreviewQR(null); setCopied(false); }}>Close</button>
+              </div>
+            </div>
+            <div className="flex items-center justify-center bg-white rounded p-4">
+              <QRCodeSVG value={previewQR} size={300} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => { if (!savingEdit) setEditing(null); }} />
+          <div className="relative bg-slate-900 border border-slate-700 rounded-lg p-4 z-10 w-[min(92vw,560px)]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Edit Visitor</div>
+              <button className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700" onClick={() => { if (!savingEdit) setEditing(null); }}>Close</button>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="First name" value={editFirst} onChange={(e) => setEditFirst(e.target.value)} />
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Middle name (optional)" value={editMiddle} onChange={(e) => setEditMiddle(e.target.value)} />
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Last name" value={editLast} onChange={(e) => setEditLast(e.target.value)} />
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Contact" value={editContact} onChange={(e) => setEditContact(e.target.value)} />
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="ID number" value={editIdNumber} onChange={(e) => setEditIdNumber(e.target.value)} />
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Relation" value={editRelation} onChange={(e) => setEditRelation(e.target.value)} />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button className="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700" onClick={() => { if (!savingEdit) setEditing(null); }}>Cancel</button>
+              <button
+                className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60"
+                disabled={savingEdit || !editFirst || !editLast}
+                onClick={async () => {
+                  setSavingEdit(true);
+                  try {
+                    const payload: any = { firstName: editFirst, lastName: editLast };
+                    if (editMiddle.trim() !== '') payload.middleName = editMiddle;
+                    if (editContact.trim() !== '') payload.contact = editContact; else payload.contact = null;
+                    if (editIdNumber.trim() !== '') payload.idNumber = editIdNumber; else payload.idNumber = null;
+                    if (editRelation.trim() !== '') payload.relation = editRelation; else payload.relation = null;
+                    await api.patch(`/api/visitors/${editing.id}`, payload);
+                    await load();
+                    setEditing(null);
+                  } catch {}
+                  finally { setSavingEdit(false); }
+                }}
+              >
+                {savingEdit ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

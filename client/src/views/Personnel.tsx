@@ -11,6 +11,8 @@ export function Personnel() {
   const [creating, setCreating] = useState(false);
   const [createdQR, setCreatedQR] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [previewQR, setPreviewQR] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -72,9 +74,9 @@ export function Personnel() {
         {createdQR && (
           <div className="mt-6">
             <div className="text-sm text-slate-300 mb-2">QR Code (print this):</div>
-            <div className="bg-white inline-block p-3 rounded">
+            <button type="button" onClick={() => setPreviewQR(createdQR)} className="bg-white inline-block p-3 rounded hover:ring-2 ring-indigo-400">
               <QRCodeSVG value={createdQR} size={160} />
-            </div>
+            </button>
             <div className="mt-2 text-xs break-all text-slate-400">{createdQR}</div>
           </div>
         )}
@@ -110,9 +112,9 @@ export function Personnel() {
                   <td className="px-3 py-2">{r.fullName}</td>
                   <td className="px-3 py-2">{r.roleTitle || '-'}</td>
                   <td className="px-3 py-2">
-                    <div className="bg-white inline-block p-1 rounded">
+                    <button type="button" onClick={() => setPreviewQR(r.qrCode)} className="bg-white inline-block p-1 rounded hover:ring-2 ring-indigo-400">
                       <QRCodeSVG value={r.qrCode} size={56} />
-                    </div>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -132,6 +134,28 @@ export function Personnel() {
           </div>
         </div>
       </section>
+      {previewQR && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => { setPreviewQR(null); setCopied(false); }} />
+          <div className="relative bg-slate-900 border border-slate-700 rounded-lg p-4 z-10 w-[min(92vw,520px)]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm text-slate-300 break-all pr-4">{previewQR}</div>
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700"
+                  onClick={async () => { try { await navigator.clipboard.writeText(previewQR); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} }}
+                >
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+                <button className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700" onClick={() => { setPreviewQR(null); setCopied(false); }}>Close</button>
+              </div>
+            </div>
+            <div className="flex items-center justify-center bg-white rounded p-4">
+              <QRCodeSVG value={previewQR} size={300} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
