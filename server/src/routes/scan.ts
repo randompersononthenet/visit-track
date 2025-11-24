@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/auth';
 import { Visitor } from '../models/Visitor';
 import { Personnel } from '../models/Personnel';
 import { VisitLog } from '../models/VisitLog';
+import { Violation } from '../models/Violation';
 
 const router = Router();
 
@@ -28,6 +29,17 @@ router.post('/', validate(scanSchema), async (req, res) => {
 
   const now = new Date();
 
+  const subject = visitor
+    ? { type: 'visitor' as const, id: visitor.id, fullName: visitor.fullName, firstName: visitor.firstName, middleName: visitor.middleName, lastName: visitor.lastName }
+    : { type: 'personnel' as const, id: (personnel as any)!.id, fullName: (personnel as any)!.fullName, firstName: (personnel as any)!.firstName, middleName: (personnel as any)!.middleName, lastName: (personnel as any)!.lastName, roleTitle: (personnel as any)!.roleTitle };
+
+  // Retrieve violation alerts (only for visitors)
+  let alerts: Array<{ level: string; details?: string | null; recordedAt: Date }> = [];
+  if (visitor) {
+    const latestViolations = await Violation.findAll({ where: { visitorId: visitor.id }, order: [['recordedAt', 'DESC']], limit: 3 });
+    alerts = latestViolations.map(v => ({ level: v.level, details: v.details ?? null, recordedAt: v.recordedAt }));
+  }
+
   if (action === 'checkin') {
     const log = await VisitLog.create({
       visitorId: visitor ? visitor.id : null,
@@ -37,7 +49,7 @@ router.post('/', validate(scanSchema), async (req, res) => {
       purpose: undefined,
       notes: undefined,
     });
-    return res.json({ status: 'ok', event: 'checkin', at: now, logId: log.id, subjectType: visitor ? 'visitor' : 'personnel' });
+    return res.json({ status: 'ok', event: 'checkin', at: now, logId: log.id, subjectType: subject.type, subject, alerts });
   }
 
   // checkout
@@ -52,7 +64,7 @@ router.post('/', validate(scanSchema), async (req, res) => {
     return res.status(400).json({ error: 'No open check-in found for this QR code' });
   }
   await openLog.update({ timeOut: now, handledByUserId: (req as any).user?.id ?? openLog.handledByUserId });
-  return res.json({ status: 'ok', event: 'checkout', at: now, logId: openLog.id, subjectType: visitor ? 'visitor' : 'personnel' });
+  return res.json({ status: 'ok', event: 'checkout', at: now, logId: openLog.id, subjectType: subject.type, subject, alerts });
 });
 
 export default router;

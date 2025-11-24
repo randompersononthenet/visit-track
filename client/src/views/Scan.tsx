@@ -62,9 +62,31 @@ export function Scan() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                 <div><span className="text-slate-400">Event:</span> {result.event}</div>
                 <div><span className="text-slate-400">Timestamp:</span> {new Date(result.at).toLocaleString()}</div>
-                <div><span className="text-slate-400">Subject:</span> {result.subjectType}</div>
+                <div><span className="text-slate-400">Subject Type:</span> {result.subjectType}</div>
+                {result.subject && (
+                  <>
+                    <div className="md:col-span-2"><span className="text-slate-400">Name:</span> {result.subject.fullName}</div>
+                    {result.subject.roleTitle && (
+                      <div className="md:col-span-2"><span className="text-slate-400">Role:</span> {result.subject.roleTitle}</div>
+                    )}
+                  </>
+                )}
                 <div><span className="text-slate-400">Log ID:</span> {result.logId}</div>
               </div>
+              {Array.isArray(result.alerts) && result.alerts.length > 0 && (
+                <div className="mt-4">
+                  <div className="font-medium text-amber-300 mb-2">Alerts</div>
+                  <ul className="list-disc pl-6 text-sm">
+                    {result.alerts.map((a: any, idx: number) => (
+                      <li key={idx} className="mb-1">
+                        <span className="text-slate-300">{a.level}</span>
+                        {a.details && <span className="text-slate-400"> — {a.details}</span>}
+                        {a.recordedAt && <span className="text-slate-500"> ({new Date(a.recordedAt).toLocaleString()})</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </section>
