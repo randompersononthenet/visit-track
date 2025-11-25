@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -15,6 +15,7 @@ export function Register() {
   const [error, setError] = useState<string | null>(null);
   const [previewQR, setPreviewQR] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const svgWrapRef = useRef<HTMLDivElement | null>(null);
 
   const [editing, setEditing] = useState<any | null>(null);
   const [editFirst, setEditFirst] = useState('');
@@ -197,10 +198,45 @@ export function Register() {
                 >
                   {copied ? 'Copied' : 'Copy'}
                 </button>
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700"
+                  onClick={() => {
+                    const svg = svgWrapRef.current?.querySelector('svg');
+                    if (!svg) return;
+                    const data = new XMLSerializer().serializeToString(svg);
+                    const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `visitor-qr-${Date.now()}.svg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Download
+                </button>
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700"
+                  onClick={() => {
+                    const svg = svgWrapRef.current?.querySelector('svg');
+                    if (!svg) return;
+                    const data = new XMLSerializer().serializeToString(svg);
+                    const win = window.open('', 'print-qr', 'width=420,height=420');
+                    if (!win) return;
+                    win.document.write(`<!doctype html><html><head><title>Print QR</title><style>html,body{height:100%}body{margin:0;display:flex;align-items:center;justify-content:center}</style></head><body>${data}</body></html>`);
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => { try { win.print(); win.close(); } catch {} }, 300);
+                  }}
+                >
+                  Print
+                </button>
                 <button className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700" onClick={() => { setPreviewQR(null); setCopied(false); }}>Close</button>
               </div>
             </div>
-            <div className="flex items-center justify-center bg-white rounded p-4">
+            <div ref={svgWrapRef} className="flex items-center justify-center bg-white rounded p-4">
               <QRCodeSVG value={previewQR} size={300} />
             </div>
           </div>

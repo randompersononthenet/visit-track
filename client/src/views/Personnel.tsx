@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -13,6 +13,14 @@ export function Personnel() {
   const [error, setError] = useState<string | null>(null);
   const [previewQR, setPreviewQR] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const svgWrapRef = useRef<HTMLDivElement | null>(null);
+
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editFirst, setEditFirst] = useState('');
+  const [editMiddle, setEditMiddle] = useState('');
+  const [editLast, setEditLast] = useState('');
+  const [editRole, setEditRole] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -103,6 +111,7 @@ export function Personnel() {
                 <th className="text-left px-3 py-2">Full name</th>
                 <th className="text-left px-3 py-2">Role</th>
                 <th className="text-left px-3 py-2">QR</th>
+                <th className="text-left px-3 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -116,11 +125,39 @@ export function Personnel() {
                       <QRCodeSVG value={r.qrCode} size={56} />
                     </button>
                   </td>
+                  <td className="px-3 py-2">
+                    <div className="flex gap-2">
+                      <button
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700"
+                        onClick={() => {
+                          setEditing(r);
+                          setEditFirst(r.firstName || '');
+                          setEditMiddle(r.middleName || '');
+                          setEditLast(r.lastName || '');
+                          setEditRole(r.roleTitle || '');
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600"
+                        onClick={async () => {
+                          if (!confirm('Delete this personnel record?')) return;
+                          try {
+                            await api.delete(`/api/personnel/${r.id}`);
+                            await load();
+                          } catch {}
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td className="px-3 py-6 text-center text-slate-400" colSpan={4}>No records</td>
+                  <td className="px-3 py-6 text-center text-slate-400" colSpan={5}>No records</td>
                 </tr>
               )}
             </tbody>
@@ -147,11 +184,85 @@ export function Personnel() {
                 >
                   {copied ? 'Copied' : 'Copy'}
                 </button>
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700"
+                  onClick={() => {
+                    const svg = svgWrapRef.current?.querySelector('svg');
+                    if (!svg) return;
+                    const data = new XMLSerializer().serializeToString(svg);
+                    const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `personnel-qr-${Date.now()}.svg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Download
+                </button>
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700"
+                  onClick={() => {
+                    const svg = svgWrapRef.current?.querySelector('svg');
+                    if (!svg) return;
+                    const data = new XMLSerializer().serializeToString(svg);
+                    const win = window.open('', 'print-qr', 'width=420,height=420');
+                    if (!win) return;
+                    win.document.write(`<!doctype html><html><head><title>Print QR</title><style>html,body{height:100%}body{margin:0;display:flex;align-items:center;justify-content:center}</style></head><body>${data}</body></html>`);
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => { try { win.print(); win.close(); } catch {} }, 300);
+                  }}
+                >
+                  Print
+                </button>
                 <button className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700" onClick={() => { setPreviewQR(null); setCopied(false); }}>Close</button>
               </div>
             </div>
-            <div className="flex items-center justify-center bg-white rounded p-4">
+            <div ref={svgWrapRef} className="flex items-center justify-center bg-white rounded p-4">
               <QRCodeSVG value={previewQR} size={300} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => { if (!savingEdit) setEditing(null); }} />
+          <div className="relative bg-slate-900 border border-slate-700 rounded-lg p-4 z-10 w-[min(92vw,560px)]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Edit Personnel</div>
+              <button className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700" onClick={() => { if (!savingEdit) setEditing(null); }}>Close</button>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="First name" value={editFirst} onChange={(e) => setEditFirst(e.target.value)} />
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Middle name (optional)" value={editMiddle} onChange={(e) => setEditMiddle(e.target.value)} />
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Last name" value={editLast} onChange={(e) => setEditLast(e.target.value)} />
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Role title" value={editRole} onChange={(e) => setEditRole(e.target.value)} />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button className="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700" onClick={() => { if (!savingEdit) setEditing(null); }}>Cancel</button>
+              <button
+                className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60"
+                disabled={savingEdit || !editFirst || !editLast}
+                onClick={async () => {
+                  setSavingEdit(true);
+                  try {
+                    const payload: any = { firstName: editFirst, lastName: editLast };
+                    if (editMiddle.trim() !== '') payload.middleName = editMiddle;
+                    if (editRole.trim() !== '') payload.roleTitle = editRole; else payload.roleTitle = null;
+                    await api.patch(`/api/personnel/${editing.id}`, payload);
+                    await load();
+                    setEditing(null);
+                  } catch {}
+                  finally { setSavingEdit(false); }
+                }}
+              >
+                {savingEdit ? 'Saving...' : 'Save'}
+              </button>
             </div>
           </div>
         </div>
