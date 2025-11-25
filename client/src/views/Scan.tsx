@@ -14,14 +14,22 @@ export function Scan() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const lastScanRef = useRef<{ code: string; at: number } | null>(null);
 
   async function doScan(action: 'checkin' | 'checkout') {
     setLoading(action);
     setError(null);
     setResult(null);
     try {
+      const now = Date.now();
+      const last = lastScanRef.current;
+      if (last && last.code === qrCode && now - last.at < 3000) {
+        setError('Duplicate scan ignored (try again in a moment)');
+        return;
+      }
       const res = await api.post('/api/scan', { qrCode, action });
       setResult(res.data);
+      lastScanRef.current = { code: qrCode, at: now };
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Scan failed');
     } finally {
@@ -116,7 +124,12 @@ export function Scan() {
             {mode === 'camera' && (
               <div className="space-y-2">
                 {cameraError && <div className="text-red-400 text-sm">{cameraError}</div>}
-                <video ref={videoRef} className="w-full rounded bg-black" muted playsInline />
+                <div className="relative">
+                  <video ref={videoRef} className="w-full rounded bg-black" muted playsInline />
+                  <div className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded">
+                    Scanning...
+                  </div>
+                </div>
                 <canvas ref={canvasRef} className="hidden" />
               </div>
             )}

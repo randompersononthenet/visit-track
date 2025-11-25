@@ -8,6 +8,7 @@ export function AppShell() {
     { to: '/register', label: 'Register' },
     { to: '/personnel', label: 'Personnel' },
     { to: '/scan', label: 'Scan' },
+    { to: '/logs', label: 'Visit Logs' },
     { to: '/reports', label: 'Reports' },
   ];
   return (

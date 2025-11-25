@@ -8,6 +8,7 @@ import { Login } from './views/Login'
 import { Register } from './views/Register'
 import { Scan } from './views/Scan'
 import { Reports } from './views/Reports'
+import { VisitLogs } from './views/VisitLogs'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Personnel } from './views/Personnel'
 
@@ -29,6 +30,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/register" element={<Register />} />
           <Route path="/personnel" element={<Personnel />} />
           <Route path="/scan" element={<Scan />} />
+          <Route path="/logs" element={<VisitLogs />} />
           <Route path="/reports" element={<Reports />} />
         </Route>
       </Routes>
