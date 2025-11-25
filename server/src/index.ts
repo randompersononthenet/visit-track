@@ -11,6 +11,7 @@ import visitorsRouter from './routes/visitors';
 import personnelRouter from './routes/personnel';
 import scanRouter from './routes/scan';
 import visitLogsRouter from './routes/visitLogs';
+import reportsRouter from './routes/reports';
 
 const app = express();
 app.use(helmet());
@@ -34,6 +35,7 @@ app.use('/api/visitors', visitorsRouter);
 app.use('/api/personnel', personnelRouter);
 app.use('/api/scan', scanRouter);
 app.use('/api/visit-logs', visitLogsRouter);
+app.use('/api/reports', reportsRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {
