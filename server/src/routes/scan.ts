@@ -6,10 +6,12 @@ import { Visitor } from '../models/Visitor';
 import { Personnel } from '../models/Personnel';
 import { VisitLog } from '../models/VisitLog';
 import { Violation } from '../models/Violation';
+import { requireRole } from '../middleware/roles';
 
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireRole('admin', 'staff', 'officer'));
 
 const scanSchema = z.object({
   qrCode: z.string().min(1),

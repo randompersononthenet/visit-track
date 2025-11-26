@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { validate } from '../lib/validation';
+import { requireRole } from '../middleware/roles';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ const router = Router();
 router.use(requireAuth);
 
 // List personnel with filters and pagination
-router.get('/', async (req, res) => {
+router.get('/', requireRole('admin', 'staff', 'officer'), async (req, res) => {
   const { q, page = '1', pageSize = '20' } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
@@ -38,7 +39,7 @@ const createPersonnelSchema = z.object({
   qrCode: z.string().max(200).optional(),
 });
 
-router.post('/', validate(createPersonnelSchema), async (req, res) => {
+router.post('/', requireRole('admin', 'staff'), validate(createPersonnelSchema), async (req, res) => {
   const { firstName, middleName, lastName, roleTitle, qrCode } = (req as any).parsed;
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
   const rec = await Personnel.create({ firstName, middleName, lastName, fullName, roleTitle, qrCode: qrCode || uuidv4() });
@@ -46,7 +47,7 @@ router.post('/', validate(createPersonnelSchema), async (req, res) => {
 });
 
 // Get by id
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireRole('admin', 'staff', 'officer'), async (req, res) => {
   const rec = await Personnel.findByPk(Number(req.params.id));
   if (!rec) return res.status(404).json({ error: 'Not found' });
   res.json(rec);
@@ -55,7 +56,7 @@ router.get('/:id', async (req, res) => {
 // Update
 const updatePersonnelSchema = createPersonnelSchema.partial();
 
-router.patch('/:id', validate(updatePersonnelSchema), async (req, res) => {
+router.patch('/:id', requireRole('admin', 'staff'), validate(updatePersonnelSchema), async (req, res) => {
   const id = Number(req.params.id);
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });
@@ -70,7 +71,7 @@ router.patch('/:id', validate(updatePersonnelSchema), async (req, res) => {
 });
 
 // Delete
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
   const id = Number(req.params.id);
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });

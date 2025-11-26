@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth';
 import { VisitLog } from '../models/VisitLog';
 import { Visitor } from '../models/Visitor';
 import { Personnel } from '../models/Personnel';
+import { requireRole } from '../middleware/roles';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const router = Router();
 router.use(requireAuth);
 
 // GET /api/visit-logs?subjectType=visitor|personnel&subjectId=...&dateFrom=ISO&dateTo=ISO&page=&pageSize=
-router.get('/', async (req, res) => {
+router.get('/', requireRole('admin', 'staff'), async (req, res) => {
   const { subjectType, subjectId, dateFrom, dateTo, page = '1', pageSize = '20' } = req.query as Record<string, string>;
 
   const p = Math.max(parseInt(page) || 1, 1);
