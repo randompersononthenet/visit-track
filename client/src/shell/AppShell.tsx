@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { hasRole } from '../lib/auth';
 
 export function AppShell() {
   const { pathname } = useLocation();
@@ -8,8 +9,8 @@ export function AppShell() {
     { to: '/register', label: 'Register' },
     { to: '/personnel', label: 'Personnel' },
     { to: '/scan', label: 'Scan' },
-    { to: '/logs', label: 'Visit Logs' },
-    { to: '/reports', label: 'Reports' },
+    ...(hasRole(['admin', 'staff']) ? [{ to: '/logs', label: 'Visit Logs' }] : [] as any),
+    ...(hasRole(['admin', 'staff']) ? [{ to: '/reports', label: 'Reports' }] : [] as any),
   ];
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex">

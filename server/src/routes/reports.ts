@@ -1,8 +1,11 @@
 import { Router } from 'express';
+import { Op } from 'sequelize';
 import { requireAuth } from '../middleware/auth';
 import { requireRole } from '../middleware/roles';
 import { Visitor } from '../models/Visitor';
 import { Personnel } from '../models/Personnel';
+import { VisitLog } from '../models/VisitLog';
+import { User } from '../models/User';
 
 function toCsvRow(fields: (string | number | null | undefined)[]) {
   return fields
@@ -25,8 +28,15 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRole('admin', 'staff'));
 
-router.get('/visitors.csv', async (_req, res) => {
-  const rows = await Visitor.findAll({ order: [['id', 'ASC']] });
+router.get('/visitors.csv', async (req, res) => {
+  const { dateFrom, dateTo } = req.query as Record<string, string>;
+  const where: any = {};
+  if (dateFrom || dateTo) {
+    where.createdAt = {} as any;
+    if (dateFrom) (where.createdAt as any)[Op.gte] = new Date(dateFrom);
+    if (dateTo) (where.createdAt as any)[Op.lte] = new Date(dateTo);
+  }
+  const rows = await Visitor.findAll({ where, order: [['id', 'ASC']] });
   const header = ['ID', 'Full Name', 'First Name', 'Middle Name', 'Last Name', 'Contact', 'ID Number', 'Relation', 'QR Code', 'Blacklisted', 'Created At'];
   const lines = [toCsvRow(header)];
   for (const r of rows) {
@@ -52,8 +62,75 @@ router.get('/visitors.csv', async (_req, res) => {
   res.send(csv);
 });
 
-router.get('/personnel.csv', async (_req, res) => {
-  const rows = await Personnel.findAll({ order: [['id', 'ASC']] });
+// Visit logs CSV: supports subject filters and date range (timeIn)
+router.get('/visit-logs.csv', async (req, res) => {
+  const { subjectType, subjectId, dateFrom, dateTo, page, pageSize } = req.query as Record<string, string>;
+  // optional paging to avoid huge memory (defaults similar to API)
+  const p = Math.max(parseInt(page || '1') || 1, 1);
+  const ps = Math.min(Math.max(parseInt(pageSize || '1000') || 1000, 1), 5000); // up to 5k rows per request
+
+  const where: any = {};
+  if (subjectType === 'visitor') {
+    where.visitorId = subjectId ? Number(subjectId) : { [Op.ne]: null };
+  } else if (subjectType === 'personnel') {
+    where.personnelId = subjectId ? Number(subjectId) : { [Op.ne]: null };
+  } else if (subjectId) {
+    where[Op.or] = [{ visitorId: Number(subjectId) }, { personnelId: Number(subjectId) }];
+  }
+  if (dateFrom || dateTo) {
+    where.timeIn = {} as any;
+    if (dateFrom) (where.timeIn as any)[Op.gte] = new Date(dateFrom);
+    if (dateTo) (where.timeIn as any)[Op.lte] = new Date(dateTo);
+  }
+
+  const { rows } = await VisitLog.findAndCountAll({
+    where,
+    order: [['timeIn', 'DESC']],
+    offset: (p - 1) * ps,
+    limit: ps,
+    include: [
+      { model: Visitor, as: 'visitor', attributes: ['id', 'fullName'] },
+      { model: Personnel, as: 'personnel', attributes: ['id', 'fullName', 'roleTitle'] },
+      { model: User, as: 'handledBy', attributes: ['id', 'username'] },
+    ],
+  });
+
+  const header = ['Log ID', 'Subject Type', 'Subject ID', 'Subject Name', 'Role', 'Time In', 'Time Out', 'Handled By'];
+  const lines = [toCsvRow(header)];
+  for (const r of rows) {
+    const type = (r as any).visitorId ? 'visitor' : ((r as any).personnelId ? 'personnel' : '');
+    const subjectId = (r as any).visitorId || (r as any).personnelId || '';
+    const subjectName = (r as any).visitor?.fullName || (r as any).personnel?.fullName || '';
+    const roleTitle = (r as any).personnel?.roleTitle || '';
+    const handled = (r as any).handledBy?.username || '';
+    lines.push(
+      toCsvRow([
+        r.id,
+        type,
+        subjectId,
+        subjectName,
+        roleTitle,
+        r.timeIn?.toISOString?.() || r.timeIn,
+        r.timeOut ? (r.timeOut as any).toISOString?.() || r.timeOut : '',
+        handled,
+      ])
+    );
+  }
+  const csv = lines.join('\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="visit-logs.csv"');
+  res.send(csv);
+});
+
+router.get('/personnel.csv', async (req, res) => {
+  const { dateFrom, dateTo } = req.query as Record<string, string>;
+  const where: any = {};
+  if (dateFrom || dateTo) {
+    where.createdAt = {} as any;
+    if (dateFrom) (where.createdAt as any)[Op.gte] = new Date(dateFrom);
+    if (dateTo) (where.createdAt as any)[Op.lte] = new Date(dateTo);
+  }
+  const rows = await Personnel.findAll({ where, order: [['id', 'ASC']] });
   const header = ['ID', 'Full Name', 'First Name', 'Middle Name', 'Last Name', 'Role Title', 'QR Code', 'Created At'];
   const lines = [toCsvRow(header)];
   for (const r of rows) {

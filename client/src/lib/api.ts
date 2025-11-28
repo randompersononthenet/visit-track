@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { setRole } from './auth';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
 
@@ -21,6 +22,7 @@ api.interceptors.response.use(
     const status = err?.response?.status;
     if (status === 401 && typeof window !== 'undefined') {
       setToken(null);
+      try { setRole(null); } catch {}
       // Optionally preserve intended path via query
       const href = window.location.href;
       const next = encodeURIComponent(href);

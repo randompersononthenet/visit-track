@@ -11,6 +11,7 @@ import { Reports } from './views/Reports'
 import { VisitLogs } from './views/VisitLogs'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Personnel } from './views/Personnel'
+import { RoleRoute } from './components/RoleRoute'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -30,8 +31,22 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/register" element={<Register />} />
           <Route path="/personnel" element={<Personnel />} />
           <Route path="/scan" element={<Scan />} />
-          <Route path="/logs" element={<VisitLogs />} />
-          <Route path="/reports" element={<Reports />} />
+          <Route
+            path="/logs"
+            element={
+              <RoleRoute roles={["admin", "staff"]}>
+                <VisitLogs />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <RoleRoute roles={["admin", "staff"]}>
+                <Reports />
+              </RoleRoute>
+            }
+          />
         </Route>
       </Routes>
     </BrowserRouter>

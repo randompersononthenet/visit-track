@@ -2,6 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, setToken } from '../lib/api';
+import { setRole } from '../lib/auth';
 
 export function Login() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export function Login() {
       const token = res.data?.token as string;
       if (!token) throw new Error('No token received');
       setToken(token);
+      try { setRole(res.data?.user?.role || null); } catch {}
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Login failed');
