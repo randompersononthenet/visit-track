@@ -54,7 +54,7 @@ export function Dashboard() {
         Dashboard
       </h2>
       {error && <div className="text-red-400 text-sm mb-3">{error}</div>}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" aria-label="Summary metrics">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4" aria-label="Summary metrics">
         {[{label:'Total Visitors', value: data?.totals?.visitors},{label:'Total Personnel', value: data?.totals?.personnel},{label:'Today Check-ins', value: data?.today?.checkIns},{label:'Currently Inside', value: data?.inside?.current}].map((m, idx) => (
           <div key={idx} className="bg-slate-800/40 rounded p-4">
             <div className="text-slate-400 text-xs">{m.label}</div>
@@ -63,7 +63,7 @@ export function Dashboard() {
         ))}
       </div>
       <section>
-      <div className="bg-slate-800/40 rounded p-4 lg:col-span-2">
+      <div className="bg-slate-800/40 rounded p-4 lg:col-span-2 mt-6 overflow-hidden">
         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
           <div className="font-semibold flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/></svg>
