@@ -99,6 +99,24 @@ This PRD defines the **key features, user experience flow, milestones, success c
 
 ---
 
+### 4.8 Current Implementation Status (Nov 2025)
+- Visitors/Personnel registration modules functional, with QR code generation and print/download options.
+- Scan module functional for check-in/out; violation lookup and alert surfaced in scan response for visitors.
+- Visit Logs API and UI available with filters and pagination.
+- Reports CSV exports available with filters:
+  - `/api/reports/visitors.csv?dateFrom=&dateTo=`
+  - `/api/reports/personnel.csv?dateFrom=&dateTo=`
+  - `/api/reports/visit-logs.csv?subjectType=visitor|personnel&subjectId=&dateFrom=&dateTo=&page=&pageSize=`
+- RBAC enforced server-side; client UI gated by role for logs/reports.
+- Dashboard summary implemented (`/api/analytics/summary`): totals, today check-ins, currently inside.
+
+### 4.9 Next Steps (Planned)
+- Dashboard expansion: recent activity table and 7-day check-ins chart.
+- Reports: PDF generation and print-ready layouts; large export UX.
+- RBAC hardening: no-permission view and stricter UI gating of write actions for officers.
+
+---
+
 ## 5. System Architecture Overview
 
 ### 5.1 Architecture Model

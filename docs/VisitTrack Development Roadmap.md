@@ -17,6 +17,12 @@ This roadmap will guide both development and project documentation up to system 
 
 ---
 
+### Progress Update (Nov 2025)
+- Implemented: Registration (visitors/personnel) with QR, Scan with check-in/out and violation checks, Visit Logs UI/API, Reports CSV with filters (visitors, personnel, visit-logs), RBAC (server + client gating), Dashboard summary metrics, API contract updated.
+- In progress next: Dashboard expansion (recent activity, 7-day check-ins chart), Reports PDF generation, RBAC hardening (no-permission UX, stricter write gating for officers).
+
+---
+
 ## 2. High-Level Timeline
 
 | Phase | Weeks | Description | Key Deliverables |

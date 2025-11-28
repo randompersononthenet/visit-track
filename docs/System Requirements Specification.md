@@ -76,6 +76,14 @@ The system provides the following major functions:
 
 Users are assumed to have basic computer literacy and familiarity with BJMP’s current manual procedures.
 
+### 2.6 Current Implementation Status (Nov 2025)
+- Visitor/Personnel registration functional with QR code generation and print/download.
+- QR scanning module functional for check-in/out; violation alerts surfaced on visitor scans.
+- Visit Logs API/UI with filters (subject, date) and pagination.
+- Reports CSV endpoints with filters (date, subject for logs). PDF endpoints stubbed.
+- Dashboard summary endpoint and UI showing totals, today check-ins, and currently inside.
+- RBAC enforced on server; client UI gated for restricted modules.
+
 ### 2.4 Constraints
 - System is **LAN-based only** and not connected to the internet.  
 - Must comply with the **Data Privacy Act of 2012 (RA 10173)**.  
