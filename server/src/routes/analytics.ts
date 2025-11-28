@@ -57,6 +57,7 @@ router.get('/checkins-7d', async (_req, res) => {
 router.get('/visitor-forecast', async (req, res) => {
   const window = Math.max(1, Math.min(30, parseInt(String(req.query.window || '7')) || 7));
   const daysParam = Math.max(window, Math.min(120, parseInt(String(req.query.days || '30')) || 30));
+  const includePersonnel = String(req.query.includePersonnel || 'false') === 'true';
 
   // last daysParam days including today
   const days: { date: string; start: Date; end: Date }[] = [];
@@ -72,9 +73,14 @@ router.get('/visitor-forecast', async (req, res) => {
   }
 
   const series: { date: string; count: number }[] = [];
+  const seriesPersonnel: { date: string; count: number }[] = [];
   for (const { date, start, end } of days) {
     const count = await VisitLog.count({ where: { visitorId: { [Op.not]: null }, timeIn: { [Op.gte]: start, [Op.lte]: end } } });
     series.push({ date, count });
+    if (includePersonnel) {
+      const pcount = await VisitLog.count({ where: { personnelId: { [Op.not]: null }, timeIn: { [Op.gte]: start, [Op.lte]: end } } });
+      seriesPersonnel.push({ date, count: pcount });
+    }
   }
 
   // simple moving average over trailing window
@@ -93,7 +99,24 @@ router.get('/visitor-forecast', async (req, res) => {
   const lastWindow = series.slice(-window);
   const nextForecast = lastWindow.length === window ? Number((lastWindow.reduce((s, v) => s + v.count, 0) / window).toFixed(2)) : null;
 
-  res.json({ window, series, movingAverage: ma, nextDayForecast: nextForecast });
+  let maPersonnel: { date: string; ma: number }[] | undefined;
+  let nextForecastPersonnel: number | null | undefined;
+  if (includePersonnel) {
+    maPersonnel = [];
+    for (let i = 0; i < seriesPersonnel.length; i++) {
+      if (i + 1 >= window) {
+        const slice = seriesPersonnel.slice(i + 1 - window, i + 1);
+        const avg = slice.reduce((s, v) => s + v.count, 0) / window;
+        maPersonnel.push({ date: seriesPersonnel[i].date, ma: Number(avg.toFixed(2)) });
+      } else {
+        maPersonnel.push({ date: seriesPersonnel[i].date, ma: NaN });
+      }
+    }
+    const lastPWindow = seriesPersonnel.slice(-window);
+    nextForecastPersonnel = lastPWindow.length === window ? Number((lastPWindow.reduce((s, v) => s + v.count, 0) / window).toFixed(2)) : null;
+  }
+
+  res.json({ window, series, movingAverage: ma, nextDayForecast: nextForecast, seriesPersonnel: includePersonnel ? seriesPersonnel : undefined, movingAveragePersonnel: includePersonnel ? maPersonnel : undefined, nextDayForecastPersonnel: includePersonnel ? nextForecastPersonnel : undefined });
 });
 
 export default router;
