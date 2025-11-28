@@ -173,28 +173,28 @@ export function Personnel() {
           </table>
         </div>
         <div className="flex items-center justify-between mt-3 text-sm">
-          <div className="text-slate-400">Page {page} of {totalPages} • {total} total</div>
+          <div className="text-slate-600 dark:text-slate-400">Page {page} of {totalPages} • {total} total</div>
           <div className="flex gap-2">
-            <button disabled={page <= 1} className="px-3 py-1 rounded bg-slate-800 disabled:opacity-60" onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
-            <button disabled={page >= totalPages} className="px-3 py-1 rounded bg-slate-800 disabled:opacity-60" onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button>
+            <button disabled={page <= 1} className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
+            <button disabled={page >= totalPages} className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button>
           </div>
         </div>
       </section>
       {previewQR && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => { setPreviewQR(null); setCopied(false); }} />
-          <div className="relative bg-slate-900 border border-slate-700 rounded-lg p-4 z-10 w-[min(92vw,520px)]">
+          <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(92vw,520px)] dark:bg-slate-900 dark:border-slate-700">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-sm text-slate-300 break-all pr-4">{previewQR}</div>
+              <div className="text-sm text-slate-700 dark:text-slate-300 break-all pr-4">{previewQR}</div>
               <div className="flex gap-2">
                 <button
-                  className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700"
+                  className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
                   onClick={async () => { try { await navigator.clipboard.writeText(previewQR); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} }}
                 >
                   {copied ? 'Copied' : 'Copy'}
                 </button>
                 <button
-                  className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700"
+                  className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
                   onClick={() => {
                     const svg = svgWrapRef.current?.querySelector('svg');
                     if (!svg) return;
@@ -213,7 +213,7 @@ export function Personnel() {
                   Download
                 </button>
                 <button
-                  className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700"
+                  className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
                   onClick={() => {
                     const svg = svgWrapRef.current?.querySelector('svg');
                     if (!svg) return;
@@ -228,7 +228,7 @@ export function Personnel() {
                 >
                   Print
                 </button>
-                <button className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700" onClick={() => { setPreviewQR(null); setCopied(false); }}>Close</button>
+                <button className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { setPreviewQR(null); setCopied(false); }}>Close</button>
               </div>
             </div>
             <div ref={svgWrapRef} className="flex items-center justify-center bg-white rounded p-4">
@@ -241,19 +241,19 @@ export function Personnel() {
       {editing && hasRole(['admin','staff']) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => { if (!savingEdit) setEditing(null); }} />
-          <div className="relative bg-slate-900 border border-slate-700 rounded-lg p-4 z-10 w-[min(92vw,560px)]">
+          <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(92vw,560px)] dark:bg-slate-900 dark:border-slate-700">
             <div className="flex items-center justify-between mb-3">
               <div className="font-semibold">Edit Personnel</div>
-              <button className="px-3 py-1 text-sm rounded bg-slate-800 hover:bg-slate-700" onClick={() => { if (!savingEdit) setEditing(null); }}>Close</button>
+              <button className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { if (!savingEdit) setEditing(null); }}>Close</button>
             </div>
             <div className="grid grid-cols-1 gap-3">
-              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="First name" value={editFirst} onChange={(e) => setEditFirst(e.target.value)} />
-              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Middle name (optional)" value={editMiddle} onChange={(e) => setEditMiddle(e.target.value)} />
-              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Last name" value={editLast} onChange={(e) => setEditLast(e.target.value)} />
-              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Role title" value={editRole} onChange={(e) => setEditRole(e.target.value)} />
+              <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="First name" value={editFirst} onChange={(e) => setEditFirst(e.target.value)} />
+              <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Middle name (optional)" value={editMiddle} onChange={(e) => setEditMiddle(e.target.value)} />
+              <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Last name" value={editLast} onChange={(e) => setEditLast(e.target.value)} />
+              <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Role title" value={editRole} onChange={(e) => setEditRole(e.target.value)} />
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <button className="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700" onClick={() => { if (!savingEdit) setEditing(null); }}>Cancel</button>
+              <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { if (!savingEdit) setEditing(null); }}>Cancel</button>
               <button
                 className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60"
                 disabled={savingEdit || !editFirst || !editLast}

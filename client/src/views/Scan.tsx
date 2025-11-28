@@ -99,31 +99,31 @@ export function Scan() {
     <div>
       <h2 className="text-xl font-semibold mb-4">Scan</h2>
       <div className="grid md:grid-cols-3 gap-8">
-        <section className="md:col-span-1 bg-slate-800/40 rounded-lg p-4">
+        <section className="md:col-span-1 bg-white border border-slate-200 rounded-lg p-4 dark:bg-slate-800/40 dark:border-slate-700">
           <div className="space-y-3">
             <div className="flex gap-2 text-sm">
               <button
-                className={`px-3 py-1 rounded ${mode === 'manual' ? 'bg-slate-700' : 'bg-slate-800 hover:bg-slate-700'}`}
+                className={`px-3 py-1 rounded ${mode === 'manual' ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white'}`}
                 onClick={() => setMode('manual')}
               >
                 Manual
               </button>
               <button
-                className={`px-3 py-1 rounded ${mode === 'camera' ? 'bg-slate-700' : 'bg-slate-800 hover:bg-slate-700'}`}
+                className={`px-3 py-1 rounded ${mode === 'camera' ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white'}`}
                 onClick={() => setMode('camera')}
               >
                 Camera
               </button>
             </div>
             <input
-              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2"
+              className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
               placeholder="Paste or scan QR code value"
               value={qrCode}
               onChange={(e) => setQrCode(e.target.value)}
             />
             {mode === 'camera' && (
               <div className="space-y-2">
-                {cameraError && <div className="text-red-400 text-sm">{cameraError}</div>}
+                {cameraError && <div className="text-rose-600 dark:text-red-400 text-sm">{cameraError}</div>}
                 <div className="relative">
                   <video ref={videoRef} className="w-full rounded bg-black" muted playsInline />
                   <div className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded">
@@ -133,7 +133,7 @@ export function Scan() {
                 <canvas ref={canvasRef} className="hidden" />
               </div>
             )}
-            {error && <div className="text-red-400 text-sm">{error}</div>}
+            {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
             <div className="flex gap-2">
               <button
                 className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded disabled:opacity-60"
@@ -155,31 +155,31 @@ export function Scan() {
 
         <section className="md:col-span-2">
           <h3 className="text-lg font-semibold mb-2">Result</h3>
-          {!result && !error && <div className="text-slate-400 text-sm">No scan yet.</div>}
+          {!result && !error && <div className="text-slate-600 dark:text-slate-400 text-sm">No scan yet.</div>}
           {result && (
-            <div className="bg-slate-800/40 rounded-lg p-4">
+            <div className="bg-white border border-slate-200 rounded-lg p-4 dark:bg-slate-800/40 dark:border-slate-700">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                <div><span className="text-slate-400">Event:</span> {result.event}</div>
-                <div><span className="text-slate-400">Timestamp:</span> {new Date(result.at).toLocaleString()}</div>
-                <div><span className="text-slate-400">Subject Type:</span> {result.subjectType}</div>
+                <div><span className="text-slate-700 dark:text-slate-400">Event:</span> {result.event}</div>
+                <div><span className="text-slate-700 dark:text-slate-400">Timestamp:</span> {new Date(result.at).toLocaleString()}</div>
+                <div><span className="text-slate-700 dark:text-slate-400">Subject Type:</span> {result.subjectType}</div>
                 {result.subject && (
                   <>
-                    <div className="md:col-span-2"><span className="text-slate-400">Name:</span> {result.subject.fullName}</div>
+                    <div className="md:col-span-2"><span className="text-slate-700 dark:text-slate-400">Name:</span> {result.subject.fullName}</div>
                     {result.subject.roleTitle && (
-                      <div className="md:col-span-2"><span className="text-slate-400">Role:</span> {result.subject.roleTitle}</div>
+                      <div className="md:col-span-2"><span className="text-slate-700 dark:text-slate-400">Role:</span> {result.subject.roleTitle}</div>
                     )}
                   </>
                 )}
-                <div><span className="text-slate-400">Log ID:</span> {result.logId}</div>
+                <div><span className="text-slate-700 dark:text-slate-400">Log ID:</span> {result.logId}</div>
               </div>
               {Array.isArray(result.alerts) && result.alerts.length > 0 && (
                 <div className="mt-4">
-                  <div className="font-medium text-amber-300 mb-2">Alerts</div>
+                  <div className="font-medium text-amber-600 dark:text-amber-300 mb-2">Alerts</div>
                   <ul className="list-disc pl-6 text-sm">
                     {result.alerts.map((a: any, idx: number) => (
                       <li key={idx} className="mb-1">
-                        <span className="text-slate-300">{a.level}</span>
-                        {a.details && <span className="text-slate-400"> — {a.details}</span>}
+                        <span className="text-slate-800 dark:text-slate-300">{a.level}</span>
+                        {a.details && <span className="text-slate-600 dark:text-slate-400"> — {a.details}</span>}
                         {a.recordedAt && <span className="text-slate-500"> ({new Date(a.recordedAt).toLocaleString()})</span>}
                       </li>
                     ))}

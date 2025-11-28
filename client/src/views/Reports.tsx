@@ -46,20 +46,20 @@ export function Reports() {
       <div className="space-y-4">
         <div className="grid md:grid-cols-4 gap-3">
           <div className="md:col-span-2 grid grid-cols-2 gap-3">
-            <input className="bg-slate-900 border border-slate-700 rounded px-3 py-2" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-            <input className="bg-slate-900 border border-slate-700 rounded px-3 py-2" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
-          <select className="bg-slate-900 border border-slate-700 rounded px-3 py-2" value={subjectType} onChange={(e) => setSubjectType(e.target.value as any)}>
+          <select className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={subjectType} onChange={(e) => setSubjectType(e.target.value as any)}>
             <option value="all">All subjects</option>
             <option value="visitor">Visitors</option>
             <option value="personnel">Personnel</option>
           </select>
-          <input className="bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Subject ID (optional)" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} />
+          <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Subject ID (optional)" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} />
         </div>
-        {error && <div className="text-red-400 text-sm">{error}</div>}
+        {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
         <div className="grid sm:grid-cols-2 gap-3">
           <button
-            className="bg-slate-800 hover:bg-slate-700 rounded px-3 py-2 text-left"
+            className="bg-slate-200 hover:bg-slate-300 text-slate-900 rounded px-3 py-2 text-left dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
             onClick={() => {
               const qs = dateQuery ? `?${dateQuery}` : '';
               downloadCsv(`/api/reports/visitors.csv${qs}`, 'visitors.csv');
@@ -69,7 +69,7 @@ export function Reports() {
             {downloading === '/api/reports/visitors.csv' ? 'Downloading Visitors CSV...' : 'Download Visitors (CSV)'}
           </button>
           <button
-            className="bg-slate-800 hover:bg-slate-700 rounded px-3 py-2 text-left"
+            className="bg-slate-200 hover:bg-slate-300 text-slate-900 rounded px-3 py-2 text-left dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
             onClick={() => {
               const qs = dateQuery ? `?${dateQuery}` : '';
               downloadCsv(`/api/reports/personnel.csv${qs}`, 'personnel.csv');
@@ -79,7 +79,7 @@ export function Reports() {
             {downloading === '/api/reports/personnel.csv' ? 'Downloading Personnel CSV...' : 'Download Personnel (CSV)'}
           </button>
           <button
-            className="bg-slate-800 hover:bg-slate-700 rounded px-3 py-2 text-left sm:col-span-2"
+            className="bg-slate-200 hover:bg-slate-300 text-slate-900 rounded px-3 py-2 text-left sm:col-span-2 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
             onClick={() => {
               const params = new URLSearchParams();
               if (dateFrom) params.set('dateFrom', new Date(dateFrom).toISOString());
@@ -96,16 +96,16 @@ export function Reports() {
             {downloading === '/api/reports/visit-logs.csv' ? 'Downloading Visit Logs CSV...' : 'Download Visit Logs (CSV)'}
           </button>
         </div>
-        <div className="flex items-center gap-4 text-sm text-slate-300 mt-1 flex-wrap">
-          <label className="text-slate-400">Rows per file (Visit Logs):</label>
-          <select className="bg-slate-900 border border-slate-700 rounded px-2 py-1" value={rowsPerFile} onChange={(e) => setRowsPerFile(parseInt(e.target.value) || 1000)}>
+        <div className="flex items-center gap-4 text-sm text-slate-700 dark:text-slate-300 mt-1 flex-wrap">
+          <label className="text-slate-600 dark:text-slate-400">Rows per file (Visit Logs):</label>
+          <select className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={rowsPerFile} onChange={(e) => setRowsPerFile(parseInt(e.target.value) || 1000)}>
             <option value={1000}>1,000</option>
             <option value={2000}>2,000</option>
             <option value={5000}>5,000</option>
           </select>
-          <label className="text-slate-400">Page:</label>
+          <label className="text-slate-600 dark:text-slate-400">Page:</label>
           <input
-            className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1"
+            className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
             type="number"
             min={1}
             value={pageNumber}
@@ -113,7 +113,7 @@ export function Reports() {
           />
           <span className="text-xs text-slate-500">Use filters to narrow results or download multiple pages for large exports.</span>
         </div>
-        <div className="text-xs text-slate-400">PDF exports are planned in Phase 5; endpoints return 501 until PDFKit is wired.</div>
+        <div className="text-xs text-slate-600 dark:text-slate-400">PDF exports are planned in Phase 5; endpoints return 501 until PDFKit is wired.</div>
       </div>
     </div>
   );

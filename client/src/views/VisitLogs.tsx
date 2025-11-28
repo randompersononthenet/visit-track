@@ -43,23 +43,23 @@ export function VisitLogs() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Visit Logs</h2>
       <div className="grid md:grid-cols-4 gap-3">
-        <select className="bg-slate-900 border border-slate-700 rounded px-3 py-2" value={subjectType} onChange={(e) => { setPage(1); setSubjectType(e.target.value as any); }}>
+        <select className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={subjectType} onChange={(e) => { setPage(1); setSubjectType(e.target.value as any); }}>
           <option value="all">All subjects</option>
           <option value="visitor">Visitors</option>
           <option value="personnel">Personnel</option>
         </select>
-        <input className="bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Subject ID (optional)" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} />
-        <input className="bg-slate-900 border border-slate-700 rounded px-3 py-2" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-        <input className="bg-slate-900 border border-slate-700 rounded px-3 py-2" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Subject ID (optional)" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} />
+        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         <div className="md:col-span-4 flex gap-2">
-          <button className="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700" onClick={() => { setPage(1); load(); }}>Apply</button>
-          <button className="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700" onClick={() => { setSubjectType('all'); setSubjectId(''); setDateFrom(''); setDateTo(''); setPage(1); load(); }}>Reset</button>
+          <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { setPage(1); load(); }}>Apply</button>
+          <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { setSubjectType('all'); setSubjectId(''); setDateFrom(''); setDateTo(''); setPage(1); load(); }}>Reset</button>
         </div>
       </div>
-      {error && <div className="text-red-400 text-sm">{error}</div>}
-      <div className="overflow-x-auto border border-slate-800 rounded-lg">
+      {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
+      <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-transparent">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-800 text-slate-300">
+          <thead className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th className="text-left px-3 py-2">ID</th>
               <th className="text-left px-3 py-2">Subject</th>
@@ -73,7 +73,7 @@ export function VisitLogs() {
               const type = r.visitorId ? 'visitor' : (r.personnelId ? 'personnel' : '—');
               const name = r.visitor?.fullName || r.personnel?.fullName || '—';
               return (
-                <tr key={r.id} className="border-t border-slate-800">
+                <tr key={r.id} className="border-t border-slate-200 dark:border-slate-800">
                   <td className="px-3 py-2">{r.id}</td>
                   <td className="px-3 py-2">{name}</td>
                   <td className="px-3 py-2 capitalize">{type}</td>
@@ -84,17 +84,17 @@ export function VisitLogs() {
             })}
             {rows.length === 0 && (
               <tr>
-                <td className="px-3 py-6 text-center text-slate-400" colSpan={5}>{loading ? 'Loading...' : 'No logs'}</td>
+                <td className="px-3 py-6 text-center text-slate-600 dark:text-slate-400" colSpan={5}>{loading ? 'Loading...' : 'No logs'}</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
       <div className="flex items-center justify-between mt-3 text-sm">
-        <div className="text-slate-400">Page {page} of {totalPages} • {total} total</div>
+        <div className="text-slate-600 dark:text-slate-400">Page {page} of {totalPages} • {total} total</div>
         <div className="flex gap-2">
-          <button disabled={page <= 1} className="px-3 py-1 rounded bg-slate-800 disabled:opacity-60" onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
-          <button disabled={page >= totalPages} className="px-3 py-1 rounded bg-slate-800 disabled:opacity-60" onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button>
+          <button disabled={page <= 1} className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
+          <button disabled={page >= totalPages} className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button>
         </div>
       </div>
     </div>
