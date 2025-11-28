@@ -1,6 +1,7 @@
 import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
+import { hasRole } from '../lib/auth';
 import { QRCodeSVG } from 'qrcode.react';
 
 export function Personnel() {
@@ -67,6 +68,7 @@ export function Personnel() {
     <div className="grid md:grid-cols-3 gap-8">
       <section className="md:col-span-1 bg-slate-800/40 rounded-lg p-4">
         <h2 className="text-lg font-semibold mb-4">Register Personnel</h2>
+        {hasRole(['admin','staff']) ? (
         <form className="space-y-3" onSubmit={onCreate}>
           <div className="grid grid-cols-1 gap-3">
             <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
@@ -79,6 +81,9 @@ export function Personnel() {
             {creating ? 'Creating...' : 'Create Personnel'}
           </button>
         </form>
+        ) : (
+          <div className="text-sm text-slate-400">You don't have permission to create personnel.</div>
+        )}
         {createdQR && (
           <div className="mt-6">
             <div className="text-sm text-slate-300 mb-2">QR Code (print this):</div>
@@ -127,6 +132,7 @@ export function Personnel() {
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-2">
+                      {hasRole(['admin','staff']) && (
                       <button
                         className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700"
                         onClick={() => {
@@ -139,6 +145,8 @@ export function Personnel() {
                       >
                         Edit
                       </button>
+                      )}
+                      {hasRole(['admin','staff']) && (
                       <button
                         className="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600"
                         onClick={async () => {
@@ -151,6 +159,7 @@ export function Personnel() {
                       >
                         Delete
                       </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -229,7 +238,7 @@ export function Personnel() {
         </div>
       )}
 
-      {editing && (
+      {editing && hasRole(['admin','staff']) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => { if (!savingEdit) setEditing(null); }} />
           <div className="relative bg-slate-900 border border-slate-700 rounded-lg p-4 z-10 w-[min(92vw,560px)]">
