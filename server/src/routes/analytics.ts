@@ -54,4 +54,46 @@ router.get('/checkins-7d', async (_req, res) => {
   res.json({ days: counts });
 });
 
+router.get('/visitor-forecast', async (req, res) => {
+  const window = Math.max(1, Math.min(30, parseInt(String(req.query.window || '7')) || 7));
+  const daysParam = Math.max(window, Math.min(120, parseInt(String(req.query.days || '30')) || 30));
+
+  // last daysParam days including today
+  const days: { date: string; start: Date; end: Date }[] = [];
+  for (let i = daysParam - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - i);
+    const start = new Date(d);
+    const end = new Date(d);
+    end.setHours(23, 59, 59, 999);
+    const dateStr = start.toISOString().slice(0, 10);
+    days.push({ date: dateStr, start, end });
+  }
+
+  const series: { date: string; count: number }[] = [];
+  for (const { date, start, end } of days) {
+    const count = await VisitLog.count({ where: { visitorId: { [Op.not]: null }, timeIn: { [Op.gte]: start, [Op.lte]: end } } });
+    series.push({ date, count });
+  }
+
+  // simple moving average over trailing window
+  const ma: { date: string; ma: number }[] = [];
+  for (let i = 0; i < series.length; i++) {
+    if (i + 1 >= window) {
+      const slice = series.slice(i + 1 - window, i + 1);
+      const avg = slice.reduce((s, v) => s + v.count, 0) / window;
+      ma.push({ date: series[i].date, ma: Number(avg.toFixed(2)) });
+    } else {
+      ma.push({ date: series[i].date, ma: NaN });
+    }
+  }
+
+  // next-day forecast = average of last window counts
+  const lastWindow = series.slice(-window);
+  const nextForecast = lastWindow.length === window ? Number((lastWindow.reduce((s, v) => s + v.count, 0) / window).toFixed(2)) : null;
+
+  res.json({ window, series, movingAverage: ma, nextDayForecast: nextForecast });
+});
+
 export default router;

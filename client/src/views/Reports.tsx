@@ -10,6 +10,7 @@ export function Reports() {
   const [subjectType, setSubjectType] = useState<'all' | 'visitor' | 'personnel'>('all');
   const [subjectId, setSubjectId] = useState('');
   const [rowsPerFile, setRowsPerFile] = useState(1000);
+  const [pageNumber, setPageNumber] = useState(1);
 
   const dateQuery = useMemo(() => {
     const params = new URLSearchParams();
@@ -85,7 +86,7 @@ export function Reports() {
               if (dateTo) params.set('dateTo', new Date(dateTo).toISOString());
               if (subjectType !== 'all') params.set('subjectType', subjectType);
               if (subjectId.trim() !== '') params.set('subjectId', subjectId.trim());
-              params.set('page', '1');
+              params.set('page', String(Math.max(1, pageNumber || 1)));
               params.set('pageSize', String(rowsPerFile));
               const qs = params.toString();
               downloadCsv(`/api/reports/visit-logs.csv${qs ? `?${qs}` : ''}`, 'visit-logs.csv');
@@ -95,13 +96,21 @@ export function Reports() {
             {downloading === '/api/reports/visit-logs.csv' ? 'Downloading Visit Logs CSV...' : 'Download Visit Logs (CSV)'}
           </button>
         </div>
-        <div className="flex items-center gap-3 text-sm text-slate-300 mt-1">
+        <div className="flex items-center gap-4 text-sm text-slate-300 mt-1 flex-wrap">
           <label className="text-slate-400">Rows per file (Visit Logs):</label>
           <select className="bg-slate-900 border border-slate-700 rounded px-2 py-1" value={rowsPerFile} onChange={(e) => setRowsPerFile(parseInt(e.target.value) || 1000)}>
             <option value={1000}>1,000</option>
             <option value={2000}>2,000</option>
             <option value={5000}>5,000</option>
           </select>
+          <label className="text-slate-400">Page:</label>
+          <input
+            className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1"
+            type="number"
+            min={1}
+            value={pageNumber}
+            onChange={(e) => setPageNumber(Math.max(1, parseInt(e.target.value) || 1))}
+          />
           <span className="text-xs text-slate-500">Use filters to narrow results or download multiple pages for large exports.</span>
         </div>
         <div className="text-xs text-slate-400">PDF exports are planned in Phase 5; endpoints return 501 until PDFKit is wired.</div>

@@ -6,18 +6,21 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<any[]>([]);
   const [trend, setTrend] = useState<{ date: string; count: number }[]>([]);
+  const [forecast, setForecast] = useState<{ window: number; series: { date: string; count: number }[]; movingAverage: { date: string; ma: number }[]; nextDayForecast: number | null } | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
         const res = await api.get('/api/analytics/summary');
         setData(res.data);
-        const [logsRes, trendRes] = await Promise.all([
+        const [logsRes, trendRes, forecastRes] = await Promise.all([
           api.get('/api/visit-logs', { params: { page: 1, pageSize: 10 } }),
           api.get('/api/analytics/checkins-7d'),
+          api.get('/api/analytics/visitor-forecast', { params: { window: 7, days: 30 } }),
         ]);
         setRecent(logsRes.data?.data || []);
         setTrend(trendRes.data?.days || []);
+        setForecast(forecastRes.data || null);
       } catch (e: any) {
         setError(e?.response?.data?.error || 'Failed to load summary');
       }
@@ -44,6 +47,63 @@ export function Dashboard() {
         <div className="bg-slate-800/40 rounded p-4">
           <div className="text-slate-400 text-xs">Currently Inside</div>
           <div className="text-2xl font-semibold">{data?.inside?.current ?? '—'}</div>
+        </div>
+        <div className="bg-slate-800/40 rounded p-4 lg:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <div className="font-semibold">Visitor Forecast (Moving Average, 7-day)</div>
+            <div className="text-sm text-slate-300">Next day forecast: <span className="font-semibold">{forecast?.nextDayForecast ?? '—'}</span></div>
+          </div>
+          <div className="h-48">
+            {forecast && forecast.series?.length > 0 ? (
+              <svg viewBox="0 0 640 200" className="w-full h-full">
+                {(() => {
+                  const data = forecast.series.map((d, i) => ({ x: i, count: d.count, date: d.date }));
+                  const ma = forecast.movingAverage.map((d, i) => ({ x: i, ma: isNaN(d.ma as any) ? null : d.ma }));
+                  const maxY = Math.max(1, ...data.map((d) => d.count), ...ma.map((m) => m.ma || 0));
+                  const pad = { left: 40, right: 10, top: 10, bottom: 30 };
+                  const width = 640 - pad.left - pad.right;
+                  const height = 200 - pad.top - pad.bottom;
+                  const xStep = width / Math.max(1, data.length - 1);
+                  const yScale = (v: number) => height - (v / maxY) * (height - 10);
+
+                  const linePath = (pts: { x: number; y: number }[]) => pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${pad.left + p.x} ${pad.top + p.y}`).join(' ');
+
+                  const countPts = data.map((d, i) => ({ x: i * xStep, y: yScale(d.count) }));
+                  const maPts = ma.map((d, i) => ({ x: i * xStep, y: d.ma == null ? null : yScale(d.ma) }));
+                  const maSegments: { x: number; y: number }[][] = [];
+                  let cur: { x: number; y: number }[] = [];
+                  maPts.forEach((p) => {
+                    if (p.y == null) {
+                      if (cur.length) { maSegments.push(cur); cur = []; }
+                    } else {
+                      cur.push({ x: p.x!, y: p.y });
+                    }
+                  });
+                  if (cur.length) maSegments.push(cur);
+
+                  return (
+                    <g>
+                      {/* axes */}
+                      <line x1={pad.left} y1={pad.top + height} x2={pad.left + width} y2={pad.top + height} stroke="#475569" />
+                      <line x1={pad.left} y1={pad.top} x2={pad.left} y2={pad.top + height} stroke="#475569" />
+                      {/* counts line */}
+                      <path d={linePath(countPts)} fill="none" stroke="#38bdf8" strokeWidth={2} />
+                      {/* moving average segments */}
+                      {maSegments.map((seg, idx) => (
+                        <path key={idx} d={linePath(seg)} fill="none" stroke="#f59e0b" strokeWidth={2} />
+                      ))}
+                      {/* x labels */}
+                      {data.map((d, i) => (
+                        <text key={d.date} x={pad.left + i * xStep} y={pad.top + height + 16} fontSize="10" textAnchor="middle" fill="#94a3b8">{d.date.slice(5)}</text>
+                      ))}
+                    </g>
+                  );
+                })()}
+              </svg>
+            ) : (
+              <div className="text-slate-400 text-sm">No data</div>
+            )}
+          </div>
         </div>
       </div>
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
