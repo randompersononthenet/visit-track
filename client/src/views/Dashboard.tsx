@@ -56,37 +56,37 @@ export function Dashboard() {
       {error && <div className="text-red-400 text-sm mb-3">{error}</div>}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4" aria-label="Summary metrics">
         {[{label:'Total Visitors', value: data?.totals?.visitors},{label:'Total Personnel', value: data?.totals?.personnel},{label:'Today Check-ins', value: data?.today?.checkIns},{label:'Currently Inside', value: data?.inside?.current}].map((m, idx) => (
-          <div key={idx} className="bg-slate-800/40 rounded p-4">
-            <div className="text-slate-400 text-xs">{m.label}</div>
-            <div className="text-2xl font-semibold">{loading ? <span className="inline-block w-12 h-6 bg-slate-700/60 animate-pulse rounded" /> : (m.value ?? '—')}</div>
+          <div key={idx} className="bg-white border border-slate-200 rounded p-4 dark:bg-slate-800/40 dark:border-slate-700">
+            <div className="text-slate-600 text-xs dark:text-slate-400">{m.label}</div>
+            <div className="text-2xl font-semibold">{loading ? <span className="inline-block w-12 h-6 bg-slate-200 animate-pulse rounded dark:bg-slate-700/60" /> : (m.value ?? '—')}</div>
           </div>
         ))}
       </div>
       <section>
-      <div className="bg-slate-800/40 rounded p-4 lg:col-span-2 mt-6 overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded p-4 lg:col-span-2 mt-6 overflow-hidden dark:bg-slate-800/40 dark:border-slate-700">
         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
           <div className="font-semibold flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/></svg>
             Visitor Forecast (Moving Average, {windowSize}-day)
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <label className="flex items-center gap-2 text-slate-300">
+            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
               <input type="checkbox" className="accent-indigo-500" checked={showPersonnel} onChange={(e) => setShowPersonnel(e.target.checked)} />
               Show personnel trend
             </label>
-            <label className="flex items-center gap-2 text-slate-300" htmlFor="window-size">Window</label>
-            <select id="window-size" aria-label="Forecast window size" className="bg-slate-900 border border-slate-700 rounded px-2 py-1" value={windowSize} onChange={(e)=> setWindowSize(parseInt(e.target.value) || 7)}>
+            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="window-size">Window</label>
+            <select id="window-size" aria-label="Forecast window size" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={windowSize} onChange={(e)=> setWindowSize(parseInt(e.target.value) || 7)}>
               <option value={3}>3</option>
               <option value={5}>5</option>
               <option value={7}>7</option>
               <option value={14}>14</option>
             </select>
-            <div className="text-slate-300">Next day forecast: <span className="font-semibold">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</span></div>
+            <div className="text-slate-700 dark:text-slate-300">Next day forecast: <span className="font-semibold">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</span></div>
           </div>
         </div>
         <div className="h-48">
           {loadingForecast ? (
-            <div className="w-full h-full bg-slate-800/40 animate-pulse rounded" aria-busy="true" aria-label="Loading forecast" />
+            <div className="w-full h-full bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" aria-busy="true" aria-label="Loading forecast" />
           ) : forecast && forecast.series?.length > 0 ? (
             <svg key={`${windowSize}-${showPersonnel}`} viewBox="0 0 640 200" className="w-full h-full">
               {(() => {
@@ -173,22 +173,22 @@ export function Dashboard() {
                 })()}
               </svg>
             ) : (
-              <div className="text-slate-400 text-sm">No forecast data available for the selected window.</div>
+              <div className="text-slate-600 dark:text-slate-400 text-sm">No forecast data available for the selected window.</div>
             )}
-          </div>
         </div>
+      </div>
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-slate-800/40 rounded p-4">
-          <div className="font-semibold mb-3 flex items-center gap-2">
+        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
+          <div className="font-semibold mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v4H4zM4 12h16v8H4z"/></svg>
             Recent Activity
           </div>
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="h-32 bg-slate-800/40 animate-pulse rounded" aria-busy="true" aria-label="Loading recent activity" />
+              <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" aria-busy="true" aria-label="Loading recent activity" />
             ) : (
             <table className="min-w-full text-sm" aria-label="Recent activity table">
-              <thead className="text-slate-300">
+              <thead className="text-slate-700 dark:text-slate-300">
                 <tr>
                   <th className="text-left py-2">Subject</th>
                   <th className="text-left py-2">Type</th>
@@ -201,23 +201,23 @@ export function Dashboard() {
                   const type = r.visitorId ? 'Visitor' : (r.personnelId ? 'Personnel' : '');
                   const subject = r.visitor?.fullName || r.personnel?.fullName || '';
                   return (
-                    <tr key={r.id} className="border-t border-slate-700">
+                    <tr key={r.id} className="border-t border-slate-200 dark:border-slate-700">
                       <td className="py-2 pr-4">{subject}</td>
                       <td className="py-2 pr-4">{type}</td>
-                      <td className="py-2 pr-4 text-slate-300">{r.timeIn ? new Date(r.timeIn).toLocaleString() : '-'}</td>
-                      <td className="py-2 pr-4 text-slate-400">{r.timeOut ? new Date(r.timeOut).toLocaleString() : '-'}</td>
+                      <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{r.timeIn ? new Date(r.timeIn).toLocaleString() : '-'}</td>
+                      <td className="py-2 pr-4 text-slate-600 dark:text-slate-400">{r.timeOut ? new Date(r.timeOut).toLocaleString() : '-'}</td>
                     </tr>
                   );
                 })}
                 {recent.length === 0 && (
-                  <tr><td className="py-6 text-slate-400" colSpan={4}>No recent activity to display.</td></tr>
+                  <tr><td className="py-6 text-slate-600 dark:text-slate-400" colSpan={4}>No recent activity to display.</td></tr>
                 )}
               </tbody>
             </table>
             )}
           </div>
         </div>
-        <div className="bg-slate-800/40 rounded p-4">
+        <div className="bg-white border border-slate-200 rounded p-4 dark:bg-slate-800/40 dark:border-slate-700">
           <div className="font-semibold mb-3">Check-ins (Last 7 Days)</div>
           {/* Inline SVG bar chart */}
           <div className="h-48">
@@ -242,7 +242,7 @@ export function Dashboard() {
                 <line x1="0" y1="140" x2="320" y2="140" stroke="#475569" strokeWidth="1" />
               </svg>
             ) : (
-              <div className="text-slate-400 text-sm">No data</div>
+              <div className="text-slate-600 dark:text-slate-400 text-sm">No data</div>
             )}
           </div>
         </div>

@@ -27,6 +27,16 @@ export function AppShell() {
   const navigate = useNavigate();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [theme, setTheme] = useState<'light'|'dark'>(
+    (typeof window !== 'undefined' && (localStorage.getItem('vt_theme') as 'light'|'dark')) || 'light'
+  );
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    if (theme === 'dark') root.classList.add('dark'); else root.classList.remove('dark');
+    try { localStorage.setItem('vt_theme', theme); } catch {}
+  }, [theme]);
 
   function openLogoutDialog() {
     setShowLogoutDialog(true);
@@ -59,8 +69,8 @@ export function AppShell() {
     ...(hasRole(['admin', 'staff']) ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
   ];
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex">
-      <aside className="w-64 hidden md:flex flex-col gap-2 p-4 border-r border-slate-800 bg-slate-950/60">
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex">
+      <aside className="w-64 hidden md:flex flex-col gap-2 p-4 border-r border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60">
         <div className="flex items-center gap-2 px-2 py-1">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12l9-9 9 9-9 9-9-9z"/></svg>
           <div className="text-lg font-semibold tracking-tight">VisitTrack</div>
@@ -74,27 +84,41 @@ export function AppShell() {
                 'px-3 py-2 rounded-md text-sm transition-colors ' +
                 (pathname === n.to
                   ? 'bg-indigo-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white')
+                  : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white')
               }
             >
               <Icon name={n.icon} /> {n.label}
             </Link>
           ))}
         </nav>
-        <button
-          onClick={openLogoutDialog}
-          className="mt-auto mb-2 mx-2 px-3 py-2 rounded-md text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-left"
-        >
-          Log out
-        </button>
-        <div className="text-xs text-slate-400 px-2">© {new Date().getFullYear()}</div>
-      </aside>
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="md:hidden border-b border-slate-800 bg-slate-950/60 px-4 py-3 flex items-center justify-between">
-          <div className="font-semibold">VisitTrack</div>
-          <button onClick={openLogoutDialog} className="text-sm bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded">
+        <div className="mt-auto mx-2 flex items-center gap-2">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="flex-1 px-3 py-2 rounded-md text-sm border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+            aria-label="Toggle color theme"
+          >
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
+          <button
+            onClick={openLogoutDialog}
+            className="px-3 py-2 rounded-md text-sm bg-slate-200 hover:bg-slate-300 text-slate-900 border border-slate-300 text-left dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700"
+          >
             Log out
           </button>
+        </div>
+        <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 px-2">© {new Date().getFullYear()}</div>
+      </aside>
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60 px-4 py-3 flex items-center justify-between">
+          <div className="font-semibold">VisitTrack</div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="text-sm bg-slate-200 hover:bg-slate-300 border border-slate-300 px-3 py-1.5 rounded text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-200" aria-label="Toggle color theme">
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </button>
+            <button onClick={openLogoutDialog} className="text-sm bg-slate-200 hover:bg-slate-300 border border-slate-300 px-3 py-1.5 rounded text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-200">
+              Log out
+            </button>
+          </div>
         </header>
         <main className="px-4 md:px-8 py-6">
           <Outlet />
