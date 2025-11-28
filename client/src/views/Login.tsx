@@ -30,27 +30,52 @@ export function Login() {
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-20">
-      <h2 className="text-xl font-semibold mb-4">Login</h2>
-      <form className="space-y-3" onSubmit={onSubmit}>
-        <input
-          className="w-full border rounded px-3 py-2"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input
-          className="w-full border rounded px-3 py-2"
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {error && <div className="text-red-600 text-sm">{error}</div>}
-        <button disabled={loading} className="w-full bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-60">
-          {loading ? 'Signing in...' : 'Sign in'}
-        </button>
-      </form>
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center px-4">
+      <div className="w-full max-w-sm bg-slate-800/50 border border-slate-700 rounded-xl p-6 shadow-xl">
+        <div className="flex flex-col items-center text-center mb-6">
+          <img
+            src="/Visittrack.png"
+            alt="VisitTrack logo"
+            className="w-16 h-16 mb-2 rounded"
+            onError={(e:any)=>{ e.currentTarget.style.display='none'; }}
+          />
+          <div className="text-2xl font-semibold tracking-tight">VisitTrack</div>
+          <div className="text-slate-400 text-sm">Sign in to your account</div>
+        </div>
+        <form className="space-y-3" onSubmit={onSubmit} aria-label="Login form">
+          <label className="block">
+            <span className="sr-only">Username</span>
+            <input
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              aria-label="Username"
+            />
+          </label>
+          <label className="block">
+            <span className="sr-only">Password</span>
+            <input
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2"
+              placeholder="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              aria-label="Password"
+            />
+          </label>
+          {error && <div className="text-rose-400 text-sm" role="alert">{error}</div>}
+          <button
+            disabled={loading}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded disabled:opacity-60"
+            aria-busy={loading}
+          >
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
