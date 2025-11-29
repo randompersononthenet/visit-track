@@ -66,31 +66,31 @@ export function Personnel() {
 
   return (
     <div className="grid md:grid-cols-3 gap-8">
-      <section className="md:col-span-1 bg-slate-800/40 rounded-lg p-4">
+      <section className="md:col-span-1 bg-white border border-slate-200 rounded-lg p-4 dark:bg-slate-800/40 dark:border-slate-700">
         <h2 className="text-lg font-semibold mb-4">Register Personnel</h2>
         {hasRole(['admin','staff']) ? (
         <form className="space-y-3" onSubmit={onCreate}>
           <div className="grid grid-cols-1 gap-3">
-            <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Middle name (optional)" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
-            <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Middle name (optional)" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
+            <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
-          <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2" placeholder="Role title (e.g. Gate Officer)" value={roleTitle} onChange={(e) => setRoleTitle(e.target.value)} />
-          {error && <div className="text-red-400 text-sm">{error}</div>}
+          <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Role title (e.g. Gate Officer)" value={roleTitle} onChange={(e) => setRoleTitle(e.target.value)} />
+          {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
           <button disabled={creating || !firstName || !lastName} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white px-3 py-2 rounded">
             {creating ? 'Creating...' : 'Create Personnel'}
           </button>
         </form>
         ) : (
-          <div className="text-sm text-slate-400">You don't have permission to create personnel.</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400">You don't have permission to create personnel.</div>
         )}
         {createdQR && (
           <div className="mt-6">
-            <div className="text-sm text-slate-300 mb-2">QR Code (print this):</div>
+            <div className="text-sm text-slate-700 dark:text-slate-300 mb-2">QR Code (print this):</div>
             <button type="button" onClick={() => setPreviewQR(createdQR)} className="bg-white inline-block p-3 rounded hover:ring-2 ring-indigo-400">
               <QRCodeSVG value={createdQR} size={160} />
             </button>
-            <div className="mt-2 text-xs break-all text-slate-400">{createdQR}</div>
+            <div className="mt-2 text-xs break-all text-slate-600 dark:text-slate-400">{createdQR}</div>
           </div>
         )}
       </section>
@@ -99,7 +99,7 @@ export function Personnel() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">Personnel</h2>
           <input
-            className="bg-slate-900 border border-slate-700 rounded px-3 py-2 w-56"
+            className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 w-56 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
             placeholder="Search name..."
             value={q}
             onChange={(e) => {
@@ -108,9 +108,9 @@ export function Personnel() {
             }}
           />
         </div>
-        <div className="overflow-x-auto border border-slate-800 rounded-lg">
+        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-transparent">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-800 text-slate-300">
+            <thead className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
               <tr>
                 <th className="text-left px-3 py-2">ID</th>
                 <th className="text-left px-3 py-2">Full name</th>
@@ -121,7 +121,7 @@ export function Personnel() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-t border-slate-800">
+                <tr key={r.id} className="border-t border-slate-200 dark:border-slate-800">
                   <td className="px-3 py-2">{r.id}</td>
                   <td className="px-3 py-2">{r.fullName}</td>
                   <td className="px-3 py-2">{r.roleTitle || '-'}</td>
@@ -134,7 +134,7 @@ export function Personnel() {
                     <div className="flex gap-2">
                       {hasRole(['admin','staff']) && (
                       <button
-                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700"
+                        className="px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
                         onClick={() => {
                           setEditing(r);
                           setEditFirst(r.firstName || '');
@@ -148,7 +148,7 @@ export function Personnel() {
                       )}
                       {hasRole(['admin','staff']) && (
                       <button
-                        className="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600"
+                        className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white"
                         onClick={async () => {
                           if (!confirm('Delete this personnel record?')) return;
                           try {
@@ -166,7 +166,7 @@ export function Personnel() {
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td className="px-3 py-6 text-center text-slate-400" colSpan={5}>No records</td>
+                  <td className="px-3 py-6 text-center text-slate-600 dark:text-slate-400" colSpan={5}>No records</td>
                 </tr>
               )}
             </tbody>
