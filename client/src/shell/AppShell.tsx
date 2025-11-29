@@ -71,9 +71,26 @@ export function AppShell() {
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex">
       <aside className="w-64 hidden md:flex flex-col gap-2 p-4 border-r border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60">
-        <div className="flex items-center gap-2 px-2 py-1">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12l9-9 9 9-9 9-9-9z"/></svg>
-          <div className="text-lg font-semibold tracking-tight">VisitTrack</div>
+        <div className="flex items-center justify-between px-2 py-1">
+          <div className="flex items-center gap-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12l9-9 9 9-9 9-9-9z"/></svg>
+            <div className="text-lg font-semibold tracking-tight">VisitTrack</div>
+          </div>
+          {/* Theme toggle (icon-only) */}
+          <div
+            role="button"
+            aria-label="Toggle color theme"
+            className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? (
+              // Sun icon
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364l-1.414-1.414M8.05 8.05L6.636 6.636m10.728 0l-1.414 1.414M8.05 15.95l-1.414 1.414"/></svg>
+            ) : (
+              // Moon icon
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            )}
+          </div>
         </div>
         <nav className="flex flex-col gap-1 mt-2">
           {nav.map((n) => (
@@ -91,33 +108,45 @@ export function AppShell() {
             </Link>
           ))}
         </nav>
-        <div className="mt-auto mx-2 flex items-center gap-2">
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="flex-1 px-3 py-2 rounded-md text-sm border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
-            aria-label="Toggle color theme"
-          >
-            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          </button>
-          <button
+        {/* Logout control (icon + text) */}
+        <div className="mt-auto mx-2 flex items-center justify-end">
+          <div
+            role="button"
+            aria-label="Log out"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 text-slate-700 border border-transparent dark:hover:bg-slate-800 dark:text-slate-300"
             onClick={openLogoutDialog}
-            className="px-3 py-2 rounded-md text-sm bg-slate-200 hover:bg-slate-300 text-slate-900 border border-slate-300 text-left dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700"
           >
-            Log out
-          </button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5"/><path d="M19 12H5"/></svg>
+            <span className="text-sm">Log out</span>
+          </div>
         </div>
         <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 px-2">© {new Date().getFullYear()}</div>
       </aside>
       <div className="flex-1 flex flex-col min-w-0">
         <header className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60 px-4 py-3 flex items-center justify-between">
           <div className="font-semibold">VisitTrack</div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="text-sm bg-slate-200 hover:bg-slate-300 border border-slate-300 px-3 py-1.5 rounded text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-200" aria-label="Toggle color theme">
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </button>
-            <button onClick={openLogoutDialog} className="text-sm bg-slate-200 hover:bg-slate-300 border border-slate-300 px-3 py-1.5 rounded text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-200">
-              Log out
-            </button>
+          <div className="flex items-center gap-1">
+            <div
+              role="button"
+              aria-label="Toggle color theme"
+              className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364l-1.414-1.414M8.05 8.05L6.636 6.636m10.728 0l-1.414 1.414M8.05 15.95l-1.414 1.414"/></svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              )}
+            </div>
+            <div
+              role="button"
+              aria-label="Log out"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
+              onClick={openLogoutDialog}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5"/><path d="M19 12H5"/></svg>
+              <span className="text-sm">Log out</span>
+            </div>
           </div>
         </header>
         <main className="px-4 md:px-8 py-6">
