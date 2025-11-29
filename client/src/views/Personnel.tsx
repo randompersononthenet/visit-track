@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { hasRole } from '../lib/auth';
 import { QRCodeSVG } from 'qrcode.react';
 import { PrintableIdCard } from '../components/PrintableIdCard';
+import { toPng } from 'html-to-image';
 
 export function Personnel() {
   const [firstName, setFirstName] = useState('');
@@ -303,9 +304,20 @@ export function Personnel() {
                   Print
                 </button>
                 <button
-                  className="px-3 py-1 text-sm rounded bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
-                  title="Install html-to-image to enable PNG download"
-                  disabled
+                  className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                  onClick={async () => {
+                    const node = idCardRef.current;
+                    if (!node) return;
+                    try {
+                      const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true, backgroundColor: '#ffffff' });
+                      const a = document.createElement('a');
+                      a.href = dataUrl;
+                      a.download = `personnel-id-${idCard?.id || 'card'}.png`;
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                    } catch {}
+                  }}
                 >
                   Download PNG
                 </button>

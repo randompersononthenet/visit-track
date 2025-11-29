@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { hasRole } from '../lib/auth';
 import { QRCodeSVG } from 'qrcode.react';
+import { PrintableIdCard } from '../components/PrintableIdCard';
+import { toPng } from 'html-to-image';
 
 export function Register() {
   const [firstName, setFirstName] = useState('');
@@ -17,6 +19,7 @@ export function Register() {
   const [previewQR, setPreviewQR] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const svgWrapRef = useRef<HTMLDivElement | null>(null);
+  const idCardRef = useRef<HTMLDivElement | null>(null);
 
   const [editing, setEditing] = useState<any | null>(null);
   const [editFirst, setEditFirst] = useState('');
@@ -26,6 +29,7 @@ export function Register() {
   const [editIdNumber, setEditIdNumber] = useState('');
   const [editRelation, setEditRelation] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [idCard, setIdCard] = useState<any | null>(null);
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -162,6 +166,14 @@ export function Register() {
                       )}
                       {hasRole(['admin','staff']) && (
                       <button
+                        className="px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                        onClick={() => setIdCard(r)}
+                      >
+                        Generate ID
+                      </button>
+                      )}
+                      {hasRole(['admin','staff']) && (
+                      <button
                         className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white"
                         onClick={async () => {
                           if (!confirm('Delete this visitor?')) return;
@@ -290,6 +302,57 @@ export function Register() {
               >
                 {savingEdit ? 'Saving...' : 'Save'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {idCard && hasRole(['admin','staff']) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setIdCard(null)} />
+          <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(96vw,760px)] dark:bg-slate-900 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Generate ID</div>
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                  onClick={() => window.print()}
+                >
+                  Print
+                </button>
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                  onClick={async () => {
+                    const node = idCardRef.current;
+                    if (!node) return;
+                    try {
+                      const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true, backgroundColor: '#ffffff' });
+                      const a = document.createElement('a');
+                      a.href = dataUrl;
+                      a.download = `visitor-id-${idCard?.id || 'card'}.png`;
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                    } catch {}
+                  }}
+                >
+                  Download PNG
+                </button>
+                <button className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setIdCard(null)}>Close</button>
+              </div>
+            </div>
+            <div className="overflow-auto">
+              <div className="flex items-center justify-center">
+                <PrintableIdCard
+                  ref={idCardRef}
+                  type="visitor"
+                  fullName={idCard.fullName}
+                  secondaryLabel={idCard.idNumber || idCard.relation || undefined}
+                  qrValue={idCard.qrCode}
+                  issuedAt={new Date().toISOString()}
+                  photoUrl={idCard.photoUrl || undefined}
+                />
+              </div>
             </div>
           </div>
         </div>
