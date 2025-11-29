@@ -17,7 +17,10 @@ import analyticsRouter from './routes/analytics';
 import uploadsRouter from './routes/uploads';
 
 const app = express();
-app.use(helmet());
+app.use(helmet({
+  // Allow images (e.g., /uploads/*) to be fetched from other origins like http://localhost:5173
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(
   cors({
     origin: [

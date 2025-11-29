@@ -15,6 +15,8 @@ export type PrintableIdCardProps = {
 export const PrintableIdCard = React.forwardRef<HTMLDivElement, PrintableIdCardProps>(
   ({ type, fullName, secondaryLabel, qrValue, issuedAt, photoUrl }, ref) => {
     const issued = issuedAt ? new Date(issuedAt) : new Date();
+    const API_BASE = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000';
+    const resolvedPhoto = photoUrl && !/^https?:\/\//i.test(photoUrl) ? `${API_BASE}${photoUrl}` : photoUrl;
     return (
       <div ref={ref} className="print-area w-[504px] h-[318px] bg-white text-slate-900 shadow rounded border border-slate-200 p-3 flex flex-col">
         <div className="flex items-center justify-between mb-2">
@@ -28,9 +30,9 @@ export const PrintableIdCard = React.forwardRef<HTMLDivElement, PrintableIdCardP
         <div className="flex-1 grid grid-cols-3 gap-3">
           <div className="col-span-1 flex flex-col items-center justify-start">
             <div className="w-28 h-28 rounded bg-slate-100 overflow-hidden border border-slate-200">
-              {photoUrl ? (
+              {resolvedPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img alt="ID Photo" src={photoUrl} className="w-full h-full object-cover" />
+                <img alt="ID Photo" src={resolvedPhoto} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-xs text-slate-500">Photo</div>
               )}
