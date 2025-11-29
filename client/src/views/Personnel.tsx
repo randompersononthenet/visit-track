@@ -13,12 +13,18 @@ export function Personnel() {
   const [roleTitle, setRoleTitle] = useState('');
   const [creating, setCreating] = useState(false);
   const [createdQR, setCreatedQR] = useState<string | null>(null);
+  const [lastCreated, setLastCreated] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewQR, setPreviewQR] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const svgWrapRef = useRef<HTMLDivElement | null>(null);
   const idCardRef = useRef<HTMLDivElement | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [capOpen, setCapOpen] = useState<null | 'create' | 'edit'>(null);
+  const capVideoRef = useRef<HTMLVideoElement | null>(null);
+  const capCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const capStreamRef = useRef<MediaStream | null>(null);
+  const [capError, setCapError] = useState<string | null>(null);
 
   const [editing, setEditing] = useState<any | null>(null);
   const [editFirst, setEditFirst] = useState('');
@@ -43,6 +49,33 @@ export function Personnel() {
     setTotal(res.data?.total || 0);
   }
 
+  async function startCamera() {
+    setCapError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      capStreamRef.current = stream;
+      if (capVideoRef.current) {
+        capVideoRef.current.srcObject = stream;
+        await capVideoRef.current.play();
+      }
+    } catch (e: any) {
+      setCapError(e?.message || 'Unable to access camera');
+    }
+  }
+
+  function stopCamera() {
+    if (capStreamRef.current) {
+      capStreamRef.current.getTracks().forEach((t) => t.stop());
+      capStreamRef.current = null;
+    }
+  }
+
+  useEffect(() => {
+    if (capOpen) startCamera();
+    return () => stopCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capOpen]);
+
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,6 +96,7 @@ export function Personnel() {
       if (roleTitle.trim() !== '') payload.roleTitle = roleTitle;
       payload.photoUrl = photoUrl;
       const res = await api.post('/api/personnel', payload);
+      setLastCreated(res.data);
       setCreatedQR(res.data?.qrCode || null);
       setFirstName('');
       setMiddleName('');
@@ -99,6 +133,69 @@ export function Personnel() {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-500">No photo</div>
                 )}
+
+      {capOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setCapOpen(null)} />
+          <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(96vw,760px)] dark:bg-slate-900 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Capture Photo</div>
+              <button className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setCapOpen(null)}>Close</button>
+            </div>
+            {capError && <div className="text-rose-600 dark:text-red-400 text-sm mb-2">{capError}</div>}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <video ref={capVideoRef} className="w-full rounded bg-black" muted playsInline />
+                <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">Align face in center, then capture.</div>
+              </div>
+              <div>
+                <canvas ref={capCanvasRef} className="w-full rounded bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-700" />
+                <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">Preview (center-cropped)</div>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                onClick={() => {
+                  const video = capVideoRef.current;
+                  const canvas = capCanvasRef.current;
+                  if (!video || !canvas) return;
+                  const vw = (video as HTMLVideoElement).videoWidth;
+                  const vh = (video as HTMLVideoElement).videoHeight;
+                  if (!vw || !vh) return;
+                  const size = Math.min(vw, vh);
+                  const sx = (vw - size) / 2;
+                  const sy = (vh - size) / 2;
+                  const out = 512;
+                  canvas.width = out;
+                  canvas.height = out;
+                  const ctx = canvas.getContext('2d');
+                  if (!ctx) return;
+                  ctx.drawImage(video, sx, sy, size, size, 0, 0, out, out);
+                }}
+              >
+                Capture Frame
+              </button>
+              <button
+                className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white"
+                onClick={async () => {
+                  const canvas = capCanvasRef.current;
+                  if (!canvas) return;
+                  try {
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    const res = await api.post('/api/uploads/image', { dataUrl });
+                    if (capOpen === 'create') setPhotoUrl(res.data?.url || '');
+                    else setEditPhotoUrl(res.data?.url || '');
+                    setCapOpen(null);
+                  } catch {}
+                }}
+              >
+                Use Photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
               </div>
               <label className="inline-flex items-center px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 cursor-pointer">
                 <input
@@ -121,6 +218,13 @@ export function Personnel() {
                 />
                 Upload
               </label>
+              <button
+                type="button"
+                className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                onClick={() => setCapOpen('create')}
+              >
+                Capture
+              </button>
             </div>
           </div>
           {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
@@ -142,13 +246,17 @@ export function Personnel() {
               <button
                 type="button"
                 className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
-                onClick={() => setIdCard({
-                  id: 0,
-                  fullName: [firstName, middleName, lastName].filter(Boolean).join(' '),
-                  roleTitle: roleTitle || undefined,
-                  qrCode: createdQR,
-                  photoUrl: photoUrl || undefined,
-                })}
+                disabled={!lastCreated}
+                onClick={() => {
+                  if (!lastCreated) return;
+                  setIdCard({
+                    id: lastCreated.id,
+                    fullName: lastCreated.fullName,
+                    roleTitle: lastCreated.roleTitle || undefined,
+                    qrCode: lastCreated.qrCode,
+                    photoUrl: lastCreated.photoUrl || undefined,
+                  });
+                }}
               >
                 Generate ID
               </button>
@@ -354,6 +462,13 @@ export function Personnel() {
                     />
                     Upload
                   </label>
+                  <button
+                    type="button"
+                    className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                    onClick={() => setCapOpen('edit')}
+                  >
+                    Capture
+                  </button>
                 </div>
               </div>
             </div>

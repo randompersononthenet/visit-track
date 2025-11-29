@@ -13,7 +13,7 @@
 ## Visitors
 - GET `/api/visitors` — query: `?q=&page=&pageSize=`
 - POST `/api/visitors`
-  - body: `{ firstName, middleName?, lastName, contact?, idNumber?, relation?, qrCode?, blacklistStatus? }`
+  - body: `{ firstName, middleName?, lastName, contact?, idNumber?, relation?, qrCode?, photoUrl?, blacklistStatus? }`
 - GET `/api/visitors/:id`
 - PATCH `/api/visitors/:id`
 - DELETE `/api/visitors/:id`
@@ -21,7 +21,7 @@
 ## Personnel
 - GET `/api/personnel` — query: `?q=&page=&pageSize=`
 - POST `/api/personnel`
-  - body: `{ firstName, middleName?, lastName, roleTitle?, qrCode? }`
+  - body: `{ firstName, middleName?, lastName, roleTitle?, qrCode?, photoUrl? }`
 - GET `/api/personnel/:id`
 - PATCH `/api/personnel/:id`
 - DELETE `/api/personnel/:id`
@@ -30,6 +30,16 @@
 - POST `/api/scan`
   - body: `{ qrCode, action: 'checkin'|'checkout' }`
   - 200: `{ status: 'ok', event: 'checkin'|'checkout', at, logId, subjectType, subject, alerts }`
+    - `subject`: `{ type: 'visitor'|'personnel', id, fullName, firstName?, middleName?, lastName?, roleTitle?, photoUrl? }`
+
+## Uploads
+- POST `/api/uploads/image`
+  - body: `{ dataUrl }` where `dataUrl` is a `data:image/png;base64,...` or `data:image/jpeg;base64,...`
+  - limits: ≤ 2 MB; content-type must be image/png or image/jpeg
+  - 201: `{ url: '/uploads/<filename>' }`
+
+### Static Files
+- Images are served from `/uploads/*` (local storage during development).
 
 ## Visit Logs
 - GET `/api/visit-logs`
