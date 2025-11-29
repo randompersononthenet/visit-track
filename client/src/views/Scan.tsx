@@ -168,6 +168,15 @@ export function Scan() {
                     {result.subject.roleTitle && (
                       <div className="md:col-span-2"><span className="text-slate-700 dark:text-slate-400">Role:</span> {result.subject.roleTitle}</div>
                     )}
+                    {result.subject.photoUrl && (
+                      <div className="md:col-span-2 mt-1">
+                        <div className="text-slate-700 dark:text-slate-400 text-xs mb-1">Photo</div>
+                        <div className="w-24 h-24 rounded bg-slate-100 border border-slate-300 overflow-hidden">
+                          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                          <img src={result.subject.photoUrl} className="w-full h-full object-cover" />
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
                 <div><span className="text-slate-700 dark:text-slate-400">Log ID:</span> {result.logId}</div>

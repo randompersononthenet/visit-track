@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 import { sequelize } from './lib/db';
 import type { Request, Response } from 'express';
 import { syncSchema } from './models';
@@ -13,6 +14,7 @@ import scanRouter from './routes/scan';
 import visitLogsRouter from './routes/visitLogs';
 import reportsRouter from './routes/reports';
 import analyticsRouter from './routes/analytics';
+import uploadsRouter from './routes/uploads';
 
 const app = express();
 app.use(helmet());
@@ -27,6 +29,8 @@ app.use(
   })
 );
 app.use(express.json());
+// Static uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Routes
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
@@ -38,6 +42,7 @@ app.use('/api/scan', scanRouter);
 app.use('/api/visit-logs', visitLogsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/uploads', uploadsRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {

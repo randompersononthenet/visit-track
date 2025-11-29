@@ -39,11 +39,12 @@ const createVisitorSchema = z.object({
   idNumber: z.string().max(100).optional(),
   relation: z.string().max(100).optional(),
   qrCode: z.string().max(200).optional(),
+  photoUrl: z.string().max(500).optional(),
   blacklistStatus: z.boolean().optional(),
 });
 
 router.post('/', requireRole('admin', 'staff'), validate(createVisitorSchema), async (req, res) => {
-  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, blacklistStatus } = (req as any).parsed;
+  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus } = (req as any).parsed;
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
   const v = await Visitor.create({
     firstName,
@@ -54,6 +55,7 @@ router.post('/', requireRole('admin', 'staff'), validate(createVisitorSchema), a
     idNumber,
     relation,
     qrCode: qrCode || uuidv4(),
+    photoUrl,
     blacklistStatus,
   });
   res.status(201).json(v);
@@ -73,13 +75,13 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updateVisitorSchema
   const id = Number(req.params.id);
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
-  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, blacklistStatus } = (req as any).parsed;
+  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus } = (req as any).parsed;
   const computedFullName = (
     [firstName ?? v.firstName, middleName ?? v.middleName, lastName ?? v.lastName]
       .filter(Boolean)
       .join(' ')
   );
-  await v.update({ firstName, middleName, lastName, fullName: computedFullName, contact, idNumber, relation, qrCode, blacklistStatus });
+  await v.update({ firstName, middleName, lastName, fullName: computedFullName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus });
   res.json(v);
 });
 

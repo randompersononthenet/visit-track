@@ -11,6 +11,7 @@ export interface VisitorAttributes {
   idNumber?: string | null;
   relation?: string | null;
   qrCode?: string | null;
+  photoUrl?: string | null;
   blacklistStatus?: boolean | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -28,6 +29,7 @@ export class Visitor extends Model<VisitorAttributes, VisitorCreation> implement
   declare idNumber: string | null | undefined;
   declare relation: string | null | undefined;
   declare qrCode: string | null | undefined;
+  declare photoUrl: string | null | undefined;
   declare blacklistStatus: boolean | null | undefined;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
@@ -44,6 +46,7 @@ Visitor.init(
     idNumber: { type: DataTypes.STRING(100), allowNull: true, unique: false, field: 'id_number' },
     relation: { type: DataTypes.STRING(100), allowNull: true },
     qrCode: { type: DataTypes.STRING(200), allowNull: true, unique: true, field: 'qr_code' },
+    photoUrl: { type: DataTypes.STRING(500), allowNull: true, field: 'photo_url' },
     blacklistStatus: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false, field: 'blacklist_status' },
   },
   { sequelize, tableName: 'visitors', underscored: true }

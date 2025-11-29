@@ -32,8 +32,8 @@ router.post('/', validate(scanSchema), async (req, res) => {
   const now = new Date();
 
   const subject = visitor
-    ? { type: 'visitor' as const, id: visitor.id, fullName: visitor.fullName, firstName: visitor.firstName, middleName: visitor.middleName, lastName: visitor.lastName }
-    : { type: 'personnel' as const, id: (personnel as any)!.id, fullName: (personnel as any)!.fullName, firstName: (personnel as any)!.firstName, middleName: (personnel as any)!.middleName, lastName: (personnel as any)!.lastName, roleTitle: (personnel as any)!.roleTitle };
+    ? { type: 'visitor' as const, id: visitor.id, fullName: visitor.fullName, firstName: visitor.firstName, middleName: visitor.middleName, lastName: visitor.lastName, photoUrl: (visitor as any).photoUrl }
+    : { type: 'personnel' as const, id: (personnel as any)!.id, fullName: (personnel as any)!.fullName, firstName: (personnel as any)!.firstName, middleName: (personnel as any)!.middleName, lastName: (personnel as any)!.lastName, roleTitle: (personnel as any)!.roleTitle, photoUrl: (personnel as any)!.photoUrl };
 
   // Retrieve violation alerts (only for visitors)
   let alerts: Array<{ level: string; details?: string | null; recordedAt: Date }> = [];

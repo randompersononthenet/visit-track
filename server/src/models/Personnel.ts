@@ -9,6 +9,7 @@ export interface PersonnelAttributes {
   fullName: string;
   roleTitle?: string | null;
   qrCode?: string | null;
+  photoUrl?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -23,6 +24,7 @@ export class Personnel extends Model<PersonnelAttributes, PersonnelCreation> imp
   declare fullName: string;
   declare roleTitle: string | null | undefined;
   declare qrCode: string | null | undefined;
+  declare photoUrl: string | null | undefined;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 }
@@ -36,6 +38,7 @@ Personnel.init(
     fullName: { type: DataTypes.STRING(150), allowNull: false, field: 'full_name' },
     roleTitle: { type: DataTypes.STRING(100), allowNull: true, field: 'role_title' },
     qrCode: { type: DataTypes.STRING(200), allowNull: true, unique: true, field: 'qr_code' },
+    photoUrl: { type: DataTypes.STRING(500), allowNull: true, field: 'photo_url' },
   },
   { sequelize, tableName: 'personnel', underscored: true }
 );

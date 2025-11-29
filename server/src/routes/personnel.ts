@@ -37,12 +37,13 @@ const createPersonnelSchema = z.object({
   lastName: z.string().min(1),
   roleTitle: z.string().max(100).optional(),
   qrCode: z.string().max(200).optional(),
+  photoUrl: z.string().max(500).optional(),
 });
 
 router.post('/', requireRole('admin', 'staff'), validate(createPersonnelSchema), async (req, res) => {
-  const { firstName, middleName, lastName, roleTitle, qrCode } = (req as any).parsed;
+  const { firstName, middleName, lastName, roleTitle, qrCode, photoUrl } = (req as any).parsed;
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
-  const rec = await Personnel.create({ firstName, middleName, lastName, fullName, roleTitle, qrCode: qrCode || uuidv4() });
+  const rec = await Personnel.create({ firstName, middleName, lastName, fullName, roleTitle, qrCode: qrCode || uuidv4(), photoUrl });
   res.status(201).json(rec);
 });
 
@@ -60,13 +61,13 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updatePersonnelSche
   const id = Number(req.params.id);
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });
-  const { firstName, middleName, lastName, roleTitle, qrCode } = (req as any).parsed;
+  const { firstName, middleName, lastName, roleTitle, qrCode, photoUrl } = (req as any).parsed;
   const computedFullName = (
     [firstName ?? rec.firstName, middleName ?? rec.middleName, lastName ?? rec.lastName]
       .filter(Boolean)
       .join(' ')
   );
-  await rec.update({ firstName, middleName, lastName, fullName: computedFullName, roleTitle, qrCode });
+  await rec.update({ firstName, middleName, lastName, fullName: computedFullName, roleTitle, qrCode, photoUrl });
   res.json(rec);
 });
 

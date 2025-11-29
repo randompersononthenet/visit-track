@@ -30,6 +30,8 @@ export function Register() {
   const [editRelation, setEditRelation] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [idCard, setIdCard] = useState<any | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [editPhotoUrl, setEditPhotoUrl] = useState<string>('');
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -55,11 +57,16 @@ export function Register() {
     setCreating(true);
     setCreatedQR(null);
     try {
+      if (!photoUrl) {
+        setError('Photo is required');
+        return;
+      }
       const payload: any = { firstName, lastName };
       if (middleName.trim() !== '') payload.middleName = middleName;
       if (contact.trim() !== '') payload.contact = contact;
       if (idNumber.trim() !== '') payload.idNumber = idNumber;
       if (relation.trim() !== '') payload.relation = relation;
+      payload.photoUrl = photoUrl;
       const res = await api.post('/api/visitors', payload);
       setCreatedQR(res.data?.qrCode || null);
       setFirstName('');
@@ -68,6 +75,7 @@ export function Register() {
       setContact('');
       setIdNumber('');
       setRelation('');
+      setPhotoUrl('');
       await load();
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Failed to create visitor');
@@ -90,8 +98,42 @@ export function Register() {
           <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Contact" value={contact} onChange={(e) => setContact(e.target.value)} />
           <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="ID number" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
           <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Relation (e.g. Brother)" value={relation} onChange={(e) => setRelation(e.target.value)} />
+          <div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Photo (required)</div>
+            <div className="flex items-center gap-3">
+              <div className="w-20 h-20 rounded bg-slate-100 border border-slate-300 overflow-hidden">
+                {photoUrl ? (
+                  // eslint-disable-next-line jsx-a11y/alt-text
+                  <img src={photoUrl} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-500">No photo</div>
+                )}
+              </div>
+              <label className="inline-flex items-center px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      const dataUrl = reader.result as string;
+                      try {
+                        const res = await api.post('/api/uploads/image', { dataUrl });
+                        setPhotoUrl(res.data?.url || '');
+                      } catch {}
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                Upload
+              </label>
+            </div>
+          </div>
           {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
-          <button disabled={creating || !firstName || !lastName} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white px-3 py-2 rounded">
+          <button disabled={creating || !firstName || !lastName || !photoUrl} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white px-3 py-2 rounded">
             {creating ? 'Creating...' : 'Create Visitor'}
           </button>
         </form>
@@ -105,6 +147,22 @@ export function Register() {
               <QRCodeSVG value={createdQR} size={160} />
             </button>
             <div className="mt-2 text-xs break-all text-slate-600 dark:text-slate-400">{createdQR}</div>
+            <div className="mt-3">
+              <button
+                type="button"
+                className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                onClick={() => setIdCard({
+                  id: 0,
+                  fullName: [firstName, middleName, lastName].filter(Boolean).join(' '),
+                  idNumber: idNumber || undefined,
+                  relation: relation || undefined,
+                  qrCode: createdQR,
+                  photoUrl: photoUrl || undefined,
+                })}
+              >
+                Generate ID
+              </button>
+            </div>
           </div>
         )}
       </section>
@@ -159,6 +217,7 @@ export function Register() {
                           setEditContact(r.contact || '');
                           setEditIdNumber(r.idNumber || '');
                           setEditRelation(r.relation || '');
+                          setEditPhotoUrl(r.photoUrl || '');
                         }}
                       >
                         Edit
@@ -279,12 +338,46 @@ export function Register() {
               <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Contact" value={editContact} onChange={(e) => setEditContact(e.target.value)} />
               <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="ID number" value={editIdNumber} onChange={(e) => setEditIdNumber(e.target.value)} />
               <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Relation" value={editRelation} onChange={(e) => setEditRelation(e.target.value)} />
+              <div>
+                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Photo (required)</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-20 h-20 rounded bg-slate-100 border border-slate-300 overflow-hidden">
+                    {editPhotoUrl ? (
+                      // eslint-disable-next-line jsx-a11y/alt-text
+                      <img src={editPhotoUrl} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-500">No photo</div>
+                    )}
+                  </div>
+                  <label className="inline-flex items-center px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = async () => {
+                          const dataUrl = reader.result as string;
+                          try {
+                            const res = await api.post('/api/uploads/image', { dataUrl });
+                            setEditPhotoUrl(res.data?.url || '');
+                          } catch {}
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    Upload
+                  </label>
+                </div>
+              </div>
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { if (!savingEdit) setEditing(null); }}>Cancel</button>
               <button
                 className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60"
-                disabled={savingEdit || !editFirst || !editLast}
+                disabled={savingEdit || !editFirst || !editLast || !editPhotoUrl}
                 onClick={async () => {
                   setSavingEdit(true);
                   try {
@@ -293,6 +386,7 @@ export function Register() {
                     if (editContact.trim() !== '') payload.contact = editContact; else payload.contact = null;
                     if (editIdNumber.trim() !== '') payload.idNumber = editIdNumber; else payload.idNumber = null;
                     if (editRelation.trim() !== '') payload.relation = editRelation; else payload.relation = null;
+                    payload.photoUrl = editPhotoUrl;
                     await api.patch(`/api/visitors/${editing.id}`, payload);
                     await load();
                     setEditing(null);
