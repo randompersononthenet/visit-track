@@ -84,20 +84,42 @@ export function Dashboard() {
             <div className="text-slate-700 dark:text-slate-300">Next day forecast: <span className="font-semibold">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</span></div>
           </div>
         </div>
-        <div className="h-48">
+        <div className="h-72 overflow-x-auto">
           {loadingForecast ? (
             <div className="w-full h-full bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" aria-busy="true" aria-label="Loading forecast" />
           ) : forecast && forecast.series?.length > 0 ? (
-            <svg key={`${windowSize}-${showPersonnel}`} viewBox="0 0 640 200" className="w-full h-full">
+            <svg
+              key={`${windowSize}-${showPersonnel}`}
+              className="h-full"
+              preserveAspectRatio="xMinYMin meet"
+              width={(() => {
+                const count = forecast.series.length;
+                const pad = { left: 50, right: 20 };
+                const minStep = 24;
+                return Math.max(640, pad.left + pad.right + (count > 1 ? (count - 1) * minStep : 200));
+              })()}
+              viewBox={(() => {
+                const count = forecast.series.length;
+                const pad = { left: 50, right: 20, top: 16, bottom: 40 };
+                const minStep = 24;
+                const baseWidth = Math.max(640, pad.left + pad.right + (count > 1 ? (count - 1) * minStep : 200));
+                const baseHeight = 260;
+                return `0 0 ${baseWidth} ${baseHeight}`;
+              })()}
+            >
               {(() => {
                 const data = forecast.series.map((d, i) => ({ x: i, count: d.count, date: d.date }));
                 const ma = forecast.movingAverage.map((d, i) => ({ x: i, ma: isNaN(d.ma as any) ? null : d.ma }));
                 const pdata = (forecast.seriesPersonnel || []).map((d, i) => ({ x: i, count: d.count, date: d.date }));
                 const pma = (forecast.movingAveragePersonnel || []).map((d, i) => ({ x: i, ma: isNaN(d.ma as any) ? null : d.ma }));
                 const maxY = Math.max(1, ...data.map((d) => d.count), ...ma.map((m) => m.ma || 0), ...pdata.map((d) => d.count || 0), ...pma.map((m) => m.ma || 0));
-                const pad = { left: 40, right: 10, top: 10, bottom: 30 };
-                const width = 640 - pad.left - pad.right;
-                const height = 200 - pad.top - pad.bottom;
+                const pad = { left: 50, right: 20, top: 16, bottom: 40 };
+                const minStep = 24; // minimum pixels per label to avoid squish
+                const baseWidth = Math.max(640, pad.left + pad.right + (data.length > 1 ? (data.length - 1) * minStep : 200));
+                const baseHeight = 260;
+                const width = baseWidth - pad.left - pad.right;
+                const height = baseHeight - pad.top - pad.bottom;
+
                 const xStep = width / Math.max(1, data.length - 1);
                 const yScale = (v: number) => height - (v / maxY) * (height - 10);
 
@@ -151,7 +173,7 @@ export function Dashboard() {
                       )}
                       {/* x labels */}
                       {data.map((d, i) => (
-                        <text key={d.date} x={pad.left + i * xStep} y={pad.top + height + 16} fontSize="10" textAnchor="middle" fill="#94a3b8">{d.date.slice(5)}</text>
+                        <text key={d.date} x={pad.left + i * xStep} y={pad.top + height + 18} fontSize="11" textAnchor="middle" fill="#94a3b8">{d.date.slice(5)}</text>
                       ))}
                       {/* legend */}
                       <g>

@@ -30,6 +30,9 @@ export function AppShell() {
   const [theme, setTheme] = useState<'light'|'dark'>(
     (typeof window !== 'undefined' && (localStorage.getItem('vt_theme') as 'light'|'dark')) || 'light'
   );
+  const [collapsed, setCollapsed] = useState<boolean>(
+    typeof window !== 'undefined' ? localStorage.getItem('vt_nav_collapsed') === '1' : false
+  );
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -37,6 +40,10 @@ export function AppShell() {
     if (theme === 'dark') root.classList.add('dark'); else root.classList.remove('dark');
     try { localStorage.setItem('vt_theme', theme); } catch {}
   }, [theme]);
+
+  useEffect(() => {
+    try { localStorage.setItem('vt_nav_collapsed', collapsed ? '1' : '0'); } catch {}
+  }, [collapsed]);
 
   function openLogoutDialog() {
     setShowLogoutDialog(true);
@@ -70,57 +77,90 @@ export function AppShell() {
   ];
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex">
-      <aside className="w-64 hidden md:flex flex-col gap-2 p-4 border-r border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60">
+      <aside className={`${collapsed ? 'w-16' : 'w-64'} hidden md:flex flex-col gap-2 ${collapsed ? 'p-2' : 'p-4'} border-r border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60 transition-all`}
+        aria-expanded={!collapsed}
+      >
         <div className="flex items-center justify-between px-2 py-1">
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center ${collapsed ? 'justify-center w-full' : 'gap-2'}`}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12l9-9 9 9-9 9-9-9z"/></svg>
-            <div className="text-lg font-semibold tracking-tight">VisitTrack</div>
+            {!collapsed && <div className="text-lg font-semibold tracking-tight">VisitTrack</div>}
           </div>
-          {/* Theme toggle (icon-only) */}
-          <div
-            role="button"
-            aria-label="Toggle color theme"
-            className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            {theme === 'dark' ? (
-              // Sun icon
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364l-1.414-1.414M8.05 8.05L6.636 6.636m10.728 0l-1.414 1.414M8.05 15.95l-1.414 1.414"/></svg>
-            ) : (
-              // Moon icon
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            )}
+          {/* Right controls */}
+          <div className={`flex items-center ${collapsed ? 'hidden' : ''}`}>
+            <div
+              role="button"
+              aria-label="Toggle sidebar"
+              className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300 mr-1"
+              onClick={() => setCollapsed(!collapsed)}
+              title={collapsed ? 'Expand' : 'Collapse'}
+            >
+              {/* Collapse/Expand icon */}
+              {collapsed ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+              )}
+            </div>
+            <div
+              role="button"
+              aria-label="Toggle color theme"
+              className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title="Theme"
+            >
+              {theme === 'dark' ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364l-1.414-1.414M8.05 8.05L6.636 6.636m10.728 0l-1.414 1.414M8.05 15.95l-1.414 1.414"/></svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              )}
+            </div>
           </div>
+          {/* When collapsed, show only collapse toggle on the right */}
+          {collapsed && (
+            <div
+              role="button"
+              aria-label="Expand sidebar"
+              className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
+              onClick={() => setCollapsed(false)}
+              title="Expand"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </div>
+          )}
         </div>
         <nav className="flex flex-col gap-1 mt-2">
           {nav.map((n) => (
             <Link
               key={n.to}
               to={n.to}
+              title={n.label}
               className={
-                'px-3 py-2 rounded-md text-sm transition-colors ' +
+                (collapsed ? 'justify-center px-2 ' : 'px-3 ') +
+                'py-2 rounded-md text-sm flex items-center gap-2 transition-colors ' +
                 (pathname === n.to
                   ? 'bg-indigo-600 text-white'
                   : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white')
               }
             >
-              <Icon name={n.icon} /> {n.label}
+              <Icon name={n.icon} />
+              {!collapsed && <span>{n.label}</span>}
             </Link>
           ))}
         </nav>
-        {/* Logout control (icon + text) */}
-        <div className="mt-auto mx-2 flex items-center justify-end">
+        {/* Logout control (icon + text, flushed left) */}
+        <div className="mt-auto mx-2 flex items-center justify-start">
           <div
             role="button"
             aria-label="Log out"
-            className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 text-slate-700 border border-transparent dark:hover:bg-slate-800 dark:text-slate-300"
+            className={(collapsed ? 'justify-center px-2 ' : 'px-2 ') + 'flex items-center gap-2 py-1.5 rounded-md hover:bg-slate-100 text-slate-700 border border-transparent dark:hover:bg-slate-800 dark:text-slate-300'}
             onClick={openLogoutDialog}
+            title="Log out"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5"/><path d="M19 12H5"/></svg>
-            <span className="text-sm">Log out</span>
+            {!collapsed && <span className="text-sm">Log out</span>}
           </div>
         </div>
-        <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 px-2">© {new Date().getFullYear()}</div>
+        <div className={`mt-2 text-xs text-slate-500 dark:text-slate-400 ${collapsed ? 'px-0 text-center' : 'px-2'}`}>© {new Date().getFullYear()}</div>
       </aside>
       <div className="flex-1 flex flex-col min-w-0">
         <header className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60 px-4 py-3 flex items-center justify-between">
