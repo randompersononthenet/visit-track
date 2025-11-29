@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { hasRole } from '../lib/auth';
 import { QRCodeSVG } from 'qrcode.react';
+import { PrintableIdCard } from '../components/PrintableIdCard';
 
 export function Personnel() {
   const [firstName, setFirstName] = useState('');
@@ -15,6 +16,7 @@ export function Personnel() {
   const [previewQR, setPreviewQR] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const svgWrapRef = useRef<HTMLDivElement | null>(null);
+  const idCardRef = useRef<HTMLDivElement | null>(null);
 
   const [editing, setEditing] = useState<any | null>(null);
   const [editFirst, setEditFirst] = useState('');
@@ -22,6 +24,8 @@ export function Personnel() {
   const [editLast, setEditLast] = useState('');
   const [editRole, setEditRole] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+
+  const [idCard, setIdCard] = useState<any | null>(null);
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -144,6 +148,14 @@ export function Personnel() {
                         }}
                       >
                         Edit
+                      </button>
+                      )}
+                      {hasRole(['admin','staff']) && (
+                      <button
+                        className="px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                        onClick={() => setIdCard(r)}
+                      >
+                        Generate ID
                       </button>
                       )}
                       {hasRole(['admin','staff']) && (
@@ -272,6 +284,46 @@ export function Personnel() {
               >
                 {savingEdit ? 'Saving...' : 'Save'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {idCard && hasRole(['admin','staff']) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setIdCard(null)} />
+          <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(96vw,760px)] dark:bg-slate-900 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Generate ID</div>
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                  onClick={() => window.print()}
+                >
+                  Print
+                </button>
+                <button
+                  className="px-3 py-1 text-sm rounded bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
+                  title="Install html-to-image to enable PNG download"
+                  disabled
+                >
+                  Download PNG
+                </button>
+                <button className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setIdCard(null)}>Close</button>
+              </div>
+            </div>
+            <div className="overflow-auto">
+              <div className="flex items-center justify-center">
+                <PrintableIdCard
+                  ref={idCardRef}
+                  type="personnel"
+                  fullName={idCard.fullName}
+                  secondaryLabel={idCard.roleTitle || undefined}
+                  qrValue={idCard.qrCode}
+                  issuedAt={new Date().toISOString()}
+                  photoUrl={idCard.photoUrl || undefined}
+                />
+              </div>
             </div>
           </div>
         </div>

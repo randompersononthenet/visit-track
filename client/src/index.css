@@ -4,3 +4,17 @@
 
 html, body, #root { height: 100%; }
 body { margin: 0; }
+
+@media print {
+  /* Hide everything except the printable card area */
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area {
+    position: fixed !important;
+    inset: 0 !important;
+    margin: auto !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border-color: #e2e8f0 !important; /* slate-200 */
+  }
+}
