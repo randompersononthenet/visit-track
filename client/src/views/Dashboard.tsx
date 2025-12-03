@@ -24,10 +24,14 @@ export function Dashboard() {
   const [alpha, setAlpha] = useState(0.3);
   const [beta, setBeta] = useState(0.1);
   const [gamma, setGamma] = useState(0.3);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const forecastSvgRef = useRef<SVGSVGElement | null>(null);
   const [heatmap, setHeatmap] = useState<{ days: number; grid: number[][] } | null>(null);
   const [trendWeek, setTrendWeek] = useState<{ granularity: string; series: { label: string; count: number }[] } | null>(null);
   const [trendMonth, setTrendMonth] = useState<{ granularity: string; series: { label: string; count: number }[] } | null>(null);
+  const [heatmapDays, setHeatmapDays] = useState(30);
+  const [weekPeriods, setWeekPeriods] = useState(12);
+  const [monthPeriods, setMonthPeriods] = useState(12);
 
   useEffect(() => {
     (async () => {
@@ -69,16 +73,16 @@ export function Dashboard() {
     (async () => {
       try {
         const [hm, tw, tm] = await Promise.all([
-          api.get('/api/analytics/hourly-heatmap', { params: { days: 30 } }),
-          api.get('/api/analytics/trends', { params: { granularity: 'week', periods: 12 } }),
-          api.get('/api/analytics/trends', { params: { granularity: 'month', periods: 12 } }),
+          api.get('/api/analytics/hourly-heatmap', { params: { days: heatmapDays } }),
+          api.get('/api/analytics/trends', { params: { granularity: 'week', periods: weekPeriods } }),
+          api.get('/api/analytics/trends', { params: { granularity: 'month', periods: monthPeriods } }),
         ]);
         setHeatmap(hm.data || null);
         setTrendWeek(tw.data || null);
         setTrendMonth(tm.data || null);
       } catch {}
     })();
-  }, []);
+  }, [heatmapDays, weekPeriods, monthPeriods]);
 
   // Persist legend toggles and restore on mount
   useEffect(() => {
@@ -181,54 +185,65 @@ export function Dashboard() {
       </div>
       <section>
       <div className="bg-white border border-slate-200 rounded p-4 lg:col-span-2 mt-6 overflow-hidden dark:bg-slate-800/40 dark:border-slate-700">
-        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+        <div className="flex items-center justify-between mb-2 gap-2">
           <div className="font-semibold flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/></svg>
             Visitor Forecast ({algo === 'ma' ? `Moving Average, ${windowSize}-day` : `Holt-Winters, season ${seasonLen}`})
           </div>
-          <div className="flex items-center gap-4 text-sm">
-            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-              <input type="checkbox" className="accent-indigo-500" checked={showPersonnel} onChange={(e) => setShowPersonnel(e.target.checked)} />
-              Show personnel trend
-            </label>
-            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="window-size">Window</label>
-            <select id="window-size" aria-label="Forecast window size" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={windowSize} onChange={(e)=> setWindowSize(parseInt(e.target.value) || 7)}>
-              <option value={3}>3</option>
-              <option value={5}>5</option>
-              <option value={7}>7</option>
-              <option value={14}>14</option>
-            </select>
-            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="algo">Algo</label>
-            <select id="algo" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={algo} onChange={(e)=> setAlgo((e.target.value as 'ma'|'hw') || 'ma')}>
-              <option value="ma">Moving Average</option>
-              <option value="hw">Holt-Winters (seasonal)</option>
-            </select>
-            {algo === 'hw' && (
-              <>
-                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="season">Season</label>
-                <input id="season" type="number" min={2} max={14} className="w-16 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={seasonLen} onChange={(e)=> setSeasonLen(Math.max(2, Math.min(14, parseInt(e.target.value)||7)))} />
-                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="alpha">α</label>
-                <input id="alpha" type="number" step="0.05" min={0.01} max={0.99} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={alpha} onChange={(e)=> setAlpha(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.3)))} />
-                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="beta">β</label>
-                <input id="beta" type="number" step="0.05" min={0.01} max={0.99} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={beta} onChange={(e)=> setBeta(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.1)))} />
-                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="gamma">γ</label>
-                <input id="gamma" type="number" step="0.05" min={0.01} max={0.99} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={gamma} onChange={(e)=> setGamma(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.3)))} />
-                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <input type="checkbox" className="accent-indigo-500" checked={overlayMA} onChange={(e)=> setOverlayMA(e.target.checked)} /> Overlay MA
-                </label>
-              </>
-            )}
-            <div className="text-slate-700 dark:text-slate-300">
-              Next day forecast: <span className="font-semibold">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</span>
-              {metrics?.ci && (
-                <span className="ml-2 text-xs text-slate-500">95% CI: {metrics.ci.lo}–{metrics.ci.hi}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={exportForecastCSV} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Export CSV</button>
-              <button onClick={downloadForecastPNG} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Download PNG</button>
+          <div className="w-full overflow-x-auto">
+            <div className="inline-flex items-center gap-3 text-sm whitespace-nowrap">
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                <input type="checkbox" className="accent-indigo-500" checked={showPersonnel} onChange={(e) => setShowPersonnel(e.target.checked)} />
+                Show personnel trend
+              </label>
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="window-size">Window</label>
+              <select id="window-size" aria-label="Forecast window size" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={windowSize} onChange={(e)=> setWindowSize(parseInt(e.target.value) || 7)}>
+                <option value={3}>3</option>
+                <option value={5}>5</option>
+                <option value={7}>7</option>
+                <option value={14}>14</option>
+              </select>
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="algo">Algo</label>
+              <select id="algo" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={algo} onChange={(e)=> setAlgo((e.target.value as 'ma'|'hw') || 'ma')}>
+                <option value="ma">Moving Average</option>
+                <option value="hw">Holt-Winters (seasonal)</option>
+              </select>
+              <div className="text-slate-700 dark:text-slate-300">
+                Next day forecast: <span className="font-semibold">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</span>
+                {metrics?.ci && (
+                  <span className="ml-2 text-xs text-slate-500">95% CI: {metrics.ci.lo}–{metrics.ci.hi}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={exportForecastCSV} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Export CSV</button>
+                <button onClick={downloadForecastPNG} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Download PNG</button>
+                {algo === 'hw' && (
+                  <button onClick={()=> setShowAdvanced((v)=>!v)} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">{showAdvanced ? 'Hide Advanced' : 'Advanced'}</button>
+                )}
+              </div>
             </div>
           </div>
+        </div>
+        {algo === 'hw' && showAdvanced && (
+          <div className="mt-2 px-2 py-2 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="season">Season</label>
+              <input id="season" type="number" min={2} max={14} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={seasonLen} onChange={(e)=> setSeasonLen(Math.max(2, Math.min(14, parseInt(e.target.value)||7)))} />
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="alpha">α</label>
+              <input id="alpha" type="number" step="0.05" min={0.01} max={0.99} className="w-24 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={alpha} onChange={(e)=> setAlpha(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.3)))} />
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="beta">β</label>
+              <input id="beta" type="number" step="0.05" min={0.01} max={0.99} className="w-24 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={beta} onChange={(e)=> setBeta(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.1)))} />
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="gamma">γ</label>
+              <input id="gamma" type="number" step="0.05" min={0.01} max={0.99} className="w-24 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={gamma} onChange={(e)=> setGamma(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.3)))} />
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                <input type="checkbox" className="accent-indigo-500" checked={overlayMA} onChange={(e)=> setOverlayMA(e.target.checked)} /> Overlay MA
+              </label>
+              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                <input type="checkbox" className="accent-indigo-500" checked={showSeasonal} onChange={(e)=> setShowSeasonal(e.target.checked)} /> Seasonal (HW)
+              </label>
+            </div>
+          </div>
+        )}
         </div>
         <div className="h-72 overflow-x-auto">
           {loadingForecast ? (
@@ -426,7 +441,7 @@ export function Dashboard() {
             )}
           </div>
         )}
-      </div>
+      
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
           <div className="font-semibold mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100">
@@ -501,7 +516,13 @@ export function Dashboard() {
       {/* Depth: Hourly heatmap and aggregated trends */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
-          <div className="font-semibold mb-3">Visitor Check-ins Heatmap (last 30 days)</div>
+          <div className="font-semibold mb-3 flex items-center justify-between">
+            <span>Visitor Check-ins Heatmap</span>
+            <div className="flex items-center gap-2 text-xs">
+              <label htmlFor="hm-days" className="text-slate-600 dark:text-slate-300">Days</label>
+              <input id="hm-days" type="number" min={7} max={120} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={heatmapDays} onChange={(e)=> setHeatmapDays(Math.max(7, Math.min(120, parseInt(e.target.value)||30)))} />
+            </div>
+          </div>
           {heatmap ? (
             <div className="grid" style={{ gridTemplateColumns: `repeat(25, minmax(0,1fr))` }}>
               <div></div>
@@ -523,9 +544,23 @@ export function Dashboard() {
           ) : (
             <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
           )}
+          {/* heatmap legend */}
+          <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-500">
+            <span>Low</span>
+            <div className="h-2 w-32 bg-gradient-to-r from-indigo-200 to-indigo-600 rounded"></div>
+            <span>High</span>
+          </div>
         </div>
         <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
-          <div className="font-semibold mb-3">Weekly & Monthly Trends</div>
+          <div className="font-semibold mb-3 flex items-center justify-between">
+            <span>Weekly & Monthly Trends</span>
+            <div className="flex items-center gap-2 text-xs">
+              <label htmlFor="wk" className="text-slate-600 dark:text-slate-300">Weeks</label>
+              <input id="wk" type="number" min={4} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={weekPeriods} onChange={(e)=> setWeekPeriods(Math.max(4, Math.min(24, parseInt(e.target.value)||12)))} />
+              <label htmlFor="mo" className="text-slate-600 dark:text-slate-300">Months</label>
+              <input id="mo" type="number" min={6} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={monthPeriods} onChange={(e)=> setMonthPeriods(Math.max(6, Math.min(24, parseInt(e.target.value)||12)))} />
+            </div>
+          </div>
           <div className="grid grid-cols-1 gap-4">
             <div>
               <div className="text-xs text-slate-500 mb-1">Weekly (last 12 weeks)</div>
