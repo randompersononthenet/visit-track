@@ -60,6 +60,9 @@ router.get('/visitor-forecast', async (req, res) => {
   const includePersonnel = String(req.query.includePersonnel || 'false') === 'true';
   const algo = String(req.query.algo || 'ma'); // 'ma' | 'hw'
   const seasonLen = Math.max(2, Math.min(14, parseInt(String(req.query.seasonLen || '7')) || 7));
+  const alpha = Math.max(0.01, Math.min(0.99, parseFloat(String(req.query.alpha || '0.3')) || 0.3));
+  const beta = Math.max(0.01, Math.min(0.99, parseFloat(String(req.query.beta || '0.1')) || 0.1));
+  const gamma = Math.max(0.01, Math.min(0.99, parseFloat(String(req.query.gamma || '0.3')) || 0.3));
 
   // last daysParam days including today
   const days: { date: string; start: Date; end: Date }[] = [];
@@ -127,9 +130,10 @@ router.get('/visitor-forecast', async (req, res) => {
 
   let nextForecast: number | null = null;
   let smoothed: { date: string; value: number }[] | undefined;
+  let fallbackUsed = false;
   if (algo === 'hw') {
     const x = series.map((d) => d.count);
-    const hw = holtWintersAdditive(x, seasonLen);
+    const hw = holtWintersAdditive(x, seasonLen, alpha, beta, gamma);
     if (hw) {
       nextForecast = hw.next;
       smoothed = hw.fitted.map((v, i) => (v == null || isNaN(v) ? null : Number((v as number).toFixed(2)))).map((v, i) => ({ date: series[i].date, value: v as any })).filter((d) => d.value != null) as any;
@@ -137,6 +141,7 @@ router.get('/visitor-forecast', async (req, res) => {
       // fallback to MA if insufficient data
       const lastWindow = series.slice(-window);
       nextForecast = lastWindow.length === window ? Number((lastWindow.reduce((s, v) => s + v.count, 0) / window).toFixed(2)) : null;
+      fallbackUsed = true;
     }
   } else {
     const lastWindow = series.slice(-window);
@@ -198,6 +203,9 @@ router.get('/visitor-forecast', async (req, res) => {
     window,
     algo,
     seasonLen: algo === 'hw' ? seasonLen : undefined,
+    alpha: algo === 'hw' ? alpha : undefined,
+    beta: algo === 'hw' ? beta : undefined,
+    gamma: algo === 'hw' ? gamma : undefined,
     series,
     movingAverage: ma,
     smoothed: smoothed,
@@ -206,7 +214,60 @@ router.get('/visitor-forecast', async (req, res) => {
     movingAveragePersonnel: includePersonnel ? maPersonnel : undefined,
     nextDayForecastPersonnel: includePersonnel ? nextForecastPersonnel : undefined,
     metrics,
+    fallbackUsed: algo === 'hw' ? fallbackUsed : undefined,
   });
+});
+
+// Hourly heatmap: returns counts for dayOfWeek (0-6) x hour (0-23) for last N days
+router.get('/hourly-heatmap', async (req, res) => {
+  const days = Math.max(1, Math.min(120, parseInt(String(req.query.days || '30')) || 30));
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+  const end = new Date();
+  const grid: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+  const logs = await VisitLog.findAll({ where: { timeIn: { [Op.gte]: start, [Op.lte]: end } }, attributes: ['timeIn'] });
+  for (const l of logs) {
+    const t = new Date((l as any).timeIn);
+    const dow = t.getDay();
+    const hour = t.getHours();
+    grid[dow][hour] += 1;
+  }
+  res.json({ days, grid });
+});
+
+// Aggregated trends by week or month for last N periods
+router.get('/trends', async (req, res) => {
+  const granularity = String(req.query.granularity || 'week'); // 'week' | 'month'
+  const periods = Math.max(1, Math.min(24, parseInt(String(req.query.periods || '12')) || 12));
+  const out: { label: string; count: number }[] = [];
+  const ref = new Date();
+  ref.setHours(0, 0, 0, 0);
+  for (let i = periods - 1; i >= 0; i--) {
+    let start = new Date(ref);
+    let end = new Date(ref);
+    if (granularity === 'month') {
+      start.setMonth(start.getMonth() - i, 1); start.setDate(1);
+      start.setHours(0,0,0,0);
+      end = new Date(start); end.setMonth(start.getMonth() + 1); end.setDate(0); end.setHours(23,59,59,999);
+      const label = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}`;
+      const count = await VisitLog.count({ where: { timeIn: { [Op.gte]: start, [Op.lte]: end } } });
+      out.push({ label, count });
+    } else {
+      // week: ISO week starting Monday
+      const d = new Date(ref);
+      d.setDate(d.getDate() - i * 7);
+      const day = d.getDay();
+      const diffToMonday = (day === 0 ? -6 : 1 - day);
+      start = new Date(d); start.setDate(d.getDate() + diffToMonday); start.setHours(0,0,0,0);
+      end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+      const weekStr = `${start.getFullYear()}-W${String(Math.ceil((((start.getTime() - new Date(start.getFullYear(),0,1).getTime())/86400000)+ new Date(start.getFullYear(),0,1).getDay()+1)/7)).padStart(2,'0')}`;
+      const count = await VisitLog.count({ where: { timeIn: { [Op.gte]: start, [Op.lte]: end } } });
+      out.push({ label: weekStr, count });
+    }
+  }
+  res.json({ granularity, series: out });
 });
 
 export default router;

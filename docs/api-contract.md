@@ -61,7 +61,21 @@
 ## Analytics & Forecasting
 - GET `/api/analytics/summary`
   - 200: `{ totals: { visitors, personnel }, today: { checkIns }, inside: { current } }`
-- GET `/api/analytics/visitor-forecast?window=7` (planned)
+- GET `/api/analytics/visitor-forecast`
+  - query:
+    - `window` number (default 7)
+    - `days` number (default 30)
+    - `includePersonnel` boolean (`true|false`)
+    - `algo` `ma|hw` (moving average or Holt-Winters additive), default `ma`
+    - `seasonLen` number, default 7 (only for `hw`)
+    - `alpha` `0.01..0.99` smoothing level (only for `hw`), default 0.3
+    - `beta` `0.01..0.99` trend smoothing (only for `hw`), default 0.1
+    - `gamma` `0.01..0.99` seasonal smoothing (only for `hw`), default 0.3
+  - 200: `{ window, algo, seasonLen?, alpha?, beta?, gamma?, series, movingAverage, smoothed?, nextDayForecast, seriesPersonnel?, movingAveragePersonnel?, nextDayForecastPersonnel?, metrics?: { mae, rmse, mape?, ci?: { lo, hi } }, fallbackUsed? }`
+- GET `/api/analytics/hourly-heatmap?days=30`
+  - 200: `{ days, grid: number[7][24] }` where grid[row=Sun..Sat][col=0..23]
+- GET `/api/analytics/trends?granularity=week|month&periods=12`
+  - 200: `{ granularity, series: { label, count }[] }`
 
 ## Notes
 - All endpoints under `/api/*` require JWT except `/health` and `/api/auth/login`.

@@ -21,7 +21,13 @@ export function Dashboard() {
   const [algo, setAlgo] = useState<'ma'|'hw'>('ma');
   const [seasonLen, setSeasonLen] = useState(7);
   const [overlayMA, setOverlayMA] = useState(true);
+  const [alpha, setAlpha] = useState(0.3);
+  const [beta, setBeta] = useState(0.1);
+  const [gamma, setGamma] = useState(0.3);
   const forecastSvgRef = useRef<SVGSVGElement | null>(null);
+  const [heatmap, setHeatmap] = useState<{ days: number; grid: number[][] } | null>(null);
+  const [trendWeek, setTrendWeek] = useState<{ granularity: string; series: { label: string; count: number }[] } | null>(null);
+  const [trendMonth, setTrendMonth] = useState<{ granularity: string; series: { label: string; count: number }[] } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -48,7 +54,7 @@ export function Dashboard() {
       try {
         setLoadingForecast(true);
         setForecast(null);
-        const forecastRes = await api.get('/api/analytics/visitor-forecast', { params: { window: windowSize, days: 30, includePersonnel: showPersonnel, algo, seasonLen: seasonLen } });
+        const forecastRes = await api.get('/api/analytics/visitor-forecast', { params: { window: windowSize, days: 30, includePersonnel: showPersonnel, algo, seasonLen: seasonLen, alpha, beta, gamma } });
         setForecast(forecastRes.data || null);
       } catch (e) {
         // don't block the rest of the dashboard if forecast fails
@@ -56,7 +62,23 @@ export function Dashboard() {
         setLoadingForecast(false);
       }
     })();
-  }, [windowSize, showPersonnel, algo, seasonLen]);
+  }, [windowSize, showPersonnel, algo, seasonLen, alpha, beta, gamma]);
+
+  // Load depth analytics (heatmap and trends)
+  useEffect(() => {
+    (async () => {
+      try {
+        const [hm, tw, tm] = await Promise.all([
+          api.get('/api/analytics/hourly-heatmap', { params: { days: 30 } }),
+          api.get('/api/analytics/trends', { params: { granularity: 'week', periods: 12 } }),
+          api.get('/api/analytics/trends', { params: { granularity: 'month', periods: 12 } }),
+        ]);
+        setHeatmap(hm.data || null);
+        setTrendWeek(tw.data || null);
+        setTrendMonth(tm.data || null);
+      } catch {}
+    })();
+  }, []);
 
   // Persist legend toggles and restore on mount
   useEffect(() => {
@@ -185,6 +207,12 @@ export function Dashboard() {
               <>
                 <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="season">Season</label>
                 <input id="season" type="number" min={2} max={14} className="w-16 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={seasonLen} onChange={(e)=> setSeasonLen(Math.max(2, Math.min(14, parseInt(e.target.value)||7)))} />
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="alpha">α</label>
+                <input id="alpha" type="number" step="0.05" min={0.01} max={0.99} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={alpha} onChange={(e)=> setAlpha(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.3)))} />
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="beta">β</label>
+                <input id="beta" type="number" step="0.05" min={0.01} max={0.99} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={beta} onChange={(e)=> setBeta(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.1)))} />
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="gamma">γ</label>
+                <input id="gamma" type="number" step="0.05" min={0.01} max={0.99} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={gamma} onChange={(e)=> setGamma(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.3)))} />
                 <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                   <input type="checkbox" className="accent-indigo-500" checked={overlayMA} onChange={(e)=> setOverlayMA(e.target.checked)} /> Overlay MA
                 </label>
@@ -379,6 +407,9 @@ export function Dashboard() {
               <div className="text-slate-600 dark:text-slate-400 text-sm">No forecast data available for the selected window.</div>
             )}
         </div>
+        {forecast?.fallbackUsed && algo === 'hw' && (
+          <div className="mt-2 text-xs text-amber-600 dark:text-yellow-400">Insufficient seasonal history for Holt-Winters. Falling back to Moving Average for next-day estimate.</div>
+        )}
         {/* metrics summary */}
         {metrics && (
           <div className="mt-2 text-xs text-slate-600 dark:text-slate-300 flex flex-wrap gap-4">
@@ -463,6 +494,89 @@ export function Dashboard() {
             ) : (
               <div className="text-slate-600 dark:text-slate-400 text-sm">No data</div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Depth: Hourly heatmap and aggregated trends */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
+          <div className="font-semibold mb-3">Visitor Check-ins Heatmap (last 30 days)</div>
+          {heatmap ? (
+            <div className="grid" style={{ gridTemplateColumns: `repeat(25, minmax(0,1fr))` }}>
+              <div></div>
+              {Array.from({ length: 24 }).map((_, h) => (
+                <div key={h} className="text-[10px] text-center text-slate-500">{h}</div>
+              ))}
+              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, r) => (
+                <React.Fragment key={d}>
+                  <div className="text-[10px] text-right pr-1 text-slate-500">{d}</div>
+                  {Array.from({ length: 24 }).map((_, c) => {
+                    const v = heatmap.grid[r][c];
+                    const intensity = Math.min(1, v / Math.max(1, ...heatmap.grid.flat()));
+                    const bg = `rgba(99,102,241,${0.1 + 0.6*intensity})`;
+                    return <div key={`${r}-${c}`} className="h-5 border border-slate-100 dark:border-slate-700" style={{ backgroundColor: bg }} title={`${d} ${c}:00 — ${v}`} />;
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          ) : (
+            <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+          )}
+        </div>
+        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
+          <div className="font-semibold mb-3">Weekly & Monthly Trends</div>
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <div className="text-xs text-slate-500 mb-1">Weekly (last 12 weeks)</div>
+              <div className="overflow-x-auto">
+                {trendWeek ? (
+                  <table className="min-w-full text-xs">
+                    <thead>
+                      <tr>
+                        <th className="text-left py-1 pr-4">Week</th>
+                        <th className="text-left py-1">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {trendWeek.series.map((r) => (
+                        <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
+                          <td className="py-1 pr-4">{r.label}</td>
+                          <td className="py-1">{r.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+                )}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 mb-1">Monthly (last 12 months)</div>
+              <div className="overflow-x-auto">
+                {trendMonth ? (
+                  <table className="min-w-full text-xs">
+                    <thead>
+                      <tr>
+                        <th className="text-left py-1 pr-4">Month</th>
+                        <th className="text-left py-1">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {trendMonth.series.map((r) => (
+                        <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
+                          <td className="py-1 pr-4">{r.label}</td>
+                          <td className="py-1">{r.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
