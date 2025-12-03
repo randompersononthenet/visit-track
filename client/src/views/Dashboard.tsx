@@ -7,7 +7,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<any[]>([]);
   const [trend, setTrend] = useState<{ date: string; count: number }[]>([]);
-  const [forecast, setForecast] = useState<{ window: number; series: { date: string; count: number }[]; movingAverage: { date: string; ma: number }[]; nextDayForecast: number | null; seriesPersonnel?: { date: string; count: number }[]; movingAveragePersonnel?: { date: string; ma: number }[]; nextDayForecastPersonnel?: number | null } | null>(null);
+  const [forecast, setForecast] = useState<{ window: number; algo?: 'ma'|'hw'; seasonLen?: number; series: { date: string; count: number }[]; movingAverage: { date: string; ma: number }[]; smoothed?: { date: string; value: number }[]; metrics?: { mae: number; rmse: number; mape?: number; ci?: { lo: number; hi: number } }; nextDayForecast: number | null; seriesPersonnel?: { date: string; count: number }[]; movingAveragePersonnel?: { date: string; ma: number }[]; nextDayForecastPersonnel?: number | null } | null>(null);
   const [showPersonnel, setShowPersonnel] = useState(false);
   const [windowSize, setWindowSize] = useState(7);
   const [loading, setLoading] = useState(true);
@@ -17,6 +17,10 @@ export function Dashboard() {
   const [showVisitorsMA, setShowVisitorsMA] = useState(true);
   const [showPersonnelSeries, setShowPersonnelSeries] = useState(true);
   const [showPersonnelMA, setShowPersonnelMA] = useState(true);
+  const [showSeasonal, setShowSeasonal] = useState(true);
+  const [algo, setAlgo] = useState<'ma'|'hw'>('ma');
+  const [seasonLen, setSeasonLen] = useState(7);
+  const [overlayMA, setOverlayMA] = useState(true);
   const forecastSvgRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
@@ -44,7 +48,7 @@ export function Dashboard() {
       try {
         setLoadingForecast(true);
         setForecast(null);
-        const forecastRes = await api.get('/api/analytics/visitor-forecast', { params: { window: windowSize, days: 30, includePersonnel: showPersonnel } });
+        const forecastRes = await api.get('/api/analytics/visitor-forecast', { params: { window: windowSize, days: 30, includePersonnel: showPersonnel, algo, seasonLen: seasonLen } });
         setForecast(forecastRes.data || null);
       } catch (e) {
         // don't block the rest of the dashboard if forecast fails
@@ -52,10 +56,32 @@ export function Dashboard() {
         setLoadingForecast(false);
       }
     })();
-  }, [windowSize, showPersonnel]);
+  }, [windowSize, showPersonnel, algo, seasonLen]);
+
+  // Persist legend toggles and restore on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('vt_forecast_toggles');
+      if (raw) {
+        const v = JSON.parse(raw);
+        if (typeof v.showVisitors === 'boolean') setShowVisitors(v.showVisitors);
+        if (typeof v.showVisitorsMA === 'boolean') setShowVisitorsMA(v.showVisitorsMA);
+        if (typeof v.showPersonnelSeries === 'boolean') setShowPersonnelSeries(v.showPersonnelSeries);
+        if (typeof v.showPersonnelMA === 'boolean') setShowPersonnelMA(v.showPersonnelMA);
+        if (typeof v.showSeasonal === 'boolean') setShowSeasonal(v.showSeasonal);
+        if (typeof v.overlayMA === 'boolean') setOverlayMA(v.overlayMA);
+      }
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem('vt_forecast_toggles', JSON.stringify({ showVisitors, showVisitorsMA, showPersonnelSeries, showPersonnelMA, showSeasonal, overlayMA }));
+    } catch {}
+  }, [showVisitors, showVisitorsMA, showPersonnelSeries, showPersonnelMA, showSeasonal, overlayMA]);
 
   const metrics = useMemo(() => {
     if (!forecast || !forecast.series || !forecast.movingAverage) return null;
+    if (forecast.metrics) return forecast.metrics;
     const actual = forecast.series.map((d) => d.count);
     const ma = forecast.movingAverage.map((d) => (isNaN(d.ma as any) ? null : (d.ma as number)));
     const pairs: { a: number; p: number }[] = [];
@@ -136,7 +162,7 @@ export function Dashboard() {
         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
           <div className="font-semibold flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/></svg>
-            Visitor Forecast (Moving Average, {windowSize}-day)
+            Visitor Forecast ({algo === 'ma' ? `Moving Average, ${windowSize}-day` : `Holt-Winters, season ${seasonLen}`})
           </div>
           <div className="flex items-center gap-4 text-sm">
             <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
@@ -150,6 +176,20 @@ export function Dashboard() {
               <option value={7}>7</option>
               <option value={14}>14</option>
             </select>
+            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="algo">Algo</label>
+            <select id="algo" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={algo} onChange={(e)=> setAlgo((e.target.value as 'ma'|'hw') || 'ma')}>
+              <option value="ma">Moving Average</option>
+              <option value="hw">Holt-Winters (seasonal)</option>
+            </select>
+            {algo === 'hw' && (
+              <>
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="season">Season</label>
+                <input id="season" type="number" min={2} max={14} className="w-16 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={seasonLen} onChange={(e)=> setSeasonLen(Math.max(2, Math.min(14, parseInt(e.target.value)||7)))} />
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <input type="checkbox" className="accent-indigo-500" checked={overlayMA} onChange={(e)=> setOverlayMA(e.target.checked)} /> Overlay MA
+                </label>
+              </>
+            )}
             <div className="text-slate-700 dark:text-slate-300">
               Next day forecast: <span className="font-semibold">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</span>
               {metrics?.ci && (
@@ -241,9 +281,18 @@ export function Dashboard() {
                         <path d={linePath(countPts)} fill="none" stroke="#38bdf8" strokeWidth={2} />
                       )}
                       {/* moving average segments */}
-                      {showVisitorsMA && maSegments.map((seg, idx) => (
+                      {overlayMA && showVisitorsMA && maSegments.map((seg, idx) => (
                         <path key={idx} d={linePath(seg)} fill="none" stroke="#f59e0b" strokeWidth={2} />
                       ))}
+                      {/* seasonal smoothed (Holt-Winters) */}
+                      {algo === 'hw' && showSeasonal && (forecast.smoothed || []).length > 0 && (
+                        <path
+                          d={linePath((forecast.smoothed || []).map((d, i) => ({ x: i * xStep, y: yScale(isNaN(d.value as any) ? 0 : (d.value as number)) })))}
+                          fill="none"
+                          stroke="#8b5cf6"
+                          strokeWidth={2}
+                        />
+                      )}
                       {/* personnel series if enabled */}
                       {showPersonnel && pCountPts.length > 0 && (
                         <>
@@ -303,15 +352,21 @@ export function Dashboard() {
                           <rect x={pad.left + 90} y={pad.top} width="10" height="2" fill="#f59e0b" opacity={showVisitorsMA ? 1 : 0.3} />
                           <text x={pad.left + 106} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showVisitorsMA ? 1 : 0.5}>Visitors MA</text>
                         </g>
+                        {algo === 'hw' && (
+                          <g role="button" onClick={() => setShowSeasonal((v) => !v)} className="cursor-pointer">
+                            <rect x={pad.left + 170} y={pad.top} width="10" height="2" fill="#8b5cf6" opacity={showSeasonal ? 1 : 0.3} />
+                            <text x={pad.left + 186} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showSeasonal ? 1 : 0.5}>Seasonal (HW)</text>
+                          </g>
+                        )}
                         {showPersonnel && (
                           <>
                             <g role="button" onClick={() => setShowPersonnelSeries((v) => !v)} className="cursor-pointer">
-                              <rect x={pad.left + 200} y={pad.top} width="10" height="2" fill="#22c55e" opacity={showPersonnelSeries ? 1 : 0.3} />
-                              <text x={pad.left + 216} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelSeries ? 1 : 0.5}>Personnel</text>
+                              <rect x={pad.left + 280} y={pad.top} width="10" height="2" fill="#22c55e" opacity={showPersonnelSeries ? 1 : 0.3} />
+                              <text x={pad.left + 296} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelSeries ? 1 : 0.5}>Personnel</text>
                             </g>
                             <g role="button" onClick={() => setShowPersonnelMA((v) => !v)} className="cursor-pointer">
-                              <rect x={pad.left + 290} y={pad.top} width="10" height="2" fill="#e11d48" opacity={showPersonnelMA ? 1 : 0.3} />
-                              <text x={pad.left + 306} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelMA ? 1 : 0.5}>Personnel MA</text>
+                              <rect x={pad.left + 370} y={pad.top} width="10" height="2" fill="#e11d48" opacity={showPersonnelMA ? 1 : 0.3} />
+                              <text x={pad.left + 386} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelMA ? 1 : 0.5}>Personnel MA</text>
                             </g>
                           </>
                         )}
