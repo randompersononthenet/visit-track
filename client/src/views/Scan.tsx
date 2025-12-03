@@ -158,6 +158,30 @@ export function Scan() {
           {!result && !error && <div className="text-slate-600 dark:text-slate-400 text-sm">No scan yet.</div>}
           {result && (
             <div className="bg-white border border-slate-200 rounded-lg p-4 dark:bg-slate-800/40 dark:border-slate-700">
+              {result.subjectType === 'visitor' && (
+                (() => {
+                  const s = result.subject || {};
+                  const risk = s.riskLevel || 'none';
+                  const isWarn = risk === 'medium' || risk === 'high' || s.blacklistStatus === true;
+                  if (!isWarn) return null;
+                  const bannerColor = s.blacklistStatus ? 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-900 dark:text-rose-200' : (risk === 'high' ? 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-900 dark:text-amber-200' : 'bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950/30 dark:border-yellow-900 dark:text-yellow-200');
+                  const chipClass = risk === 'high' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800';
+                  return (
+                    <div className={`mb-3 border rounded px-3 py-2 text-sm ${bannerColor}`}>
+                      <div className="flex items-start gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-[2px]"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {s.blacklistStatus && (<span className="px-2 py-0.5 text-xs rounded bg-rose-100 text-rose-800">Do not admit</span>)}
+                            {risk && risk !== 'none' && (<span className={`px-2 py-0.5 text-xs rounded ${chipClass}`}>Risk: {risk}</span>)}
+                          </div>
+                          {s.flagReason && <div className="mt-1 text-xs opacity-90">{s.flagReason}</div>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                 <div><span className="text-slate-700 dark:text-slate-400">Event:</span> {result.event}</div>
                 <div><span className="text-slate-700 dark:text-slate-400">Timestamp:</span> {new Date(result.at).toLocaleString()}</div>
