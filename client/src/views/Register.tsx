@@ -33,6 +33,14 @@ export function Register() {
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [editPhotoUrl, setEditPhotoUrl] = useState<string>('');
   const [capOpen, setCapOpen] = useState<null | 'create' | 'edit'>(null);
+  const [editRiskLevel, setEditRiskLevel] = useState<'none'|'low'|'medium'|'high'>('none');
+  const [editFlagReason, setEditFlagReason] = useState<string>('');
+  const [editBlacklist, setEditBlacklist] = useState<boolean>(false);
+  const [violationsOpen, setViolationsOpen] = useState<null | { visitorId: number; fullName: string }>(null);
+  const [violations, setViolations] = useState<any[]>([]);
+  const [creatingViolation, setCreatingViolation] = useState(false);
+  const [newViolLevel, setNewViolLevel] = useState('low');
+  const [newViolDetails, setNewViolDetails] = useState('');
   const capVideoRef = useRef<HTMLVideoElement | null>(null);
   const capCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const capStreamRef = useRef<MediaStream | null>(null);
@@ -49,6 +57,13 @@ export function Register() {
     const res = await api.get('/api/visitors', { params: { q, page, pageSize } });
     setRows(res.data?.data || []);
     setTotal(res.data?.total || 0);
+  }
+
+  async function loadViolations(visitorId: number) {
+    try {
+      const res = await api.get(`/api/violations/visitor/${visitorId}`);
+      setViolations(res.data?.data || []);
+    } catch {}
   }
 
   async function startCamera() {
@@ -268,6 +283,75 @@ export function Register() {
           </div>
         )}
       </section>
+    {violationsOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/70" onClick={() => setViolationsOpen(null)} />
+        <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(96vw,760px)] dark:bg-slate-900 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-semibold">Incidents — {violationsOpen.fullName}</div>
+            <button className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setViolationsOpen(null)}>Close</button>
+          </div>
+          <div className="mb-3 grid md:grid-cols-4 gap-2 items-end">
+            <div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Severity</div>
+              <select className="w-full bg-white border border-slate-300 text-slate-900 rounded px-2 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={newViolLevel} onChange={(e)=> setNewViolLevel(e.target.value)}>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+                <option value="critical">critical</option>
+              </select>
+            </div>
+            <div className="md:col-span-3">
+              <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Details</div>
+              <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Describe the incident" value={newViolDetails} onChange={(e)=> setNewViolDetails(e.target.value)} />
+            </div>
+            <div>
+              <button
+                className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-60"
+                disabled={creatingViolation || !newViolLevel}
+                onClick={async () => {
+                  if (!violationsOpen) return;
+                  setCreatingViolation(true);
+                  try {
+                    await api.post(`/api/violations/visitor/${violationsOpen.visitorId}`, { level: newViolLevel, details: newViolDetails || undefined });
+                    setNewViolDetails('');
+                    await loadViolations(violationsOpen.visitorId);
+                  } catch {}
+                  finally { setCreatingViolation(false); }
+                }}
+              >
+                {creatingViolation ? 'Saving...' : 'Add Incident'}
+              </button>
+            </div>
+          </div>
+          <div className="border border-slate-200 dark:border-slate-700 rounded">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <tr>
+                  <th className="text-left px-3 py-2">When</th>
+                  <th className="text-left px-3 py-2">Severity</th>
+                  <th className="text-left px-3 py-2">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {violations.map((v) => (
+                  <tr key={v.id} className="border-t border-slate-200 dark:border-slate-800">
+                    <td className="px-3 py-2">{new Date(v.recordedAt).toLocaleString()}</td>
+                    <td className="px-3 py-2">{v.level}</td>
+                    <td className="px-3 py-2">{v.details || '-'}</td>
+                  </tr>
+                ))}
+                {violations.length === 0 && (
+                  <tr>
+                    <td className="px-3 py-6 text-center text-slate-600 dark:text-slate-400" colSpan={3}>No incidents</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )}
 
       <section className="md:col-span-2">
         <div className="flex items-center justify-between mb-3">
@@ -288,6 +372,8 @@ export function Register() {
               <tr>
                 <th className="text-left px-3 py-2">ID</th>
                 <th className="text-left px-3 py-2">Full name</th>
+                <th className="text-left px-3 py-2">Risk</th>
+                <th className="text-left px-3 py-2">Do not admit</th>
                 <th className="text-left px-3 py-2">Contact</th>
                 <th className="text-left px-3 py-2">ID #</th>
                 <th className="text-left px-3 py-2">QR</th>
@@ -299,6 +385,22 @@ export function Register() {
                 <tr key={r.id} className="border-t border-slate-200 dark:border-slate-800">
                   <td className="px-3 py-2">{r.id}</td>
                   <td className="px-3 py-2">{r.fullName}</td>
+                  <td className="px-3 py-2">
+                    {r.riskLevel && r.riskLevel !== 'none' ? (
+                      <span className={`px-2 py-0.5 text-xs rounded ${r.riskLevel==='low'?'bg-emerald-100 text-emerald-800': r.riskLevel==='medium'?'bg-amber-100 text-amber-800':'bg-rose-100 text-rose-800'}`} title={r.flagReason || ''}>
+                        {r.riskLevel}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-400">none</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    {r.blacklistStatus ? (
+                      <span className="px-2 py-0.5 text-xs rounded bg-rose-100 text-rose-800">On</span>
+                    ) : (
+                      <span className="text-xs text-slate-400">Off</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2">{r.contact || '-'}</td>
                   <td className="px-3 py-2">{r.idNumber || '-'}</td>
                   <td className="px-3 py-2">
@@ -320,9 +422,23 @@ export function Register() {
                           setEditIdNumber(r.idNumber || '');
                           setEditRelation(r.relation || '');
                           setEditPhotoUrl(r.photoUrl || '');
+                          setEditRiskLevel((r.riskLevel as any) || 'none');
+                          setEditFlagReason(r.flagReason || '');
+                          setEditBlacklist(!!r.blacklistStatus);
                         }}
                       >
                         Edit
+                      </button>
+                      )}
+                      {hasRole(['admin','staff']) && (
+                      <button
+                        className="px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                        onClick={async () => {
+                          setViolationsOpen({ visitorId: r.id, fullName: r.fullName });
+                          await loadViolations(r.id);
+                        }}
+                      >
+                        Incidents
                       </button>
                       )}
                       {hasRole(['admin','staff']) && (
@@ -440,9 +556,9 @@ export function Register() {
               <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Contact" value={editContact} onChange={(e) => setEditContact(e.target.value)} />
               <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="ID number" value={editIdNumber} onChange={(e) => setEditIdNumber(e.target.value)} />
               <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Relation" value={editRelation} onChange={(e) => setEditRelation(e.target.value)} />
-              <div>
-                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Photo (required)</div>
-                <div className="flex items-center gap-3">
+                <div>
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Photo (required)</div>
+                  <div className="flex items-center gap-3">
                   <div className="w-20 h-20 rounded bg-slate-100 border border-slate-300 overflow-hidden">
                     {editPhotoUrl ? (
                       // eslint-disable-next-line jsx-a11y/alt-text
@@ -481,6 +597,25 @@ export function Register() {
                   </button>
                 </div>
               </div>
+              <div className="grid md:grid-cols-3 gap-3">
+                <div>
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Risk level</div>
+                  <select className="w-full bg-white border border-slate-300 text-slate-900 rounded px-2 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={editRiskLevel} onChange={(e)=> setEditRiskLevel(e.target.value as any)}>
+                    <option value="none">none</option>
+                    <option value="low">low</option>
+                    <option value="medium">medium</option>
+                    <option value="high">high</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Flag reason (optional)</div>
+                  <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Why is this visitor flagged?" value={editFlagReason} onChange={(e)=> setEditFlagReason(e.target.value)} />
+                </div>
+                <label className="inline-flex items-center gap-2 text-sm mt-1">
+                  <input type="checkbox" className="accent-rose-600" checked={editBlacklist} onChange={(e)=> setEditBlacklist(e.target.checked)} />
+                  Do not admit (admin controlled)
+                </label>
+              </div>
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { if (!savingEdit) setEditing(null); }}>Cancel</button>
@@ -496,6 +631,9 @@ export function Register() {
                     if (editIdNumber.trim() !== '') payload.idNumber = editIdNumber; else payload.idNumber = null;
                     if (editRelation.trim() !== '') payload.relation = editRelation; else payload.relation = null;
                     payload.photoUrl = editPhotoUrl;
+                    payload.riskLevel = editRiskLevel;
+                    payload.flagReason = editFlagReason || undefined;
+                    payload.blacklistStatus = editBlacklist;
                     await api.patch(`/api/visitors/${editing.id}`, payload);
                     await load();
                     setEditing(null);
@@ -509,8 +647,7 @@ export function Register() {
           </div>
         </div>
       )}
-
-      {idCard && hasRole(['admin','staff']) && (
+{idCard && hasRole(['admin','staff']) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => setIdCard(null)} />
           <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(96vw,760px)] dark:bg-slate-900 dark:border-slate-700">

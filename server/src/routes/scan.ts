@@ -13,6 +13,24 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRole('admin', 'staff', 'officer'));
 
+// Preview scan info without creating any log
+router.get('/preview', async (req, res) => {
+  const qrCode = String(req.query.qrCode || '');
+  if (!qrCode) return res.status(400).json({ error: 'qrCode is required' });
+  const visitor = await Visitor.findOne({ where: { qrCode } });
+  const personnel = visitor ? null : await Personnel.findOne({ where: { qrCode } });
+  if (!visitor && !personnel) return res.status(404).json({ error: 'Not found' });
+  const subject = visitor
+    ? { type: 'visitor' as const, id: visitor.id, fullName: visitor.fullName, firstName: visitor.firstName, middleName: visitor.middleName, lastName: visitor.lastName, photoUrl: (visitor as any).photoUrl, riskLevel: (visitor as any).riskLevel, flagReason: (visitor as any).flagReason, blacklistStatus: (visitor as any).blacklistStatus }
+    : { type: 'personnel' as const, id: (personnel as any)!.id, fullName: (personnel as any)!.fullName, firstName: (personnel as any)!.firstName, middleName: (personnel as any)!.middleName, lastName: (personnel as any)!.lastName, roleTitle: (personnel as any)!.roleTitle, photoUrl: (personnel as any)!.photoUrl };
+  let alerts: Array<{ level: string; details?: string | null; recordedAt: Date }> = [];
+  if (visitor) {
+    const latestViolations = await Violation.findAll({ where: { visitorId: visitor.id }, order: [['recordedAt', 'DESC']], limit: 3 });
+    alerts = latestViolations.map(v => ({ level: v.level, details: v.details ?? null, recordedAt: v.recordedAt }));
+  }
+  return res.json({ status: 'ok', subjectType: subject.type, subject, alerts });
+});
+
 const scanSchema = z.object({
   qrCode: z.string().min(1),
   action: z.enum(['checkin', 'checkout']),
@@ -32,7 +50,7 @@ router.post('/', validate(scanSchema), async (req, res) => {
   const now = new Date();
 
   const subject = visitor
-    ? { type: 'visitor' as const, id: visitor.id, fullName: visitor.fullName, firstName: visitor.firstName, middleName: visitor.middleName, lastName: visitor.lastName, photoUrl: (visitor as any).photoUrl }
+    ? { type: 'visitor' as const, id: visitor.id, fullName: visitor.fullName, firstName: visitor.firstName, middleName: visitor.middleName, lastName: visitor.lastName, photoUrl: (visitor as any).photoUrl, riskLevel: (visitor as any).riskLevel, flagReason: (visitor as any).flagReason, blacklistStatus: (visitor as any).blacklistStatus }
     : { type: 'personnel' as const, id: (personnel as any)!.id, fullName: (personnel as any)!.fullName, firstName: (personnel as any)!.firstName, middleName: (personnel as any)!.middleName, lastName: (personnel as any)!.lastName, roleTitle: (personnel as any)!.roleTitle, photoUrl: (personnel as any)!.photoUrl };
 
   // Retrieve violation alerts (only for visitors)
