@@ -69,19 +69,31 @@ router.get('/:id', requireRole('admin', 'staff', 'officer'), async (req, res) =>
 });
 
 // Update visitor
-const updateVisitorSchema = createVisitorSchema.partial();
+const updateVisitorSchema = createVisitorSchema.partial().extend({
+  riskLevel: z.enum(['none','low','medium','high']).optional(),
+  flagReason: z.string().max(1000).optional().or(z.literal('')).transform((v) => (v === '' ? undefined : v)),
+  blacklistStatus: z.boolean().optional(),
+});
 
 router.patch('/:id', requireRole('admin', 'staff'), validate(updateVisitorSchema), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
-  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus } = (req as any).parsed;
+  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus, riskLevel, flagReason } = (req as any).parsed;
   const computedFullName = (
     [firstName ?? v.firstName, middleName ?? v.middleName, lastName ?? v.lastName]
       .filter(Boolean)
       .join(' ')
   );
-  await v.update({ firstName, middleName, lastName, fullName: computedFullName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus });
+  const updates: any = { firstName, middleName, lastName, fullName: computedFullName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus };
+  const riskFieldsTouched = typeof riskLevel !== 'undefined' || typeof flagReason !== 'undefined';
+  if (typeof riskLevel !== 'undefined') updates.riskLevel = riskLevel;
+  if (typeof flagReason !== 'undefined') updates.flagReason = flagReason;
+  if (riskFieldsTouched) {
+    updates.flagUpdatedBy = (req as any).user?.id ?? null;
+    updates.flagUpdatedAt = new Date();
+  }
+  await v.update(updates);
   res.json(v);
 });
 

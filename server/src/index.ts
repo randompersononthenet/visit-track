@@ -14,6 +14,7 @@ import scanRouter from './routes/scan';
 import visitLogsRouter from './routes/visitLogs';
 import reportsRouter from './routes/reports';
 import analyticsRouter from './routes/analytics';
+import violationsRouter from './routes/violations';
 import uploadsRouter from './routes/uploads';
 
 const app = express();
@@ -46,6 +47,7 @@ app.use('/api/visit-logs', visitLogsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/uploads', uploadsRouter);
+app.use('/api/violations', violationsRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {
