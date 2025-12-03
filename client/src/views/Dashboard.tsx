@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
+import { toPng } from 'html-to-image';
 
 export function Dashboard() {
   const [data, setData] = useState<any | null>(null);
@@ -12,6 +13,11 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [loadingForecast, setLoadingForecast] = useState(true);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [showVisitors, setShowVisitors] = useState(true);
+  const [showVisitorsMA, setShowVisitorsMA] = useState(true);
+  const [showPersonnelSeries, setShowPersonnelSeries] = useState(true);
+  const [showPersonnelMA, setShowPersonnelMA] = useState(true);
+  const forecastSvgRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -76,6 +82,40 @@ export function Dashboard() {
     return { mae, rmse, mape, ci };
   }, [forecast]);
 
+  async function downloadForecastPNG() {
+    const node = forecastSvgRef.current;
+    if (!node) return;
+    try {
+      const dataUrl = await toPng(node as unknown as HTMLElement, { cacheBust: true, backgroundColor: '#ffffff' });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'visitor-forecast.png';
+      a.click();
+    } catch {}
+  }
+
+  function exportForecastCSV() {
+    if (!forecast || !forecast.series) return;
+    const header = ['date', 'visitors', 'visitors_ma', 'personnel', 'personnel_ma'];
+    const rows: string[] = [header.join(',')];
+    const len = forecast.series.length;
+    for (let i = 0; i < len; i++) {
+      const date = forecast.series[i]?.date || '';
+      const v = forecast.series[i]?.count ?? '';
+      const vma = (forecast.movingAverage[i]?.ma ?? '') as any;
+      const p = forecast.seriesPersonnel?.[i]?.count ?? '';
+      const pma = (forecast.movingAveragePersonnel?.[i]?.ma ?? '') as any;
+      rows.push([date, String(v), String(vma), String(p), String(pma)].join(','));
+    }
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'visitor-forecast.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -116,6 +156,10 @@ export function Dashboard() {
                 <span className="ml-2 text-xs text-slate-500">95% CI: {metrics.ci.lo}–{metrics.ci.hi}</span>
               )}
             </div>
+            <div className="flex items-center gap-2">
+              <button onClick={exportForecastCSV} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Export CSV</button>
+              <button onClick={downloadForecastPNG} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Download PNG</button>
+            </div>
           </div>
         </div>
         <div className="h-72 overflow-x-auto">
@@ -126,6 +170,7 @@ export function Dashboard() {
               key={`${windowSize}-${showPersonnel}`}
               className="h-full"
               preserveAspectRatio="xMinYMin meet"
+              ref={forecastSvgRef}
               width={(() => {
                 const count = forecast.series.length;
                 const pad = { left: 50, right: 20 };
@@ -192,16 +237,20 @@ export function Dashboard() {
                       <line x1={pad.left} y1={pad.top + height} x2={pad.left + width} y2={pad.top + height} stroke="#475569" />
                       <line x1={pad.left} y1={pad.top} x2={pad.left} y2={pad.top + height} stroke="#475569" />
                       {/* counts line */}
-                      <path d={linePath(countPts)} fill="none" stroke="#38bdf8" strokeWidth={2} />
+                      {showVisitors && (
+                        <path d={linePath(countPts)} fill="none" stroke="#38bdf8" strokeWidth={2} />
+                      )}
                       {/* moving average segments */}
-                      {maSegments.map((seg, idx) => (
+                      {showVisitorsMA && maSegments.map((seg, idx) => (
                         <path key={idx} d={linePath(seg)} fill="none" stroke="#f59e0b" strokeWidth={2} />
                       ))}
                       {/* personnel series if enabled */}
                       {showPersonnel && pCountPts.length > 0 && (
                         <>
-                          <path d={linePath(pCountPts)} fill="none" stroke="#22c55e" strokeWidth={2} />
-                          {pmaSegments.map((seg, idx) => (
+                          {showPersonnelSeries && (
+                            <path d={linePath(pCountPts)} fill="none" stroke="#22c55e" strokeWidth={2} />
+                          )}
+                          {showPersonnelMA && pmaSegments.map((seg, idx) => (
                             <path key={`p${idx}`} d={linePath(seg)} fill="none" stroke="#e11d48" strokeWidth={2} />
                           ))}
                         </>
@@ -244,18 +293,26 @@ export function Dashboard() {
                           </g>
                         )}
                       </g>
-                      {/* legend */}
+                      {/* legend (toggleable) */}
                       <g>
-                        <rect x={pad.left} y={pad.top} width="10" height="2" fill="#38bdf8" />
-                        <text x={pad.left + 16} y={pad.top + 3} fontSize="10" fill="#cbd5e1">Visitors</text>
-                        <rect x={pad.left + 90} y={pad.top} width="10" height="2" fill="#f59e0b" />
-                        <text x={pad.left + 106} y={pad.top + 3} fontSize="10" fill="#cbd5e1">Visitors MA</text>
+                        <g role="button" onClick={() => setShowVisitors((v) => !v)} className="cursor-pointer">
+                          <rect x={pad.left} y={pad.top} width="10" height="2" fill="#38bdf8" opacity={showVisitors ? 1 : 0.3} />
+                          <text x={pad.left + 16} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showVisitors ? 1 : 0.5}>Visitors</text>
+                        </g>
+                        <g role="button" onClick={() => setShowVisitorsMA((v) => !v)} className="cursor-pointer">
+                          <rect x={pad.left + 90} y={pad.top} width="10" height="2" fill="#f59e0b" opacity={showVisitorsMA ? 1 : 0.3} />
+                          <text x={pad.left + 106} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showVisitorsMA ? 1 : 0.5}>Visitors MA</text>
+                        </g>
                         {showPersonnel && (
                           <>
-                            <rect x={pad.left + 200} y={pad.top} width="10" height="2" fill="#22c55e" />
-                            <text x={pad.left + 216} y={pad.top + 3} fontSize="10" fill="#cbd5e1">Personnel</text>
-                            <rect x={pad.left + 290} y={pad.top} width="10" height="2" fill="#e11d48" />
-                            <text x={pad.left + 306} y={pad.top + 3} fontSize="10" fill="#cbd5e1">Personnel MA</text>
+                            <g role="button" onClick={() => setShowPersonnelSeries((v) => !v)} className="cursor-pointer">
+                              <rect x={pad.left + 200} y={pad.top} width="10" height="2" fill="#22c55e" opacity={showPersonnelSeries ? 1 : 0.3} />
+                              <text x={pad.left + 216} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelSeries ? 1 : 0.5}>Personnel</text>
+                            </g>
+                            <g role="button" onClick={() => setShowPersonnelMA((v) => !v)} className="cursor-pointer">
+                              <rect x={pad.left + 290} y={pad.top} width="10" height="2" fill="#e11d48" opacity={showPersonnelMA ? 1 : 0.3} />
+                              <text x={pad.left + 306} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelMA ? 1 : 0.5}>Personnel MA</text>
+                            </g>
                           </>
                         )}
                       </g>
