@@ -27,3 +27,10 @@ client/.env
 
 # Database
 postgres-data/
+
+
+#unnecessary files
+.png
+.jpg
+.jpeg
+uploads/
