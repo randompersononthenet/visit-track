@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 
 export function Dashboard() {
@@ -11,6 +11,7 @@ export function Dashboard() {
   const [windowSize, setWindowSize] = useState(7);
   const [loading, setLoading] = useState(true);
   const [loadingForecast, setLoadingForecast] = useState(true);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -47,6 +48,34 @@ export function Dashboard() {
     })();
   }, [windowSize, showPersonnel]);
 
+  const metrics = useMemo(() => {
+    if (!forecast || !forecast.series || !forecast.movingAverage) return null;
+    const actual = forecast.series.map((d) => d.count);
+    const ma = forecast.movingAverage.map((d) => (isNaN(d.ma as any) ? null : (d.ma as number)));
+    const pairs: { a: number; p: number }[] = [];
+    for (let i = 0; i < Math.min(actual.length, ma.length); i++) {
+      if (ma[i] == null) continue;
+      pairs.push({ a: actual[i], p: ma[i]! });
+    }
+    if (pairs.length === 0) return null;
+    const absErrors = pairs.map(({ a, p }) => Math.abs(a - p));
+    const sqErrors = pairs.map(({ a, p }) => (a - p) ** 2);
+    const ape = pairs
+      .filter(({ a }) => a !== 0)
+      .map(({ a, p }) => Math.abs((a - p) / a));
+    const mae = absErrors.reduce((s, v) => s + v, 0) / absErrors.length;
+    const rmse = Math.sqrt(sqErrors.reduce((s, v) => s + v, 0) / sqErrors.length);
+    const mape = ape.length ? (ape.reduce((s, v) => s + v, 0) / ape.length) * 100 : null;
+    const residuals = pairs.map(({ a, p }) => a - p);
+    const meanRes = residuals.reduce((s, v) => s + v, 0) / residuals.length;
+    const varRes = residuals.reduce((s, v) => s + (v - meanRes) ** 2, 0) / Math.max(1, residuals.length - 1);
+    const stdRes = Math.sqrt(Math.max(0, varRes));
+    const point = forecast.nextDayForecast ?? null;
+    const z = 1.96;
+    const ci = point != null ? { lo: Math.max(0, Math.round(point - z * stdRes)), hi: Math.round(point + z * stdRes) } : null;
+    return { mae, rmse, mape, ci };
+  }, [forecast]);
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -81,7 +110,12 @@ export function Dashboard() {
               <option value={7}>7</option>
               <option value={14}>14</option>
             </select>
-            <div className="text-slate-700 dark:text-slate-300">Next day forecast: <span className="font-semibold">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</span></div>
+            <div className="text-slate-700 dark:text-slate-300">
+              Next day forecast: <span className="font-semibold">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</span>
+              {metrics?.ci && (
+                <span className="ml-2 text-xs text-slate-500">95% CI: {metrics.ci.lo}–{metrics.ci.hi}</span>
+              )}
+            </div>
           </div>
         </div>
         <div className="h-72 overflow-x-auto">
@@ -106,6 +140,7 @@ export function Dashboard() {
                 const baseHeight = 260;
                 return `0 0 ${baseWidth} ${baseHeight}`;
               })()}
+              onMouseLeave={() => setHoverIdx(null)}
             >
               {(() => {
                 const data = forecast.series.map((d, i) => ({ x: i, count: d.count, date: d.date }));
@@ -175,6 +210,40 @@ export function Dashboard() {
                       {data.map((d, i) => (
                         <text key={d.date} x={pad.left + i * xStep} y={pad.top + height + 18} fontSize="11" textAnchor="middle" fill="#94a3b8">{d.date.slice(5)}</text>
                       ))}
+                      {/* hover interaction layer */}
+                      <g>
+                        {data.map((d, i) => (
+                          <rect
+                            key={`h${i}`}
+                            x={pad.left + i * xStep - xStep / 2}
+                            y={pad.top}
+                            width={Math.max(5, xStep)}
+                            height={height}
+                            fill="transparent"
+                            onMouseEnter={() => setHoverIdx(i)}
+                          />
+                        ))}
+                        {hoverIdx != null && hoverIdx >= 0 && hoverIdx < data.length && (
+                          <g>
+                            <line x1={pad.left + hoverIdx * xStep} y1={pad.top} x2={pad.left + hoverIdx * xStep} y2={pad.top + height} stroke="#94a3b8" strokeDasharray="4 4" />
+                            {/* tooltip */}
+                            {(() => {
+                              const dx = pad.left + hoverIdx * xStep + 8;
+                              const dy = pad.top + 8;
+                              const a = data[hoverIdx].count;
+                              const mv = ma[hoverIdx]?.ma ?? null;
+                              return (
+                                <g>
+                                  <rect x={dx} y={dy} width={140} height={46} rx={6} fill="#0f172a" opacity="0.9" stroke="#334155" />
+                                  <text x={dx + 8} y={dy + 16} fontSize="11" fill="#e2e8f0">{data[hoverIdx].date}</text>
+                                  <text x={dx + 8} y={dy + 30} fontSize="11" fill="#38bdf8">Visitors: {a}</text>
+                                  {mv != null && <text x={dx + 8} y={dy + 44} fontSize="11" fill="#f59e0b">MA: {Math.round(mv)}</text>}
+                                </g>
+                              );
+                            })()}
+                          </g>
+                        )}
+                      </g>
                       {/* legend */}
                       <g>
                         <rect x={pad.left} y={pad.top} width="10" height="2" fill="#38bdf8" />
@@ -198,6 +267,22 @@ export function Dashboard() {
               <div className="text-slate-600 dark:text-slate-400 text-sm">No forecast data available for the selected window.</div>
             )}
         </div>
+        {/* metrics summary */}
+        {metrics && (
+          <div className="mt-2 text-xs text-slate-600 dark:text-slate-300 flex flex-wrap gap-4">
+            <div>
+              <span className="text-slate-500">MAE:</span> <span className="font-semibold">{metrics.mae.toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-slate-500">RMSE:</span> <span className="font-semibold">{metrics.rmse.toFixed(2)}</span>
+            </div>
+            {metrics.mape != null && (
+              <div>
+                <span className="text-slate-500">MAPE:</span> <span className="font-semibold">{metrics.mape.toFixed(1)}%</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
