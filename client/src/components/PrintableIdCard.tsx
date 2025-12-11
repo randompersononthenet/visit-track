@@ -20,12 +20,18 @@ export const PrintableIdCard = React.forwardRef<HTMLDivElement, PrintableIdCardP
     return (
       <div ref={ref} className="print-area w-[504px] h-[318px] bg-white text-slate-900 shadow rounded border border-slate-200 p-3 flex flex-col">
         <div className="flex items-center justify-between mb-2">
-          <div className="w-10 h-10 rounded bg-slate-200" />
+          <div className="w-10 h-10 rounded overflow-hidden bg-white border border-slate-200 flex items-center justify-center">
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <img src="/rbjmp1-logo.jpg" className="w-full h-full object-contain" />
+          </div>
           <div className="text-center">
             <div className="text-xs uppercase tracking-wide text-slate-600">VisitTrack</div>
             <div className="text-sm font-semibold">BJMP Agoo District Jail</div>
           </div>
-          <div className="w-10 h-10 rounded bg-slate-200" />
+          <div className="w-10 h-10 rounded overflow-hidden bg-white border border-slate-200 flex items-center justify-center">
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <img src="/agooDJ-logo.jpg" className="w-full h-full object-contain" />
+          </div>
         </div>
         <div className="flex-1 grid grid-cols-3 gap-3">
           <div className="col-span-1 flex flex-col items-center justify-start">
@@ -56,9 +62,15 @@ export const PrintableIdCard = React.forwardRef<HTMLDivElement, PrintableIdCardP
           </div>
         </div>
         <div className="mt-2 flex items-center justify-center gap-2">
-          <div className="w-10 h-10 rounded bg-slate-200" />
+          <div className="w-10 h-10 rounded overflow-hidden bg-white border border-slate-200 flex items-center justify-center">
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <img src="/rbjmp1-logo.jpg" className="w-full h-full object-contain" />
+          </div>
           <div className="text-[10px] text-slate-500">Official Use Only</div>
-          <div className="w-10 h-10 rounded bg-slate-200" />
+          <div className="w-10 h-10 rounded overflow-hidden bg-white border border-slate-200 flex items-center justify-center">
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <img src="/agooDJ-logo.jpg" className="w-full h-full object-contain" />
+          </div>
         </div>
       </div>
     );

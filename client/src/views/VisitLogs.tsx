@@ -3,10 +3,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 
 export function VisitLogs() {
+  function todayLocalISODate() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
   const [subjectType, setSubjectType] = useState<'all' | 'visitor' | 'personnel'>('all');
   const [subjectId, setSubjectId] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateFrom, setDateFrom] = useState(todayLocalISODate());
+  const [dateTo, setDateTo] = useState(todayLocalISODate());
   const [rows, setRows] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -22,8 +29,14 @@ export function VisitLogs() {
       const params: any = { page, pageSize };
       if (subjectType !== 'all') params.subjectType = subjectType;
       if (subjectId.trim() !== '') params.subjectId = subjectId.trim();
-      if (dateFrom) params.dateFrom = new Date(dateFrom).toISOString();
-      if (dateTo) params.dateTo = new Date(dateTo).toISOString();
+      if (dateFrom) {
+        const from = new Date(`${dateFrom}T00:00:00`);
+        params.dateFrom = from.toISOString();
+      }
+      if (dateTo) {
+        const to = new Date(`${dateTo}T23:59:59.999`);
+        params.dateTo = to.toISOString();
+      }
       const res = await api.get('/api/visit-logs', { params });
       setRows(res.data?.data || []);
       setTotal(res.data?.total || 0);
@@ -37,7 +50,7 @@ export function VisitLogs() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, subjectType]);
+  }, [page, subjectType, dateFrom, dateTo]);
 
   return (
     <div className="space-y-4">
@@ -53,7 +66,7 @@ export function VisitLogs() {
         <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         <div className="md:col-span-4 flex gap-2">
           <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { setPage(1); load(); }}>Apply</button>
-          <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { setSubjectType('all'); setSubjectId(''); setDateFrom(''); setDateTo(''); setPage(1); load(); }}>Reset</button>
+          <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { const t = todayLocalISODate(); setSubjectType('all'); setSubjectId(''); setDateFrom(t); setDateTo(t); setPage(1); load(); }}>Reset</button>
         </div>
       </div>
       {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
