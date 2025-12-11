@@ -282,20 +282,20 @@ export function Personnel() {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
               <tr>
-                <th className="text-left px-3 py-2">ID</th>
+                <th className="text-left px-3 py-2 hidden md:table-cell">ID</th>
                 <th className="text-left px-3 py-2">Full name</th>
-                <th className="text-left px-3 py-2">Role</th>
-                <th className="text-left px-3 py-2">QR</th>
+                <th className="text-left px-3 py-2 hidden lg:table-cell">Role</th>
+                <th className="text-left px-3 py-2 hidden lg:table-cell">QR</th>
                 <th className="text-left px-3 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className="border-t border-slate-200 dark:border-slate-800">
-                  <td className="px-3 py-2">{r.id}</td>
+                  <td className="px-3 py-2 hidden md:table-cell">{r.id}</td>
                   <td className="px-3 py-2">{r.fullName}</td>
-                  <td className="px-3 py-2">{r.roleTitle || '-'}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden lg:table-cell">{r.roleTitle || '-'}</td>
+                  <td className="px-3 py-2 hidden lg:table-cell">
                     <button type="button" onClick={() => setPreviewQR(r.qrCode)} className="bg-white inline-block p-1 rounded hover:ring-2 ring-indigo-400">
                       <QRCodeSVG value={r.qrCode} size={56} />
                     </button>

@@ -74,11 +74,11 @@ export function VisitLogs() {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
             <tr>
-              <th className="text-left px-3 py-2">ID</th>
+              <th className="text-left px-3 py-2 hidden md:table-cell">ID</th>
               <th className="text-left px-3 py-2">Subject</th>
-              <th className="text-left px-3 py-2">Type</th>
+              <th className="text-left px-3 py-2 hidden sm:table-cell">Type</th>
               <th className="text-left px-3 py-2">Time In</th>
-              <th className="text-left px-3 py-2">Time Out</th>
+              <th className="text-left px-3 py-2 hidden md:table-cell">Time Out</th>
             </tr>
           </thead>
           <tbody>
@@ -87,11 +87,11 @@ export function VisitLogs() {
               const name = r.visitor?.fullName || r.personnel?.fullName || '—';
               return (
                 <tr key={r.id} className="border-t border-slate-200 dark:border-slate-800">
-                  <td className="px-3 py-2">{r.id}</td>
+                  <td className="px-3 py-2 hidden md:table-cell">{r.id}</td>
                   <td className="px-3 py-2">{name}</td>
-                  <td className="px-3 py-2 capitalize">{type}</td>
+                  <td className="px-3 py-2 capitalize hidden sm:table-cell">{type}</td>
                   <td className="px-3 py-2">{new Date(r.timeIn).toLocaleString()}</td>
-                  <td className="px-3 py-2">{r.timeOut ? new Date(r.timeOut).toLocaleString() : '-'}</td>
+                  <td className="px-3 py-2 hidden md:table-cell">{r.timeOut ? new Date(r.timeOut).toLocaleString() : '-'}</td>
                 </tr>
               );
             })}

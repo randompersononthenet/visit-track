@@ -370,22 +370,22 @@ export function Register() {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
               <tr>
-                <th className="text-left px-3 py-2">ID</th>
+                <th className="text-left px-3 py-2 hidden md:table-cell">ID</th>
                 <th className="text-left px-3 py-2">Full name</th>
-                <th className="text-left px-3 py-2">Risk</th>
-                <th className="text-left px-3 py-2">Do not admit</th>
-                <th className="text-left px-3 py-2">Contact</th>
-                <th className="text-left px-3 py-2">ID #</th>
-                <th className="text-left px-3 py-2">QR</th>
+                <th className="text-left px-3 py-2 hidden lg:table-cell">Risk</th>
+                <th className="text-left px-3 py-2 hidden lg:table-cell">Do not admit</th>
+                <th className="text-left px-3 py-2 hidden xl:table-cell">Contact</th>
+                <th className="text-left px-3 py-2 hidden xl:table-cell">ID #</th>
+                <th className="text-left px-3 py-2 hidden lg:table-cell">QR</th>
                 <th className="text-left px-3 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className="border-t border-slate-200 dark:border-slate-800">
-                  <td className="px-3 py-2">{r.id}</td>
+                  <td className="px-3 py-2 hidden md:table-cell">{r.id}</td>
                   <td className="px-3 py-2">{r.fullName}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden lg:table-cell">
                     {r.riskLevel && r.riskLevel !== 'none' ? (
                       <span className={`px-2 py-0.5 text-xs rounded ${r.riskLevel==='low'?'bg-emerald-100 text-emerald-800': r.riskLevel==='medium'?'bg-amber-100 text-amber-800':'bg-rose-100 text-rose-800'}`} title={r.flagReason || ''}>
                         {r.riskLevel}
@@ -394,16 +394,16 @@ export function Register() {
                       <span className="text-xs text-slate-400">none</span>
                     )}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden lg:table-cell">
                     {r.blacklistStatus ? (
                       <span className="px-2 py-0.5 text-xs rounded bg-rose-100 text-rose-800">On</span>
                     ) : (
                       <span className="text-xs text-slate-400">Off</span>
                     )}
                   </td>
-                  <td className="px-3 py-2">{r.contact || '-'}</td>
-                  <td className="px-3 py-2">{r.idNumber || '-'}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 hidden xl:table-cell">{r.contact || '-'}</td>
+                  <td className="px-3 py-2 hidden xl:table-cell">{r.idNumber || '-'}</td>
+                  <td className="px-3 py-2 hidden lg:table-cell">
                     <button type="button" onClick={() => setPreviewQR(r.qrCode)} className="bg-white inline-block p-1 rounded hover:ring-2 ring-indigo-400">
                       <QRCodeSVG value={r.qrCode} size={56} />
                     </button>
