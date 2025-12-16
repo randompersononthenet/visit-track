@@ -77,7 +77,7 @@ export function AppShell() {
   ];
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex">
-      <aside className={`${collapsed ? 'w-16' : 'w-64'} hidden md:flex flex-col gap-2 ${collapsed ? 'p-2' : 'p-4'} border-r border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60 transition-all`}
+      <aside className={`${collapsed ? 'w-16' : 'w-64'} hidden md:flex flex-col gap-2 ${collapsed ? 'p-2' : 'p-4'} border-r border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60 transition-all sticky top-0 h-screen overflow-y-auto shrink-0`}
         aria-expanded={!collapsed}
       >
         <div className="flex items-center justify-between px-2 py-1">
