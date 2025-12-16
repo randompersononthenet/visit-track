@@ -347,10 +347,19 @@ export function Dashboard() {
                           ))}
                         </>
                       )}
-                      {/* x labels */}
-                      {data.map((d, i) => (
-                        <text key={d.date} x={pad.left + i * xStep} y={pad.top + height + 18} fontSize="11" textAnchor="middle" fill="#94a3b8">{d.date.slice(5)}</text>
-                      ))}
+                      {/* x labels (responsive density) */}
+                      {(() => {
+                        // Determine step to avoid overlapping labels based on pixel spacing
+                        const step = xStep >= 40 ? 1 : xStep >= 28 ? 2 : xStep >= 20 ? 3 : xStep >= 16 ? 4 : Math.max(5, Math.ceil(64 / Math.max(1, xStep)));
+                        return data.map((d, i) => {
+                          if (i % step !== 0) return null;
+                          // Shorten label when very tight: show just day-of-month
+                          const label = xStep < 20 ? d.date.slice(8) : d.date.slice(5);
+                          return (
+                            <text key={d.date} x={pad.left + i * xStep} y={pad.top + height + 18} fontSize="11" textAnchor="middle" fill="#94a3b8">{label}</text>
+                          );
+                        });
+                      })()}
                       {/* hover interaction layer */}
                       <g>
                         {data.map((d, i) => (
