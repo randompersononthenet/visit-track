@@ -82,7 +82,12 @@ export function AppShell() {
       >
         <div className="flex items-center justify-between px-2 py-1">
           <div className={`flex items-center ${collapsed ? 'justify-center w-full' : 'gap-2'}`}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12l9-9 9 9-9 9-9-9z"/></svg>
+            <img
+              src="/Visittrack.png"
+              alt="VisitTrack"
+              className={`${collapsed ? 'w-8 h-8' : 'w-10 h-10'} rounded`}
+              onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
+            />
             {!collapsed && <div className="text-lg font-semibold tracking-tight">VisitTrack</div>}
           </div>
           {/* Right controls */}
