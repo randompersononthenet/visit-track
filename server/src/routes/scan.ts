@@ -1,3 +1,5 @@
+// Scan routes: handle QR scans for visitors/personnel.
+// Includes preview (no log) and create visit logs for check-in/out.
 import { Router } from 'express';
 import { z } from 'zod';
 import { validate } from '../lib/validation';
@@ -13,7 +15,10 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRole('admin', 'staff', 'officer'));
 
-// Preview scan info without creating any log
+/**
+ * GET /api/scan/preview?qrCode=...
+ * Look up subject and recent alerts without creating a VisitLog.
+ */
 router.get('/preview', async (req, res) => {
   const qrCode = String(req.query.qrCode || '');
   if (!qrCode) return res.status(400).json({ error: 'qrCode is required' });

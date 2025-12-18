@@ -1,3 +1,5 @@
+// AppShell: main layout with sidebar navigation, header (mobile), theming and routing outlet.
+// Sidebar is sticky and scrolls independently; theme persists in localStorage.
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { hasRole, logout } from '../lib/auth';

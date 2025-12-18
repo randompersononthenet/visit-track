@@ -1,3 +1,5 @@
+// Visit logs routes: list visit entries with optional filters
+// Supports subject filtering and date range (timeIn) with pagination.
 import { Router } from 'express';
 import { Op } from 'sequelize';
 import { requireAuth } from '../middleware/auth';
@@ -11,7 +13,11 @@ const router = Router();
 // All routes require auth
 router.use(requireAuth);
 
-// GET /api/visit-logs?subjectType=visitor|personnel&subjectId=...&dateFrom=ISO&dateTo=ISO&page=&pageSize=
+/**
+ * GET /api/visit-logs
+ * Query: subjectType (visitor|personnel), subjectId, dateFrom, dateTo, page, pageSize
+ * Returns paged visit logs ordered by timeIn desc, with subject info included.
+ */
 router.get('/', requireRole('admin', 'staff'), async (req, res) => {
   const { subjectType, subjectId, dateFrom, dateTo, page = '1', pageSize = '20' } = req.query as Record<string, string>;
 
