@@ -22,11 +22,19 @@ app.use(helmet({
   // Allow images (e.g., /uploads/*) to be fetched from other origins like http://localhost:5173
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
+// CORS: allow Vite dev server and, in development, any origin (e.g., phone via LAN IP)
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173',
-    ],
+    origin: (origin, cb) => {
+      const isDev = process.env.NODE_ENV !== 'production';
+      const allowList = new Set<string>([
+        'http://localhost:5173',
+      ]);
+      if (!origin) return cb(null, true); // non-browser or same-origin
+      if (isDev) return cb(null, true); // relax in dev for LAN testing
+      if (allowList.has(origin)) return cb(null, true);
+      return cb(new Error('CORS not allowed'), false);
+    },
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -59,14 +67,15 @@ app.get('/health', async (_req: Request, res: Response) => {
 });
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 async function start() {
   try {
     await sequelize.authenticate();
     console.log('Database connection established');
     await syncSchema();
-    app.listen(PORT, () => {
-      console.log(`Server listening on http://localhost:${PORT}`);
+    app.listen(PORT, HOST, () => {
+      console.log(`Server listening on http://${HOST}:${PORT}`);
     });
   } catch (error) {
     console.error('Unable to connect to the database:', error);

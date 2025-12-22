@@ -29,6 +29,7 @@ export function AppShell() {
   const navigate = useNavigate();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [showMobileNav, setShowMobileNav] = useState(false);
   const [theme, setTheme] = useState<'light'|'dark'>(
     (typeof window !== 'undefined' && (localStorage.getItem('vt_theme') as 'light'|'dark')) || 'light'
   );
@@ -171,7 +172,16 @@ export function AppShell() {
       </aside>
       <div className="flex-1 flex flex-col min-w-0">
         <header className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/60 px-4 py-3 flex items-center justify-between">
-          <div className="font-semibold">VisitTrack</div>
+          <div className="flex items-center gap-2">
+            <button
+              aria-label="Open navigation"
+              className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
+              onClick={() => setShowMobileNav(true)}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </button>
+            <div className="font-semibold">VisitTrack</div>
+          </div>
           <div className="flex items-center gap-1">
             <div
               role="button"
@@ -200,6 +210,46 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+      {/* Mobile navigation overlay */}
+      {showMobileNav && (
+        <div
+          className="md:hidden fixed inset-0 z-50"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowMobileNav(false); }}
+        >
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-xl p-3 max-h-[70vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-2 py-1">
+              <div className="font-semibold">Menu</div>
+              <button
+                aria-label="Close navigation"
+                className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
+                onClick={() => setShowMobileNav(false)}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <ul className="mt-1 divide-y divide-slate-200 dark:divide-slate-800">
+              {nav.map((n) => (
+                <li key={`sheet-${n.to}`}>
+                  <Link
+                    to={n.to}
+                    onClick={() => setShowMobileNav(false)}
+                    className={
+                      'flex items-center gap-2 px-3 py-3 rounded-md ' +
+                      (pathname === n.to ? 'bg-indigo-50 text-indigo-700 dark:bg-slate-800 dark:text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800')
+                    }
+                  >
+                    <Icon name={n.icon} />
+                    <span className="text-sm">{n.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
       {showLogoutDialog && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
