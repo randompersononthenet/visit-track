@@ -16,6 +16,9 @@ import reportsRouter from './routes/reports';
 import analyticsRouter from './routes/analytics';
 import violationsRouter from './routes/violations';
 import uploadsRouter from './routes/uploads';
+import bcrypt from 'bcryptjs';
+import { User } from './models/User';
+import { Role } from './models/Role';
 
 const app = express();
 app.use(helmet({
@@ -74,6 +77,7 @@ async function start() {
     await sequelize.authenticate();
     console.log('Database connection established');
     await syncSchema();
+    await bootstrapAdmin();
     app.listen(PORT, HOST, () => {
       console.log(`Server listening on http://${HOST}:${PORT}`);
     });
@@ -84,3 +88,32 @@ async function start() {
 }
 
 start();
+
+async function bootstrapAdmin() {
+  const isProd = process.env.NODE_ENV === 'production';
+  const shouldBootstrap = process.env.BOOTSTRAP_ADMIN === 'true' || (!isProd);
+  if (!shouldBootstrap) return;
+
+  // Ensure roles exist
+  const roleNames: Array<'admin'|'staff'|'officer'> = ['admin','staff','officer'];
+  for (const name of roleNames) {
+    // @ts-ignore
+    await Role.findOrCreate({ where: { name }, defaults: { name } });
+  }
+
+  const username = process.env.ADMIN_USER || 'admin';
+  const password = process.env.ADMIN_PASS || 'admin123';
+  const roleName = (process.env.ADMIN_ROLE as any) || 'admin';
+  const role = await Role.findOne({ where: { name: roleName } });
+  if (!role) return;
+
+  const existing = await User.findOne({ where: { username } });
+  const passwordHash = await bcrypt.hash(password, 10);
+  if (!existing) {
+    await User.create({ username, passwordHash, roleId: role.id });
+    console.log(`Bootstrap: created user '${username}' with role '${roleName}'`);
+  } else if (process.env.RESET_ADMIN_PASSWORD === 'true') {
+    await existing.update({ passwordHash, roleId: role.id });
+    console.log(`Bootstrap: reset password for user '${username}'`);
+  }
+}

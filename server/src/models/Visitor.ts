@@ -52,7 +52,7 @@ Visitor.init(
     fullName: { type: DataTypes.STRING(150), allowNull: false, field: 'full_name' },
     contact: { type: DataTypes.STRING(100), allowNull: true },
     idNumber: { type: DataTypes.STRING(100), allowNull: true, unique: false, field: 'id_number' },
-    relation: { type: DataTypes.STRING(100), allowNull: true },
+    relation: { type: DataTypes.STRING(200), allowNull: true },
     qrCode: { type: DataTypes.STRING(200), allowNull: true, unique: true, field: 'qr_code' },
     photoUrl: { type: DataTypes.STRING(500), allowNull: true, field: 'photo_url' },
     blacklistStatus: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false, field: 'blacklist_status' },

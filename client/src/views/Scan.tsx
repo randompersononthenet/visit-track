@@ -15,6 +15,11 @@ export function Scan() {
   const rafRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const lastScanRef = useRef<{ code: string; at: number } | null>(null);
+  const lastDecodeTsRef = useRef<number>(0);
+  const zxingControlsRef = useRef<any | null>(null);
+  const zxingReaderRef = useRef<any | null>(null);
+  const [torchAvailable, setTorchAvailable] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
 
   async function doScan(action: 'checkin' | 'checkout') {
     setLoading(action);
@@ -42,6 +47,14 @@ export function Scan() {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
+    if (zxingControlsRef.current) {
+      try { zxingControlsRef.current.stop(); } catch {}
+      zxingControlsRef.current = null;
+    }
+    if (zxingReaderRef.current) {
+      try { zxingReaderRef.current.reset?.(); } catch {}
+      zxingReaderRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
@@ -51,11 +64,52 @@ export function Scan() {
   async function startCamera() {
     setCameraError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      // Prefer ZXing if available (requires @zxing/browser installed)
+      try {
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
+        const reader = new BrowserMultiFormatReader();
+        zxingReaderRef.current = reader;
+        const controls = await reader.decodeFromVideoDevice(
+          undefined,
+          videoRef.current!,
+          (result: any, err: any, c: any) => {
+            if (c) zxingControlsRef.current = c;
+            if (result) {
+              const text = result.getText();
+              setQrCode((prev) => (prev === text ? prev : text));
+            }
+          },
+          {
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            } as any,
+          }
+        );
+        zxingControlsRef.current = controls;
+        // Torch support (ZXing path relies on underlying stream track)
+        const track: MediaStreamTrack | undefined = (videoRef.current?.srcObject as MediaStream | undefined)?.getVideoTracks?.()[0];
+        if (track && 'getCapabilities' in track) {
+          const caps: any = (track as any).getCapabilities?.() || {};
+          setTorchAvailable(!!caps.torch);
+        }
+        return; // ZXing started; don't start manual loop
+      } catch {
+        // Fallback to manual getUserMedia + jsQR
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        await (videoRef.current as HTMLVideoElement).play();
+        // Torch capability (fallback path)
+        const track = stream.getVideoTracks()[0];
+        if (track && 'getCapabilities' in track) {
+          const caps: any = (track as any).getCapabilities?.() || {};
+          setTorchAvailable(!!caps.torch);
+        }
         tick();
       }
     } catch (e: any) {
@@ -70,15 +124,26 @@ export function Scan() {
     const w = video.videoWidth;
     const h = video.videoHeight;
     if (w && h) {
-      canvas.width = w;
-      canvas.height = h;
+      const targetW = Math.min(480, w || 480);
+      const scale = targetW / (w || 1);
+      const targetH = Math.max(1, Math.round(h * scale));
+      canvas.width = targetW;
+      canvas.height = targetH;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(video, 0, 0, w, h);
-        const img = ctx.getImageData(0, 0, w, h);
-        const code = jsQR(img.data, img.width, img.height);
-        if (code && code.data) {
-          setQrCode(code.data);
+        ctx.drawImage(video, 0, 0, targetW, targetH);
+        const now = performance.now();
+        if (now - lastDecodeTsRef.current >= 180) {
+          // Decode only on a centered square ROI for better performance
+          const roiSize = Math.floor(Math.min(targetW, targetH) * 0.7);
+          const roiX = Math.floor((targetW - roiSize) / 2);
+          const roiY = Math.floor((targetH - roiSize) / 2);
+          const img = ctx.getImageData(roiX, roiY, roiSize, roiSize);
+          const code = jsQR(img.data, img.width, img.height);
+          if (code && code.data) {
+            setQrCode((prev) => (prev === code.data ? prev : code.data));
+          }
+          lastDecodeTsRef.current = now;
         }
       }
     }
@@ -121,14 +186,98 @@ export function Scan() {
               value={qrCode}
               onChange={(e) => setQrCode(e.target.value)}
             />
+            <label className="inline-flex items-center px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  setError(null);
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const dataUrl = await new Promise<string>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = () => resolve(reader.result as string);
+                      reader.onerror = () => reject(new Error('Failed to read image'));
+                      reader.readAsDataURL(file);
+                    });
+                    const imgEl = await new Promise<HTMLImageElement>((resolve, reject) => {
+                      const img = new Image();
+                      img.onload = () => resolve(img);
+                      img.onerror = () => reject(new Error('Invalid image'));
+                      img.src = dataUrl;
+                    });
+                    // Try ZXing first for image decoding
+                    try {
+                      const { BrowserMultiFormatReader } = await import('@zxing/browser');
+                      const reader = new BrowserMultiFormatReader();
+                      const res: any = await reader.decodeFromImageElement(imgEl as any);
+                      const text = res?.getText?.() || '';
+                      if (text) {
+                        setQrCode(text);
+                      } else {
+                        throw new Error('ZXing could not decode');
+                      }
+                    } catch {
+                      // Fallback to jsQR
+                      const canvas = canvasRef.current;
+                      if (!canvas) return;
+                      const maxW = 1000;
+                      const scale = Math.min(1, maxW / (imgEl.naturalWidth || maxW));
+                      const w = Math.max(1, Math.round((imgEl.naturalWidth || maxW) * scale));
+                      const h = Math.max(1, Math.round((imgEl.naturalHeight || maxW) * scale));
+                      canvas.width = w;
+                      canvas.height = h;
+                      const ctx = canvas.getContext('2d');
+                      if (!ctx) return;
+                      ctx.drawImage(imgEl, 0, 0, w, h);
+                      const roiSize = Math.floor(Math.min(w, h) * 0.9);
+                      const roiX = Math.floor((w - roiSize) / 2);
+                      const roiY = Math.floor((h - roiSize) / 2);
+                      const img = ctx.getImageData(roiX, roiY, roiSize, roiSize);
+                      const code = jsQR(img.data, img.width, img.height);
+                      if (code && code.data) setQrCode(code.data);
+                      else setError('No QR found in image');
+                    }
+                  } catch (e: any) {
+                    setError(e?.message || 'Failed to decode image');
+                  } finally {
+                    // reset the input so selecting same file again triggers change
+                    e.currentTarget.value = '';
+                  }
+                }}
+              />
+              Upload QR Image
+            </label>
             {mode === 'camera' && (
               <div className="space-y-2">
                 {cameraError && <div className="text-rose-600 dark:text-red-400 text-sm">{cameraError}</div>}
                 <div className="relative">
                   <video ref={videoRef} className="w-full rounded bg-black" muted playsInline />
+                  {/* Scan guide (center square) */}
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <div className="w-[70%] h-[70%] max-w-[420px] max-h-[420px] border-2 border-emerald-400 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]"></div>
+                  </div>
                   <div className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded">
                     Scanning...
                   </div>
+                  {torchAvailable && (
+                    <button
+                      type="button"
+                      className="absolute bottom-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded"
+                      onClick={async () => {
+                        try {
+                          const track: any = (videoRef.current?.srcObject as any)?.getVideoTracks?.()[0];
+                          if (!track) return;
+                          await track.applyConstraints({ advanced: [{ torch: !torchOn }] });
+                          setTorchOn((v) => !v);
+                        } catch {}
+                      }}
+                    >
+                      {torchOn ? 'Torch Off' : 'Torch On'}
+                    </button>
+                  )}
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
               </div>

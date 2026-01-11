@@ -37,7 +37,7 @@ const createVisitorSchema = z.object({
   lastName: z.string().min(1),
   contact: z.string().max(100).optional(),
   idNumber: z.string().max(100).optional(),
-  relation: z.string().max(100).optional(),
+  relation: z.string().max(200).optional(),
   qrCode: z.string().max(200).optional(),
   photoUrl: z.string().max(500).optional(),
   blacklistStatus: z.boolean().optional(),

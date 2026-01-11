@@ -144,7 +144,7 @@ export function Register() {
           </div>
           <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Contact" value={contact} onChange={(e) => setContact(e.target.value)} />
           <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="ID number" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
-          <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Relation (e.g. Brother)" value={relation} onChange={(e) => setRelation(e.target.value)} />
+          <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Relation note (e.g., Brother of Juan Dela Cruz)" maxLength={200} value={relation} onChange={(e) => setRelation(e.target.value)} />
           <div>
             <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Photo (required)</div>
             <div className="flex items-center gap-3">
@@ -563,7 +563,7 @@ export function Register() {
               <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Last name" value={editLast} onChange={(e) => setEditLast(e.target.value)} />
               <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Contact" value={editContact} onChange={(e) => setEditContact(e.target.value)} />
               <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="ID number" value={editIdNumber} onChange={(e) => setEditIdNumber(e.target.value)} />
-              <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Relation" value={editRelation} onChange={(e) => setEditRelation(e.target.value)} />
+              <input className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Relation note (optional)" maxLength={200} value={editRelation} onChange={(e) => setEditRelation(e.target.value)} />
                 <div>
                   <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Photo (required)</div>
                   <div className="flex items-center gap-3">
