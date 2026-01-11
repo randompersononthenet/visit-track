@@ -20,6 +20,47 @@ export function Scan() {
   const zxingReaderRef = useRef<any | null>(null);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
+  const workerRef = useRef<Worker | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropImgUrl, setCropImgUrl] = useState<string | null>(null);
+  const [cropImgNatural, setCropImgNatural] = useState<{ w: number; h: number } | null>(null);
+  const cropImgRef = useRef<HTMLImageElement | null>(null);
+  const [cropBox, setCropBox] = useState<{ x: number; y: number; size: number }>({ x: 0, y: 0, size: 100 });
+  const cropDraggingRef = useRef<{ active: boolean; ox: number; oy: number } | null>(null);
+
+  useEffect(() => {
+    try {
+      // @ts-ignore Vite worker import
+      workerRef.current = new Worker(new URL('../workers/qrWorker.ts', import.meta.url), { type: 'module' });
+    } catch {}
+    return () => {
+      if (workerRef.current) {
+        try { workerRef.current.terminate(); } catch {}
+        workerRef.current = null;
+      }
+    };
+  }, []);
+
+  async function openManualCropWithDataUrl(dataUrl: string) {
+    setCropImgUrl(dataUrl);
+    setCropImgNatural(null);
+    setCropOpen(true);
+  }
+
+  function decodeViaWorker(imageData: ImageData): Promise<string | null> {
+    return new Promise((resolve) => {
+      const w = workerRef.current;
+      if (!w) return resolve(null);
+      const onMsg = (ev: MessageEvent) => {
+        w.removeEventListener('message', onMsg as any);
+        const res = ev.data;
+        if (res && res.ok && res.text) resolve(res.text as string);
+        else resolve(null);
+      };
+      w.addEventListener('message', onMsg as any);
+      w.postMessage({ cmd: 'decode', payload: { width: imageData.width, height: imageData.height, data: imageData.data } });
+    });
+  }
 
   async function doScan(action: 'checkin' | 'checkout') {
     setLoading(action);
@@ -64,41 +105,19 @@ export function Scan() {
   async function startCamera() {
     setCameraError(null);
     try {
-      // Prefer ZXing if available (requires @zxing/browser installed)
-      try {
-        const { BrowserMultiFormatReader } = await import('@zxing/browser');
-        const reader = new BrowserMultiFormatReader();
-        zxingReaderRef.current = reader;
-        const controls = await reader.decodeFromVideoDevice(
-          undefined,
-          videoRef.current!,
-          (result: any, err: any, c: any) => {
-            if (c) zxingControlsRef.current = c;
-            if (result) {
-              const text = result.getText();
-              setQrCode((prev) => (prev === text ? prev : text));
-            }
-          },
-          {
-            video: {
-              facingMode: { ideal: 'environment' },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            } as any,
-          }
+      if (!('mediaDevices' in navigator) || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const insecure = typeof window !== 'undefined' && !window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname);
+        setCameraError(
+          insecure
+            ? 'Camera is unavailable over HTTP on mobile. Please use HTTPS (or localhost) to enable camera access.'
+            : 'Camera API is unavailable in this browser. Please use a modern browser (Chrome/Safari/Edge) and allow camera permissions.'
         );
-        zxingControlsRef.current = controls;
-        // Torch support (ZXing path relies on underlying stream track)
-        const track: MediaStreamTrack | undefined = (videoRef.current?.srcObject as MediaStream | undefined)?.getVideoTracks?.()[0];
-        if (track && 'getCapabilities' in track) {
-          const caps: any = (track as any).getCapabilities?.() || {};
-          setTorchAvailable(!!caps.torch);
-        }
-        return; // ZXing started; don't start manual loop
-      } catch {
-        // Fallback to manual getUserMedia + jsQR
+        return;
       }
-
+      if (typeof window !== 'undefined' && !window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+        setCameraError('Camera requires a secure origin. Start the dev server with HTTPS or access via a secure tunnel.');
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -110,44 +129,41 @@ export function Scan() {
           const caps: any = (track as any).getCapabilities?.() || {};
           setTorchAvailable(!!caps.torch);
         }
-        tick();
       }
     } catch (e: any) {
       setCameraError(e?.message || 'Unable to access camera');
     }
   }
 
-  function tick() {
+  async function captureAndDecode() {
+    setError(null);
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
-    const w = video.videoWidth;
-    const h = video.videoHeight;
-    if (w && h) {
-      const targetW = Math.min(480, w || 480);
-      const scale = targetW / (w || 1);
-      const targetH = Math.max(1, Math.round(h * scale));
-      canvas.width = targetW;
-      canvas.height = targetH;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, targetW, targetH);
-        const now = performance.now();
-        if (now - lastDecodeTsRef.current >= 180) {
-          // Decode only on a centered square ROI for better performance
-          const roiSize = Math.floor(Math.min(targetW, targetH) * 0.7);
-          const roiX = Math.floor((targetW - roiSize) / 2);
-          const roiY = Math.floor((targetH - roiSize) / 2);
-          const img = ctx.getImageData(roiX, roiY, roiSize, roiSize);
-          const code = jsQR(img.data, img.width, img.height);
-          if (code && code.data) {
-            setQrCode((prev) => (prev === code.data ? prev : code.data));
-          }
-          lastDecodeTsRef.current = now;
-        }
-      }
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (!vw || !vh) return;
+    const maxW = 1280;
+    const scale = Math.min(1, maxW / (vw || maxW));
+    const tw = Math.max(1, Math.round(vw * scale));
+    const th = Math.max(1, Math.round(vh * scale));
+    canvas.width = tw;
+    canvas.height = th;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, tw, th);
+    const imageData = ctx.getImageData(0, 0, tw, th);
+    const text = await decodeViaWorker(imageData);
+    if (text) {
+      setQrCode(text);
+    } else {
+      // Open manual crop editor with the captured frame
+      try {
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        await openManualCropWithDataUrl(dataUrl);
+      } catch {}
+      setError('No QR found. Try adjusting the crop to the QR area.');
     }
-    rafRef.current = requestAnimationFrame(tick);
   }
 
   useEffect(() => {
@@ -193,9 +209,7 @@ export function Scan() {
                 className="hidden"
                 onChange={async (e) => {
                   setError(null);
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  try {
+                  const file = e.target.files?.[0];                  try {
                     const dataUrl = await new Promise<string>((resolve, reject) => {
                       const reader = new FileReader();
                       reader.onload = () => resolve(reader.result as string);
@@ -208,37 +222,27 @@ export function Scan() {
                       img.onerror = () => reject(new Error('Invalid image'));
                       img.src = dataUrl;
                     });
-                    // Try ZXing first for image decoding
-                    try {
-                      const { BrowserMultiFormatReader } = await import('@zxing/browser');
-                      const reader = new BrowserMultiFormatReader();
-                      const res: any = await reader.decodeFromImageElement(imgEl as any);
-                      const text = res?.getText?.() || '';
-                      if (text) {
-                        setQrCode(text);
-                      } else {
-                        throw new Error('ZXing could not decode');
-                      }
-                    } catch {
-                      // Fallback to jsQR
-                      const canvas = canvasRef.current;
-                      if (!canvas) return;
-                      const maxW = 1000;
-                      const scale = Math.min(1, maxW / (imgEl.naturalWidth || maxW));
-                      const w = Math.max(1, Math.round((imgEl.naturalWidth || maxW) * scale));
-                      const h = Math.max(1, Math.round((imgEl.naturalHeight || maxW) * scale));
-                      canvas.width = w;
-                      canvas.height = h;
-                      const ctx = canvas.getContext('2d');
-                      if (!ctx) return;
-                      ctx.drawImage(imgEl, 0, 0, w, h);
-                      const roiSize = Math.floor(Math.min(w, h) * 0.9);
-                      const roiX = Math.floor((w - roiSize) / 2);
-                      const roiY = Math.floor((h - roiSize) / 2);
-                      const img = ctx.getImageData(roiX, roiY, roiSize, roiSize);
-                      const code = jsQR(img.data, img.width, img.height);
-                      if (code && code.data) setQrCode(code.data);
-                      else setError('No QR found in image');
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const maxW = 1600;
+                    const s = Math.min(1, maxW / (imgEl.naturalWidth || maxW));
+                    const w = Math.max(1, Math.round((imgEl.naturalWidth || maxW) * s));
+                    const h = Math.max(1, Math.round((imgEl.naturalHeight || maxW) * s));
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    ctx.drawImage(imgEl, 0, 0, w, h);
+                    const imageData = ctx.getImageData(0, 0, w, h);
+                    const text = await decodeViaWorker(imageData);
+                    if (text) setQrCode(text);
+                    else {
+                      // Open manual crop editor to allow user to adjust
+                      try {
+                        const url = canvas.toDataURL('image/jpeg', 0.92);
+                        await openManualCropWithDataUrl(url);
+                      } catch {}
+                      setError('No QR found in image. Try cropping to the QR area.');
                     }
                   } catch (e: any) {
                     setError(e?.message || 'Failed to decode image');
@@ -259,9 +263,7 @@ export function Scan() {
                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                     <div className="w-[70%] h-[70%] max-w-[420px] max-h-[420px] border-2 border-emerald-400 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]"></div>
                   </div>
-                  <div className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded">
-                    Scanning...
-                  </div>
+                  <div className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded">Ready</div>
                   {torchAvailable && (
                     <button
                       type="button"
@@ -280,6 +282,39 @@ export function Scan() {
                   )}
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded"
+                    onClick={captureAndDecode}
+                  >
+                    Capture & Decode
+                  </button>
+                  <button
+                    type="button"
+                    className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                    onClick={async () => {
+                      try {
+                        const video = videoRef.current;
+                        const canvas = canvasRef.current;
+                        if (!video || !canvas) return;
+                        const vw = video.videoWidth;
+                        const vh = video.videoHeight;
+                        if (!vw || !vh) return;
+                        canvas.width = vw;
+                        canvas.height = vh;
+                        const ctx = canvas.getContext('2d');
+                        if (!ctx) return;
+                        ctx.drawImage(video, 0, 0, vw, vh);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                        await openManualCropWithDataUrl(dataUrl);
+                        setError(null);
+                      } catch {}
+                    }}
+                  >
+                    Manual Crop
+                  </button>
+                </div>
               </div>
             )}
             {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
@@ -372,6 +407,170 @@ export function Scan() {
           )}
         </section>
       </div>
+
+      {cropOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setCropOpen(false)} />
+          <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(96vw,900px)] dark:bg-slate-900 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Manual Crop</div>
+              <button className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setCropOpen(false)}>Close</button>
+            </div>
+            <div className="relative overflow-auto max-h-[70vh]">
+              {/* Image container */}
+              <div className="relative inline-block">
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                <img
+                  ref={cropImgRef}
+                  src={cropImgUrl || ''}
+                  onLoad={() => {
+                    const img = cropImgRef.current;
+                    if (!img) return;
+                    const nw = img.naturalWidth || 0;
+                    const nh = img.naturalHeight || 0;
+                    setCropImgNatural({ w: nw, h: nh });
+                    const size = Math.floor(Math.min(nw, nh) * 0.5);
+                    const x = Math.floor((nw - size) / 2);
+                    const y = Math.floor((nh - size) / 2);
+                    setCropBox({ x, y, size });
+                  }}
+                  className="max-w-[80vw] max-h-[60vh] object-contain select-none"
+                />
+
+                {/* Square crop overlay in image coordinates */}
+                {cropImgNatural && cropImgRef.current && (() => {
+                  const img = cropImgRef.current!;
+                  // Compute scale from natural to displayed size
+                  const dispW = img.clientWidth;
+                  const dispH = img.clientHeight;
+                  const scaleX = dispW / cropImgNatural.w;
+                  const scaleY = dispH / cropImgNatural.h;
+                  const sx = cropBox.x * scaleX;
+                  const sy = cropBox.y * scaleY;
+                  const ss = cropBox.size * Math.min(scaleX, scaleY);
+
+                  function onPointerDown(ev: React.MouseEvent | React.TouchEvent) {
+                    const pt = 'touches' in ev ? ev.touches[0] : (ev as any);
+                    const rect = img.getBoundingClientRect();
+                    const cx = pt.clientX - rect.left;
+                    const cy = pt.clientY - rect.top;
+                    cropDraggingRef.current = { active: true, ox: cx, oy: cy };
+                    (ev as any).preventDefault?.();
+                  }
+
+                  function onPointerMove(ev: any) {
+                    if (!cropDraggingRef.current?.active) return;
+                    const pt = ev.touches ? ev.touches[0] : ev;
+                    const rect = img.getBoundingClientRect();
+                    const cx = pt.clientX - rect.left;
+                    const cy = pt.clientY - rect.top;
+                    const dx = (cx - cropDraggingRef.current.ox) / scaleX;
+                    const dy = (cy - cropDraggingRef.current.oy) / scaleY;
+                    cropDraggingRef.current.ox = cx;
+                    cropDraggingRef.current.oy = cy;
+                    setCropBox((b) => {
+                      const nx = Math.max(0, Math.min(cropImgNatural.w - b.size, b.x + dx));
+                      const ny = Math.max(0, Math.min(cropImgNatural.h - b.size, b.y + dy));
+                      return { ...b, x: Math.round(nx), y: Math.round(ny), size: b.size };
+                    });
+                  }
+
+                  function onPointerUp() {
+                    cropDraggingRef.current = { active: false, ox: 0, oy: 0 };
+                  }
+
+                  return (
+                    <div
+                      className="absolute border-2 border-emerald-500 rounded"
+                      style={{ left: sx, top: sy, width: ss, height: ss }}
+                      onMouseDown={onPointerDown as any}
+                      onMouseMove={onPointerMove as any}
+                      onMouseUp={onPointerUp}
+                      onMouseLeave={onPointerUp}
+                      onTouchStart={onPointerDown as any}
+                      onTouchMove={onPointerMove as any}
+                      onTouchEnd={onPointerUp}
+                    />
+                  );
+                })()}
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              <label className="text-xs text-slate-600 dark:text-slate-400">Size</label>
+              <input
+                type="range"
+                min={20}
+                max={100}
+                value={(() => {
+                  const base = cropImgNatural ? Math.min(cropImgNatural.w, cropImgNatural.h) : cropBox.size;
+                  return Math.round((cropBox.size / Math.max(1, base)) * 100);
+                })()}
+                onChange={(e) => {
+                  const base = cropImgNatural ? Math.min(cropImgNatural.w, cropImgNatural.h) : cropBox.size;
+                  const size = Math.max(10, Math.floor((Number(e.target.value) / 100) * base));
+                  setCropBox((b) => {
+                    // keep center roughly in place
+                    const cx = b.x + b.size / 2;
+                    const cy = b.y + b.size / 2;
+                    let nx = Math.round(cx - size / 2);
+                    let ny = Math.round(cy - size / 2);
+                    const maxW = cropImgNatural ? cropImgNatural.w : b.size;
+                    const maxH = cropImgNatural ? cropImgNatural.h : b.size;
+                    nx = Math.max(0, Math.min(maxW - size, nx));
+                    ny = Math.max(0, Math.min(maxH - size, ny));
+                    return { x: nx, y: ny, size };
+                  });
+                }}
+              />
+              <div className="ml-auto flex gap-2">
+                <button
+                  className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                  onClick={() => setCropOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white"
+                  onClick={async () => {
+                    try {
+                      if (!cropImgRef.current || !cropImgNatural || !canvasRef.current) return;
+                      const img = cropImgRef.current;
+                      const outSize = 800;
+                      const canvas = canvasRef.current;
+                      canvas.width = outSize;
+                      canvas.height = outSize;
+                      const ctx = canvas.getContext('2d');
+                      if (!ctx) return;
+                      ctx.drawImage(
+                        img,
+                        cropBox.x,
+                        cropBox.y,
+                        cropBox.size,
+                        cropBox.size,
+                        0,
+                        0,
+                        outSize,
+                        outSize
+                      );
+                      const imageData = ctx.getImageData(0, 0, outSize, outSize);
+                      const text = await decodeViaWorker(imageData);
+                      if (text) {
+                        setQrCode(text);
+                        setError(null);
+                        setCropOpen(false);
+                      } else {
+                        setError('No QR found in selected crop');
+                      }
+                    } catch {}
+                  }}
+                >
+                  Decode Crop
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
