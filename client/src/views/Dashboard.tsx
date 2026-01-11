@@ -32,6 +32,7 @@ export function Dashboard() {
   const [heatmapDays, setHeatmapDays] = useState(30);
   const [weekPeriods, setWeekPeriods] = useState(12);
   const [monthPeriods, setMonthPeriods] = useState(12);
+  const [trendsOpen, setTrendsOpen] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -217,12 +218,6 @@ export function Dashboard() {
                 <option value="ma">Moving Average</option>
                 <option value="hw">Holt-Winters (seasonal)</option>
               </select>
-              <div className="text-slate-700 dark:text-slate-300">
-                Next day forecast: <span className="font-semibold">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</span>
-                {metrics?.ci && (
-                  <span className="ml-2 text-xs text-slate-500">95% CI: {metrics.ci.lo}–{metrics.ci.hi}</span>
-                )}
-              </div>
               <div className="flex items-center gap-2">
                 <button onClick={exportForecastCSV} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Export CSV</button>
                 <button onClick={downloadForecastPNG} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Download PNG</button>
@@ -254,7 +249,15 @@ export function Dashboard() {
           </div>
         )}
         </div>
-        <div className="h-72 overflow-x-auto">
+        <div className="h-72 overflow-x-auto relative">
+          {/* Prominent forecast value on the right */}
+          <div className="absolute top-2 right-3 text-right">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Next day forecast</div>
+            <div className="text-3xl md:text-5xl font-extrabold text-slate-800 dark:text-slate-100">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</div>
+            {metrics?.ci && (
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">95% CI: {metrics.ci.lo}–{metrics.ci.hi}</div>
+            )}
+          </div>
           {loadingForecast ? (
             <div className="w-full h-full bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" aria-busy="true" aria-label="Loading forecast" />
           ) : forecast && forecast.series?.length > 0 ? (
@@ -440,7 +443,7 @@ export function Dashboard() {
               <div className="text-slate-600 dark:text-slate-400 text-sm">No forecast data available for the selected window.</div>
             )}
         </div>
-        {forecast?.fallbackUsed && algo === 'hw' && (
+        {(forecast as any)?.fallbackUsed && algo === 'hw' && (
           <div className="mt-2 text-xs text-amber-600 dark:text-yellow-400">Insufficient seasonal history for Holt-Winters. Falling back to Moving Average for next-day estimate.</div>
         )}
         {/* metrics summary */}
@@ -500,15 +503,78 @@ export function Dashboard() {
             )}
           </div>
         </div>
-        {/*
-        <div className="bg-white border border-slate-200 rounded p-4 dark:bg-slate-800/40 dark:border-slate-700">
-          <div className="font-semibold mb-3">Check-ins (Last 7 Days)</div>
-          <div className="h-48">(Temporarily disabled)</div>
+        {/* Weekly & Monthly Trends moved up and collapsible */}
+        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
+          <div className="font-semibold mb-3 flex items-center justify-between">
+            <span>Weekly & Monthly Trends</span>
+            <div className="flex items-center gap-2 text-xs">
+              <button onClick={() => setTrendsOpen((v)=>!v)} className="px-2 py-1 rounded border border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
+                {trendsOpen ? 'Hide' : 'Show'}
+              </button>
+              <label htmlFor="wk" className="text-slate-600 dark:text-slate-300">Weeks</label>
+              <input id="wk" type="number" min={4} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={weekPeriods} onChange={(e)=> setWeekPeriods(Math.max(4, Math.min(24, parseInt(e.target.value)||12)))} />
+              <label htmlFor="mo" className="text-slate-600 dark:text-slate-300">Months</label>
+              <input id="mo" type="number" min={6} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={monthPeriods} onChange={(e)=> setMonthPeriods(Math.max(6, Math.min(24, parseInt(e.target.value)||12)))} />
+            </div>
+          </div>
+          {trendsOpen && (
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <div className="text-xs text-slate-500 mb-1">Weekly (last {weekPeriods} weeks)</div>
+                <div className="overflow-x-auto">
+                  {trendWeek ? (
+                    <table className="min-w-full text-xs">
+                      <thead>
+                        <tr>
+                          <th className="text-left py-1 pr-4">Week</th>
+                          <th className="text-left py-1">Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trendWeek.series.map((r) => (
+                          <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
+                            <td className="py-1 pr-4">{r.label}</td>
+                            <td className="py-1">{r.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500 mb-1">Monthly (last {monthPeriods} months)</div>
+                <div className="overflow-x-auto">
+                  {trendMonth ? (
+                    <table className="min-w-full text-xs">
+                      <thead>
+                        <tr>
+                          <th className="text-left py-1 pr-4">Month</th>
+                          <th className="text-left py-1">Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trendMonth.series.map((r) => (
+                          <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
+                            <td className="py-1 pr-4">{r.label}</td>
+                            <td className="py-1">{r.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-        */}
       </div>
 
-      {/* Depth: Hourly heatmap and aggregated trends */}
+      {/* Depth: Hourly heatmap */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
           <div className="font-semibold mb-3 flex items-center justify-between">
@@ -544,69 +610,6 @@ export function Dashboard() {
             <span>Low</span>
             <div className="h-2 w-32 bg-gradient-to-r from-indigo-200 to-indigo-600 rounded"></div>
             <span>High</span>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
-          <div className="font-semibold mb-3 flex items-center justify-between">
-            <span>Weekly & Monthly Trends</span>
-            <div className="flex items-center gap-2 text-xs">
-              <label htmlFor="wk" className="text-slate-600 dark:text-slate-300">Weeks</label>
-              <input id="wk" type="number" min={4} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={weekPeriods} onChange={(e)=> setWeekPeriods(Math.max(4, Math.min(24, parseInt(e.target.value)||12)))} />
-              <label htmlFor="mo" className="text-slate-600 dark:text-slate-300">Months</label>
-              <input id="mo" type="number" min={6} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={monthPeriods} onChange={(e)=> setMonthPeriods(Math.max(6, Math.min(24, parseInt(e.target.value)||12)))} />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <div className="text-xs text-slate-500 mb-1">Weekly (last 12 weeks)</div>
-              <div className="overflow-x-auto">
-                {trendWeek ? (
-                  <table className="min-w-full text-xs">
-                    <thead>
-                      <tr>
-                        <th className="text-left py-1 pr-4">Week</th>
-                        <th className="text-left py-1">Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {trendWeek.series.map((r) => (
-                        <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
-                          <td className="py-1 pr-4">{r.label}</td>
-                          <td className="py-1">{r.count}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
-                )}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-500 mb-1">Monthly (last 12 months)</div>
-              <div className="overflow-x-auto">
-                {trendMonth ? (
-                  <table className="min-w-full text-xs">
-                    <thead>
-                      <tr>
-                        <th className="text-left py-1 pr-4">Month</th>
-                        <th className="text-left py-1">Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {trendMonth.series.map((r) => (
-                        <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
-                          <td className="py-1 pr-4">{r.label}</td>
-                          <td className="py-1">{r.count}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </div>
