@@ -59,7 +59,7 @@ export function Reports() {
         {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
         <div className="grid sm:grid-cols-2 gap-3">
           <button
-            className="bg-slate-200 hover:bg-slate-300 text-slate-900 rounded px-3 py-2 text-left dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+            className="inline-flex items-center gap-2 rounded border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-sm text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-100"
             onClick={() => {
               const qs = dateQuery ? `?${dateQuery}` : '';
               downloadCsv(`/api/reports/visitors.csv${qs}`, 'visitors.csv');
@@ -69,7 +69,7 @@ export function Reports() {
             {downloading === '/api/reports/visitors.csv' ? 'Downloading Visitors CSV...' : 'Download Visitors (CSV)'}
           </button>
           <button
-            className="bg-slate-200 hover:bg-slate-300 text-slate-900 rounded px-3 py-2 text-left dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+            className="inline-flex items-center gap-2 rounded border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-sm text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-100"
             onClick={() => {
               const qs = dateQuery ? `?${dateQuery}` : '';
               downloadCsv(`/api/reports/personnel.csv${qs}`, 'personnel.csv');
@@ -79,7 +79,7 @@ export function Reports() {
             {downloading === '/api/reports/personnel.csv' ? 'Downloading Personnel CSV...' : 'Download Personnel (CSV)'}
           </button>
           <button
-            className="bg-slate-200 hover:bg-slate-300 text-slate-900 rounded px-3 py-2 text-left sm:col-span-2 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+            className="inline-flex items-center gap-2 rounded border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-sm text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-100"
             onClick={() => {
               const params = new URLSearchParams();
               if (dateFrom) params.set('dateFrom', new Date(dateFrom).toISOString());
