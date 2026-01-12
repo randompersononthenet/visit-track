@@ -464,8 +464,8 @@ export function Dashboard() {
           </div>
         )}
       
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
           <div className="font-semibold mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100 text-lg">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v4H4zM4 12h16v8H4z"/></svg>
             Recent Activity
