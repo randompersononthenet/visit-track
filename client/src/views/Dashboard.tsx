@@ -464,6 +464,48 @@ export function Dashboard() {
           </div>
         )}
       
+      {/* Heatmap moved higher */}
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
+          <div className="font-semibold mb-3 flex items-center justify-between">
+            <span>Visitor Check-ins Heatmap</span>
+            <div className="flex items-center gap-2 text-xs">
+              <label htmlFor="hm-days" className="text-slate-600 dark:text-slate-300">Days</label>
+              <input id="hm-days" type="number" min={7} max={120} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={heatmapDays} onChange={(e)=> setHeatmapDays(Math.max(7, Math.min(120, parseInt(e.target.value)||30)))} />
+            </div>
+          </div>
+          {heatmap ? (
+            <div className="overflow-auto max-h-96">
+              <div className="grid" style={{ gridTemplateColumns: `repeat(25, minmax(0,1fr))` }}>
+                <div></div>
+                {Array.from({ length: 24 }).map((_, h) => (
+                  <div key={h} className="text-[10px] text-center text-slate-500">{h}</div>
+                ))}
+                {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, r) => (
+                  <React.Fragment key={d}>
+                    <div className="text-[10px] text-right pr-1 text-slate-500">{d}</div>
+                    {Array.from({ length: 24 }).map((_, c) => {
+                      const v = heatmap.grid[r][c];
+                      const intensity = Math.min(1, v / Math.max(1, ...heatmap.grid.flat()));
+                      const bg = `rgba(99,102,241,${0.1 + 0.6*intensity})`;
+                      return <div key={`${r}-${c}`} className="h-5 border border-slate-100 dark:border-slate-700" style={{ backgroundColor: bg }} title={`${d} ${c}:00 — ${v}`} />;
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+          )}
+          {/* heatmap legend */}
+          <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-500">
+            <span>Low</span>
+            <div className="h-2 w-32 bg-gradient-to-r from-indigo-200 to-indigo-600 rounded"></div>
+            <span>High</span>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
           <div className="font-semibold mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100 text-lg">
@@ -575,47 +617,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Depth: Hourly heatmap */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
-          <div className="font-semibold mb-3 flex items-center justify-between">
-            <span>Visitor Check-ins Heatmap</span>
-            <div className="flex items-center gap-2 text-xs">
-              <label htmlFor="hm-days" className="text-slate-600 dark:text-slate-300">Days</label>
-              <input id="hm-days" type="number" min={7} max={120} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={heatmapDays} onChange={(e)=> setHeatmapDays(Math.max(7, Math.min(120, parseInt(e.target.value)||30)))} />
-            </div>
-          </div>
-          {heatmap ? (
-            <div className="overflow-auto max-h-130">
-              <div className="grid" style={{ gridTemplateColumns: `repeat(25, minmax(0,1fr))` }}>
-                <div></div>
-                {Array.from({ length: 24 }).map((_, h) => (
-                  <div key={h} className="text-[10px] text-center text-slate-500">{h}</div>
-                ))}
-                {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, r) => (
-                  <React.Fragment key={d}>
-                    <div className="text-[10px] text-right pr-1 text-slate-500">{d}</div>
-                    {Array.from({ length: 24 }).map((_, c) => {
-                      const v = heatmap.grid[r][c];
-                      const intensity = Math.min(1, v / Math.max(1, ...heatmap.grid.flat()));
-                      const bg = `rgba(99,102,241,${0.1 + 0.6*intensity})`;
-                      return <div key={`${r}-${c}`} className="h-5 border border-slate-100 dark:border-slate-700" style={{ backgroundColor: bg }} title={`${d} ${c}:00 — ${v}`} />;
-                    })}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
-          )}
-          {/* heatmap legend */}
-          <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-500">
-            <span>Low</span>
-            <div className="h-2 w-32 bg-gradient-to-r from-indigo-200 to-indigo-600 rounded"></div>
-            <span>High</span>
-          </div>
-        </div>
-      </div>
+      {/* Depth: placeholder for future lower sections */}
       </section>
     </div>
   );
