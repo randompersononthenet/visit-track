@@ -22,8 +22,8 @@ router.post('/image', requireRole('admin', 'staff'), async (req, res) => {
     const b64 = match[3];
 
     const buffer = Buffer.from(b64, 'base64');
-    if (buffer.length > 2 * 1024 * 1024) { // 2MB
-      return res.status(413).json({ error: 'File too large' });
+    if (buffer.length > 5 * 1024 * 1024) { // 5MB
+      return res.status(413).json({ error: 'File too large (max 5MB)' });
     }
 
     const uploadsDir = path.join(process.cwd(), 'uploads');

@@ -209,7 +209,9 @@ export function Register() {
                     if (capOpen === 'create') setPhotoUrl(res.data?.url || '');
                     else setEditPhotoUrl(res.data?.url || '');
                     setCapOpen(null);
-                  } catch {}
+                  } catch (e: any) {
+                    setError(e?.response?.data?.error || 'Upload failed');
+                  }
                 }}
               >
                 Use Photo
@@ -233,7 +235,9 @@ export function Register() {
                       try {
                         const res = await api.post('/api/uploads/image', { dataUrl });
                         setPhotoUrl(res.data?.url || '');
-                      } catch {}
+                      } catch (e: any) {
+                        setError(e?.response?.data?.error || 'Upload failed');
+                      }
                     };
                     reader.readAsDataURL(file);
                   }}

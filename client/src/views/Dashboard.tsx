@@ -470,7 +470,7 @@ export function Dashboard() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v4H4zM4 12h16v8H4z"/></svg>
             Recent Activity
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-96">
             {loading ? (
               <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" aria-busy="true" aria-label="Loading recent activity" />
             ) : (
@@ -576,8 +576,8 @@ export function Dashboard() {
       </div>
 
       {/* Depth: Hourly heatmap */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
           <div className="font-semibold mb-3 flex items-center justify-between">
             <span>Visitor Check-ins Heatmap</span>
             <div className="flex items-center gap-2 text-xs">
@@ -586,22 +586,24 @@ export function Dashboard() {
             </div>
           </div>
           {heatmap ? (
-            <div className="grid" style={{ gridTemplateColumns: `repeat(25, minmax(0,1fr))` }}>
-              <div></div>
-              {Array.from({ length: 24 }).map((_, h) => (
-                <div key={h} className="text-[10px] text-center text-slate-500">{h}</div>
-              ))}
-              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, r) => (
-                <React.Fragment key={d}>
-                  <div className="text-[10px] text-right pr-1 text-slate-500">{d}</div>
-                  {Array.from({ length: 24 }).map((_, c) => {
-                    const v = heatmap.grid[r][c];
-                    const intensity = Math.min(1, v / Math.max(1, ...heatmap.grid.flat()));
-                    const bg = `rgba(99,102,241,${0.1 + 0.6*intensity})`;
-                    return <div key={`${r}-${c}`} className="h-5 border border-slate-100 dark:border-slate-700" style={{ backgroundColor: bg }} title={`${d} ${c}:00 — ${v}`} />;
-                  })}
-                </React.Fragment>
-              ))}
+            <div className="overflow-auto max-h-130">
+              <div className="grid" style={{ gridTemplateColumns: `repeat(25, minmax(0,1fr))` }}>
+                <div></div>
+                {Array.from({ length: 24 }).map((_, h) => (
+                  <div key={h} className="text-[10px] text-center text-slate-500">{h}</div>
+                ))}
+                {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, r) => (
+                  <React.Fragment key={d}>
+                    <div className="text-[10px] text-right pr-1 text-slate-500">{d}</div>
+                    {Array.from({ length: 24 }).map((_, c) => {
+                      const v = heatmap.grid[r][c];
+                      const intensity = Math.min(1, v / Math.max(1, ...heatmap.grid.flat()));
+                      const bg = `rgba(99,102,241,${0.1 + 0.6*intensity})`;
+                      return <div key={`${r}-${c}`} className="h-5 border border-slate-100 dark:border-slate-700" style={{ backgroundColor: bg }} title={`${d} ${c}:00 — ${v}`} />;
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />

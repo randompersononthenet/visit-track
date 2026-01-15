@@ -43,7 +43,7 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: '6mb' }));
 // Static uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
