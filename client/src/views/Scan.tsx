@@ -381,7 +381,7 @@ export function Scan() {
                         <div className="text-slate-700 dark:text-slate-400 text-xs mb-1">Photo</div>
                         <div className="w-24 h-24 rounded bg-slate-100 border border-slate-300 overflow-hidden">
                           {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                          <img src={result.subject.photoUrl} className="w-full h-full object-cover" />
+                          <img src={/^https?:\/\//i.test(result.subject.photoUrl) ? result.subject.photoUrl : `${(import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000'}${result.subject.photoUrl}` } className="w-full h-full object-cover" />
                         </div>
                       </div>
                     )}
