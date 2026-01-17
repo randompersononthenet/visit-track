@@ -1,6 +1,7 @@
 // Scan routes: handle QR scans for visitors/personnel.
 // Includes preview (no log) and create visit logs for check-in/out.
 import { Router } from 'express';
+import { Op } from 'sequelize';
 import { z } from 'zod';
 import { validate } from '../lib/validation';
 import { requireAuth } from '../middleware/auth';
@@ -53,6 +54,11 @@ router.post('/', validate(scanSchema), async (req, res) => {
   }
 
   const now = new Date();
+  // Compute today's window [start, end)
+  const dayStart = new Date(now);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
 
   const subject = visitor
     ? { type: 'visitor' as const, id: visitor.id, fullName: visitor.fullName, firstName: visitor.firstName, middleName: visitor.middleName, lastName: visitor.lastName, photoUrl: (visitor as any).photoUrl, riskLevel: (visitor as any).riskLevel, flagReason: (visitor as any).flagReason, blacklistStatus: (visitor as any).blacklistStatus }
@@ -66,6 +72,15 @@ router.post('/', validate(scanSchema), async (req, res) => {
   }
 
   if (action === 'checkin') {
+    // Prevent more than one check-in per subject per day
+    const whereCheckedInToday: any = {
+      timeIn: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
+    };
+    if (visitor) whereCheckedInToday.visitorId = visitor.id; else whereCheckedInToday.personnelId = (personnel as any)!.id;
+    const existingIn = await VisitLog.findOne({ where: whereCheckedInToday });
+    if (existingIn) {
+      return res.status(400).json({ error: 'Already checked in today' });
+    }
     const log = await VisitLog.create({
       visitorId: visitor ? visitor.id : null,
       personnelId: personnel ? personnel.id : null,
@@ -87,6 +102,15 @@ router.post('/', validate(scanSchema), async (req, res) => {
   const openLog = await VisitLog.findOne({ where: whereOpen, order: [['timeIn', 'DESC']] });
   if (!openLog) {
     return res.status(400).json({ error: 'No open check-in found for this QR code' });
+  }
+  // Prevent more than one check-out per subject per day
+  const whereCheckedOutToday: any = {
+    timeOut: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
+  };
+  if (visitor) whereCheckedOutToday.visitorId = visitor.id; else whereCheckedOutToday.personnelId = (personnel as any)!.id;
+  const existingOut = await VisitLog.findOne({ where: whereCheckedOutToday });
+  if (existingOut) {
+    return res.status(400).json({ error: 'Already checked out today' });
   }
   await openLog.update({ timeOut: now, handledByUserId: (req as any).user?.id ?? openLog.handledByUserId });
   return res.json({ status: 'ok', event: 'checkout', at: now, logId: openLog.id, subjectType: subject.type, subject, alerts });

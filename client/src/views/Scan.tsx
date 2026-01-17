@@ -366,7 +366,7 @@ export function Scan() {
                   );
                 })()
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-base">
                 <div><span className="text-slate-700 dark:text-slate-400">Event:</span> {result.event}</div>
                 <div><span className="text-slate-700 dark:text-slate-400">Timestamp:</span> {new Date(result.at).toLocaleString()}</div>
                 <div><span className="text-slate-700 dark:text-slate-400">Subject Type:</span> {result.subjectType}</div>
@@ -378,8 +378,8 @@ export function Scan() {
                     )}
                     {result.subject.photoUrl && (
                       <div className="md:col-span-2 mt-1">
-                        <div className="text-slate-700 dark:text-slate-400 text-xs mb-1">Photo</div>
-                        <div className="w-24 h-24 rounded bg-slate-100 border border-slate-300 overflow-hidden">
+                        <div className="text-slate-700 dark:text-slate-400 text-sm mb-1">Photo</div>
+                        <div className="w-40 h-40 rounded bg-slate-100 border border-slate-300 overflow-hidden">
                           {/* eslint-disable-next-line jsx-a11y/alt-text */}
                           <img src={/^https?:\/\//i.test(result.subject.photoUrl) ? result.subject.photoUrl : `${(import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000'}${result.subject.photoUrl}` } className="w-full h-full object-cover" />
                         </div>

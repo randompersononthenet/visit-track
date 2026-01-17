@@ -16,6 +16,7 @@ import reportsRouter from './routes/reports';
 import analyticsRouter from './routes/analytics';
 import violationsRouter from './routes/violations';
 import uploadsRouter from './routes/uploads';
+import preregRouter from './routes/prereg';
 import bcrypt from 'bcryptjs';
 import { User } from './models/User';
 import { Role } from './models/Role';
@@ -59,6 +60,7 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/violations', violationsRouter);
+app.use('/api/prereg', preregRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {
