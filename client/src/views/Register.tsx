@@ -1,5 +1,6 @@
 import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { hasRole } from '../lib/auth';
 import { QRCodeSVG } from 'qrcode.react';
@@ -7,6 +8,8 @@ import { PrintableIdCard } from '../components/PrintableIdCard';
 import { toPng } from 'html-to-image';
 
 export function Register() {
+  const location = useLocation() as any;
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -52,6 +55,20 @@ export function Register() {
   const [rows, setRows] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
+
+  useEffect(() => {
+    const st = location?.state as any;
+    const prefill = st?.prefill;
+    if (prefill) {
+      if (prefill.firstName) setFirstName(prefill.firstName);
+      if (prefill.middleName) setMiddleName(prefill.middleName);
+      if (prefill.lastName) setLastName(prefill.lastName);
+      if (prefill.contact) setContact(prefill.contact);
+      if (prefill.relation) setRelation(prefill.relation);
+      if (prefill.photoUrl) setPhotoUrl(prefill.photoUrl);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, []);
 
   async function load() {
     const res = await api.get('/api/visitors', { params: { q, page, pageSize } });

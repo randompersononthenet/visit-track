@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { requireRole } from '../middleware/roles';
 import { fetchPending, markImported, markRejected, PreregRow } from '../lib/preregClient';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 
@@ -60,7 +62,31 @@ router.post('/:id/approve', async (req, res) => {
     const row = rows.find((r) => r.id === id);
     if (!row) return res.status(404).json({ error: 'Pre-registration not found or not pending' });
     await markImported(id);
-    const prefill = mapPrefill(row);
+    const prefill: any = mapPrefill(row);
+    // If external photo URL provided, import and store locally
+    if (row.photo_url && /^https?:\/\//i.test(row.photo_url)) {
+      try {
+        const resp = await fetch(row.photo_url);
+        if (resp.ok) {
+          const ct = resp.headers.get('content-type') || '';
+          const isPng = ct.startsWith('image/png');
+          const isJpeg = ct.startsWith('image/jpeg') || ct.startsWith('image/jpg');
+          if (isPng || isJpeg) {
+            const ab = await resp.arrayBuffer();
+            const buffer = Buffer.from(ab);
+            if (buffer.length <= 5 * 1024 * 1024) {
+              const uploadsDir = path.join(process.cwd(), 'uploads');
+              await fs.promises.mkdir(uploadsDir, { recursive: true });
+              const ext = isPng ? 'png' : 'jpg';
+              const filename = `img_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+              const filePath = path.join(uploadsDir, filename);
+              await fs.promises.writeFile(filePath, buffer);
+              prefill.photoUrl = `/uploads/${filename}`;
+            }
+          }
+        }
+      } catch {}
+    }
     res.json({ status: 'ok', prefill });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'Approve failed' });

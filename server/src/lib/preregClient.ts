@@ -4,6 +4,7 @@ export type PreregRow = {
   contact_number?: string | null;
   purpose_of_visit?: string | null;
   intended_visit_date?: string | null;
+  photo_url?: string | null;
   created_at: string;
   status: 'PENDING' | 'IMPORTED' | 'REJECTED';
 };

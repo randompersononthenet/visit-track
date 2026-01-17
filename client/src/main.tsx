@@ -12,6 +12,7 @@ import { VisitLogs } from './views/VisitLogs'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Personnel } from './views/Personnel'
 import { RoleRoute } from './components/RoleRoute'
+import { PreRegistrations } from './views/PreRegistrations'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -31,6 +32,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/register" element={<Register />} />
           <Route path="/personnel" element={<Personnel />} />
           <Route path="/scan" element={<Scan />} />
+          <Route
+            path="/prereg"
+            element={
+              <RoleRoute roles={["admin", "staff"]}>
+                <PreRegistrations />
+              </RoleRoute>
+            }
+          />
           <Route
             path="/logs"
             element={

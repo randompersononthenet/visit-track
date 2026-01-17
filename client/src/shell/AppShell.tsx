@@ -75,6 +75,7 @@ export function AppShell() {
     { to: '/register', label: 'Register', icon: 'register' },
     { to: '/personnel', label: 'Personnel', icon: 'personnel' },
     { to: '/scan', label: 'Scan', icon: 'scan' },
+    ...(hasRole(['admin', 'staff']) ? [{ to: '/prereg', label: 'Pre-Registrations', icon: 'register' }] : [] as any),
     ...(hasRole(['admin', 'staff']) ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),
     ...(hasRole(['admin', 'staff']) ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
   ];
