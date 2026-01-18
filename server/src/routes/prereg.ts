@@ -23,15 +23,24 @@ function splitFullName(full: string): { firstName: string; middleName?: string; 
 }
 
 function mapPrefill(row: PreregRow) {
-  const { firstName, middleName, lastName } = splitFullName(row.full_name || '');
+  let firstName = (row.first_name || '').trim();
+  let middleName = (row.middle_name || '').trim();
+  let lastName = (row.last_name || '').trim();
+  if (!firstName && !lastName && (row.full_name || '')) {
+    const s = splitFullName(row.full_name || '');
+    firstName = s.firstName;
+    if (s.middleName) middleName = s.middleName;
+    lastName = s.lastName;
+  }
   return {
     source: 'prereg',
     sourceId: row.id,
     firstName,
-    middleName,
+    middleName: middleName || undefined,
     lastName,
     contact: row.contact_number || '',
-    relation: row.purpose_of_visit || '',
+    relation: (row.relation || row.purpose_of_visit || '') || '',
+    idNumber: row.id_number || undefined,
     intendedVisitDate: row.intended_visit_date || null,
   };
 }
@@ -42,9 +51,11 @@ router.get('/pending', async (_req, res) => {
     // Do not include sensitive mapping yet; show raw + derived preview
     const data = rows.map((r) => ({
       id: r.id,
-      full_name: r.full_name,
+      full_name: r.full_name || [r.first_name, r.middle_name, r.last_name].filter(Boolean).join(' '),
       contact_number: r.contact_number || null,
       purpose_of_visit: r.purpose_of_visit || null,
+      relation: r.relation || null,
+      id_number: r.id_number || null,
       intended_visit_date: r.intended_visit_date || null,
       created_at: r.created_at,
       prefillPreview: mapPrefill(r),

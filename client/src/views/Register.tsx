@@ -65,6 +65,7 @@ export function Register() {
       if (prefill.lastName) setLastName(prefill.lastName);
       if (prefill.contact) setContact(prefill.contact);
       if (prefill.relation) setRelation(prefill.relation);
+      if (prefill.idNumber) setIdNumber(prefill.idNumber);
       if (prefill.photoUrl) setPhotoUrl(prefill.photoUrl);
       navigate(location.pathname, { replace: true, state: {} });
     }

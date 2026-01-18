@@ -1,8 +1,13 @@
 export type PreregRow = {
   id: string;
-  full_name: string;
+  full_name?: string | null;
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
   contact_number?: string | null;
   purpose_of_visit?: string | null;
+  relation?: string | null;
+  id_number?: string | null;
   intended_visit_date?: string | null;
   photo_url?: string | null;
   created_at: string;
