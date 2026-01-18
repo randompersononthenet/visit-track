@@ -12,7 +12,6 @@ create table if not exists public.pre_registrations (
   contact_number text,
   relation text,
   id_number text,
-  intended_visit_date date,
   photo_url text,
   created_at timestamptz not null default now(),
   status text not null check (status in ('PENDING','IMPORTED','REJECTED')) default 'PENDING'

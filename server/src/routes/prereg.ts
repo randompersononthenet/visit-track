@@ -41,7 +41,6 @@ function mapPrefill(row: PreregRow) {
     contact: row.contact_number || '',
     relation: (row.relation || row.purpose_of_visit || '') || '',
     idNumber: row.id_number || undefined,
-    intendedVisitDate: row.intended_visit_date || null,
   };
 }
 
@@ -56,7 +55,6 @@ router.get('/pending', async (_req, res) => {
       purpose_of_visit: r.purpose_of_visit || null,
       relation: r.relation || null,
       id_number: r.id_number || null,
-      intended_visit_date: r.intended_visit_date || null,
       created_at: r.created_at,
       prefillPreview: mapPrefill(r),
     }));
