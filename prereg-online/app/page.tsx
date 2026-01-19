@@ -67,19 +67,26 @@ export default function Page() {
 
   }
 
-  const logoUrl = '../public/VisitTrack.png';
   return (
     <div style={{ minHeight: '100vh', background: '#f1f5f9' }}>
       <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="VisitTrack" style={{ height: 28 }} />
-          ) : (
-            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: 18 }}>VisitTrack</div>
-          )}
-          <div style={{ height: 20, width: 1, background: '#e2e8f0', margin: '0 8px' }} />
-          <div style={{ fontWeight: 600, color: '#0f172a' }}>Pre-Registration</div>
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '12px 16px', display: 'flex', alignItems: 'center' }}>
+          {/* Left spacer */}
+          <div style={{ flex: 1 }} />
+          {/* Centered logos with VisitTrack in the middle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/agooDJ-logo.jpg" alt="Agoo DJ Logo" style={{ height: 28 }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/Visittrack.png" alt="VisitTrack" style={{ height: 28 }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/rbjmp1-logo.jpg" alt="RBJMP1 Logo" style={{ height: 28 }} />
+          </div>
+          {/* Right title */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+            <div style={{ height: 20, width: 1, background: '#e2e8f0' }} />
+            <div style={{ fontWeight: 600, color: '#0f172a' }}>Pre-Registration</div>
+          </div>
         </div>
       </header>
 
