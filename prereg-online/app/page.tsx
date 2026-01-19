@@ -36,9 +36,9 @@ export default function Page() {
         if (file.size > 5 * 1024 * 1024) throw new Error('File too large (max 5MB)');
         const ext = file.type.includes('png') ? 'png' : 'jpg';
         const path = `prereg/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await sb.storage.from('public').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+        const { error: upErr } = await sb.storage.from('pub').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
         if (upErr) throw upErr;
-        const { data } = sb.storage.from('public').getPublicUrl(path);
+        const { data } = sb.storage.from('pub').getPublicUrl(path);
         finalPhotoUrl = data.publicUrl;
       }
       const row: any = {
