@@ -376,6 +376,22 @@ export function Scan() {
                     {result.subject.roleTitle && (
                       <div className="md:col-span-2"><span className="text-slate-700 dark:text-slate-400">Role:</span> {result.subject.roleTitle}</div>
                     )}
+                    {(() => {
+                      const r = (result.subject?.riskLevel || 'none') as string;
+                      const chip = r === 'high'
+                        ? 'bg-rose-100 text-rose-800'
+                        : r === 'medium'
+                          ? 'bg-amber-100 text-amber-800'
+                          : r === 'low'
+                            ? 'bg-sky-100 text-sky-800'
+                            : 'bg-slate-100 text-slate-800';
+                      return (
+                        <div className="md:col-span-2 flex items-center gap-2">
+                          <span className="text-slate-700 dark:text-slate-400">Risk Level:</span>
+                          <span className={`px-2 py-0.5 text-xs rounded ${chip}`}>{r}</span>
+                        </div>
+                      );
+                    })()}
                     {result.subject.photoUrl && (
                       <div className="md:col-span-2 mt-1">
                         <div className="text-slate-700 dark:text-slate-400 text-sm mb-1">Photo</div>
