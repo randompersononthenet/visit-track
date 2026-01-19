@@ -32,6 +32,7 @@ export default function Page() {
     try {
       if (!firstName.trim() || !lastName.trim()) throw new Error('First and last name are required');
       if (!contact.trim()) throw new Error('Contact number is required');
+      if (!/^\d+$/.test(contact.trim())) throw new Error('Contact number must be numeric');
       if (!relation.trim()) throw new Error('Relation is required');
       if (!file && !photoUrl.trim()) throw new Error('Photo is required');
       const sb = getClient();
@@ -85,13 +86,13 @@ export default function Page() {
           {/* Right title */}
           <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
             <div style={{ height: 20, width: 1, background: '#e2e8f0' }} />
-            <div style={{ fontWeight: 600, color: '#0f172a' }}>Pre-Registration</div>
+           
           </div>
         </div>
       </header>
 
       <main style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 20, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 20, boxShadow: '0 1px 2px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: '#0f172a' }}>Visitor Pre-Registration</h1>
           <p style={{ margin: '6px 0 16px', color: '#334155', fontSize: 14 }}>Provide your basic information and a recent photo.</p>
 
@@ -110,7 +111,17 @@ export default function Page() {
             </div>
             <div>
               <label style={label}>Contact number</label>
-              <input value={contact} onChange={(e)=> setContact(e.target.value)} style={input} />
+              <input
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]+"
+                value={contact}
+                onChange={(e)=> {
+                  const v = e.target.value.replace(/[^0-9]/g, '');
+                  setContact(v);
+                }}
+                style={input}
+              />
             </div>
             <div>
               <label style={label}>Relation to visitor</label>
@@ -118,7 +129,7 @@ export default function Page() {
             </div>
             <div>
               <div style={{ display: 'grid', gap: 10 }}>
-                <div style={label}>Photo (JPEG/PNG, max 5MB)</div>
+                <div style={label}>Photo for Identification (JPEG/PNG, max 5MB)</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   <div style={thumb}>
                     {(localPreview || photoUrl) ? (
@@ -181,7 +192,15 @@ export default function Page() {
             </div>
             {err && <div style={{ color: '#b91c1c', fontSize: 14, background: '#fee2e2', border: '1px solid #fecaca', padding: '8px 10px', borderRadius: 8 }}>{err}</div>}
             {ok && <div style={{ color: '#166534', fontSize: 14, background: '#dcfce7', border: '1px solid #bbf7d0', padding: '8px 10px', borderRadius: 8 }}>{ok}</div>}
-            <button disabled={submitting || !firstName.trim() || !lastName.trim() || !contact.trim() || !relation.trim() || (!file && !photoUrl.trim())} type="submit" style={btn}>
+            <button disabled={
+              submitting ||
+              !firstName.trim() ||
+              !lastName.trim() ||
+              !contact.trim() ||
+              !/^\d+$/.test(contact.trim()) ||
+              !relation.trim() ||
+              (!file && !photoUrl.trim())
+            } type="submit" style={btn}>
               {submitting ? 'Submitting...' : 'Submit'}
             </button>
           </form>
