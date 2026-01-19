@@ -61,39 +61,96 @@ export default function Page() {
     }
   }
 
+  const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || '';
   return (
-    <div>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>VisitTrack Pre-Registration</h1>
-      <p style={{ color: '#475569', marginBottom: 16 }}>Submit basic details ahead of your visit. Final verification and approval happen on-site.</p>
-      <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
-        <input placeholder="First name" value={firstName} onChange={(e)=> setFirstName(e.target.value)} style={inp} />
-        <input placeholder="Middle name (optional)" value={middleName} onChange={(e)=> setMiddleName(e.target.value)} style={inp} />
-        <input placeholder="Last name" value={lastName} onChange={(e)=> setLastName(e.target.value)} style={inp} />
-        <input placeholder="Contact number (optional)" value={contact} onChange={(e)=> setContact(e.target.value)} style={inp} />
-        {/* ID number removed; auto-assigned on approval */}
-        <input placeholder="Relation to visitor (optional)" value={relation} onChange={(e)=> setRelation(e.target.value)} style={inp} />
-        <div style={{ display: 'grid', gap: 8 }}>
-          <div style={{ fontSize: 12, color: '#475569' }}>Photo (JPEG/PNG, max 5MB)</div>
-          <input type="file" accept="image/*" onChange={(e)=> setFile(e.target.files?.[0] || null)} />
-          <div style={{ fontSize: 12, color: '#64748b' }}>If you already have a hosted image, you can paste the URL instead:</div>
-          <input placeholder="Photo URL (optional)" value={photoUrl} onChange={(e)=> setPhotoUrl(e.target.value)} style={inp} />
+    <div style={{ minHeight: '100vh', background: '#f1f5f9' }}>
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="VisitTrack" style={{ height: 28 }} />
+          ) : (
+            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: 18 }}>VisitTrack</div>
+          )}
+          <div style={{ height: 20, width: 1, background: '#e2e8f0', margin: '0 8px' }} />
+          <div style={{ fontWeight: 600, color: '#0f172a' }}>Pre-Registration</div>
         </div>
-        {err && <div style={{ color: '#dc2626', fontSize: 14 }}>{err}</div>}
-        {ok && <div style={{ color: '#16a34a', fontSize: 14 }}>{ok}</div>}
-        <button disabled={submitting || !firstName.trim() || !lastName.trim() || (!file && !photoUrl.trim())} type="submit" style={btn}>
-          {submitting ? 'Submitting...' : 'Submit'}
-        </button>
-      </form>
-      <div style={{ marginTop: 24, fontSize: 12, color: '#64748b' }}>
-        Do not upload sensitive IDs or private data. Photos are optional and may be replaced on-site.
-      </div>
+      </header>
+
+      <main style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 20, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: '#0f172a' }}>Visitor Pre-Registration</h1>
+          <p style={{ margin: '6px 0 16px', color: '#334155', fontSize: 14 }}>Provide your basic information and a recent photo.</p>
+
+          <form onSubmit={onSubmit} style={{ display: 'grid', gap: 14 }}>
+            <div>
+              <label style={label}>First name</label>
+              <input value={firstName} onChange={(e)=> setFirstName(e.target.value)} style={input} />
+            </div>
+            <div>
+              <label style={label}>Middle name (optional)</label>
+              <input value={middleName} onChange={(e)=> setMiddleName(e.target.value)} style={input} />
+            </div>
+            <div>
+              <label style={label}>Last name</label>
+              <input value={lastName} onChange={(e)=> setLastName(e.target.value)} style={input} />
+            </div>
+            <div>
+              <label style={label}>Contact number (optional)</label>
+              <input value={contact} onChange={(e)=> setContact(e.target.value)} style={input} />
+            </div>
+            <div>
+              <label style={label}>Relation to visitor (optional)</label>
+              <input value={relation} onChange={(e)=> setRelation(e.target.value)} style={input} />
+            </div>
+            <div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={label}>Photo (JPEG/PNG, max 5MB)</div>
+                <input type="file" accept="image/*" onChange={(e)=> setFile(e.target.files?.[0] || null)} />
+                <div style={{ fontSize: 12, color: '#64748b' }}>If you already have a hosted image, paste the URL below:</div>
+                <input placeholder="https://example.com/photo.jpg" value={photoUrl} onChange={(e)=> setPhotoUrl(e.target.value)} style={input} />
+              </div>
+            </div>
+            {err && <div style={{ color: '#b91c1c', fontSize: 14, background: '#fee2e2', border: '1px solid #fecaca', padding: '8px 10px', borderRadius: 8 }}>{err}</div>}
+            {ok && <div style={{ color: '#166534', fontSize: 14, background: '#dcfce7', border: '1px solid #bbf7d0', padding: '8px 10px', borderRadius: 8 }}>{ok}</div>}
+            <button disabled={submitting || !firstName.trim() || !lastName.trim() || (!file && !photoUrl.trim())} type="submit" style={btn}>
+              {submitting ? 'Submitting...' : 'Submit'}
+            </button>
+          </form>
+          <div style={{ marginTop: 16, fontSize: 12, color: '#64748b' }}>
+            Your information will be processed by staff on-site. Do not upload sensitive IDs or private documents.
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
 
-const inp: React.CSSProperties = {
-  border: '1px solid #cbd5e1', borderRadius: 6, padding: '10px 12px', outline: 'none'
+const input: React.CSSProperties = {
+  padding: '10px 12px',
+  borderRadius: 8,
+  border: '1px solid #cbd5e1',
+  fontSize: 14,
+  width: '100%',
+  outline: 'none',
+  color: '#0f172a',
+  background: '#ffffff',
+};
+const label: React.CSSProperties = {
+  display: 'block',
+  fontSize: 12,
+  color: '#475569',
+  marginBottom: 6,
+  fontWeight: 600,
 };
 const btn: React.CSSProperties = {
-  background: '#4f46e5', color: 'white', border: '0', borderRadius: 6, padding: '10px 12px', cursor: 'pointer', opacity: 1
+  appearance: 'none',
+  border: '0',
+  padding: '10px 14px',
+  borderRadius: 8,
+  background: '#4f46e5',
+  color: '#fff',
+  fontWeight: 600,
+  cursor: 'pointer',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
 };
