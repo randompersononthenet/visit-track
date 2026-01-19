@@ -506,23 +506,23 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
           <div className="font-semibold mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100 text-lg">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v4H4zM4 12h16v8H4z"/></svg>
             Recent Activity
           </div>
-          <div className="overflow-auto max-h-96">
+          <div className="overflow-x-auto">
             {loading ? (
               <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" aria-busy="true" aria-label="Loading recent activity" />
             ) : (
-            <table className="min-w-full text-base" aria-label="Recent activity table">
+            <table className="min-w-full text-sm" aria-label="Recent activity table">
               <thead className="text-slate-700 dark:text-slate-300 font-medium">
                 <tr>
-                  <th className="text-left py-2">Subject</th>
-                  <th className="text-left py-2">Type</th>
-                  <th className="text-left py-2">Time In</th>
-                  <th className="text-left py-2">Time Out</th>
+                  <th className="text-left py-1.5">Subject</th>
+                  <th className="text-left py-1.5">Type</th>
+                  <th className="text-left py-1.5">Time In</th>
+                  <th className="text-left py-1.5">Time Out</th>
                 </tr>
               </thead>
               <tbody>
@@ -531,15 +531,15 @@ export function Dashboard() {
                   const subject = r.visitor?.fullName || r.personnel?.fullName || '';
                   return (
                     <tr key={r.id} className="border-t border-slate-200 dark:border-slate-700">
-                      <td className="py-2 pr-4">{subject}</td>
-                      <td className="py-2 pr-4">{type}</td>
-                      <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{r.timeIn ? new Date(r.timeIn).toLocaleString() : '-'}</td>
-                      <td className="py-2 pr-4 text-slate-600 dark:text-slate-400">{r.timeOut ? new Date(r.timeOut).toLocaleString() : '-'}</td>
+                      <td className="py-1.5 pr-3">{subject}</td>
+                      <td className="py-1.5 pr-3">{type}</td>
+                      <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{r.timeIn ? new Date(r.timeIn).toLocaleString() : '-'}</td>
+                      <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-400">{r.timeOut ? new Date(r.timeOut).toLocaleString() : '-'}</td>
                     </tr>
                   );
                 })}
                 {recent.length === 0 && (
-                  <tr><td className="py-6 text-slate-600 dark:text-slate-400" colSpan={4}>No recent activity to display.</td></tr>
+                  <tr><td className="py-4 text-slate-600 dark:text-slate-400" colSpan={4}>No recent activity to display.</td></tr>
                 )}
               </tbody>
             </table>
@@ -547,7 +547,7 @@ export function Dashboard() {
           </div>
         </div>
         {/* Weekly & Monthly Trends moved up and collapsible */}
-        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4">
+        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 row-span-2">
           <div className="font-semibold mb-3 flex items-center justify-between">
             <span>Weekly & Monthly Trends</span>
             <div className="flex items-center gap-2 text-xs">
