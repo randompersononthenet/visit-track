@@ -28,6 +28,8 @@ export default function Page() {
     setSubmitting(true);
     try {
       if (!firstName.trim() || !lastName.trim()) throw new Error('First and last name are required');
+      if (!contact.trim()) throw new Error('Contact number is required');
+      if (!relation.trim()) throw new Error('Relation is required');
       if (!file && !photoUrl.trim()) throw new Error('Photo is required');
       const sb = getClient();
       let finalPhotoUrl = photoUrl.trim();
@@ -45,8 +47,8 @@ export default function Page() {
         first_name: firstName.trim(),
         middle_name: middleName.trim() || null,
         last_name: lastName.trim(),
-        contact_number: contact.trim() || null,
-        relation: relation.trim() || null,
+        contact_number: contact.trim(),
+        relation: relation.trim(),
         status: 'PENDING',
       };
       if (finalPhotoUrl) row.photo_url = finalPhotoUrl;
@@ -96,11 +98,11 @@ export default function Page() {
               <input value={lastName} onChange={(e)=> setLastName(e.target.value)} style={input} />
             </div>
             <div>
-              <label style={label}>Contact number (optional)</label>
+              <label style={label}>Contact number</label>
               <input value={contact} onChange={(e)=> setContact(e.target.value)} style={input} />
             </div>
             <div>
-              <label style={label}>Relation to visitor (optional)</label>
+              <label style={label}>Relation to visitor</label>
               <input value={relation} onChange={(e)=> setRelation(e.target.value)} style={input} />
             </div>
             <div>
@@ -113,7 +115,7 @@ export default function Page() {
             </div>
             {err && <div style={{ color: '#b91c1c', fontSize: 14, background: '#fee2e2', border: '1px solid #fecaca', padding: '8px 10px', borderRadius: 8 }}>{err}</div>}
             {ok && <div style={{ color: '#166534', fontSize: 14, background: '#dcfce7', border: '1px solid #bbf7d0', padding: '8px 10px', borderRadius: 8 }}>{ok}</div>}
-            <button disabled={submitting || !firstName.trim() || !lastName.trim() || (!file && !photoUrl.trim())} type="submit" style={btn}>
+            <button disabled={submitting || !firstName.trim() || !lastName.trim() || !contact.trim() || !relation.trim() || (!file && !photoUrl.trim())} type="submit" style={btn}>
               {submitting ? 'Submitting...' : 'Submit'}
             </button>
           </form>
