@@ -10,6 +10,7 @@ export function PreRegistrations() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [preview, setPreview] = useState<any | null>(null);
+  const [bulkApproving, setBulkApproving] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -45,12 +46,46 @@ export function PreRegistrations() {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold">Pre-Registrations (Pending)</h2>
-        <button
-          className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
-          onClick={load}
-        >
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+            onClick={load}
+            disabled={loading || bulkApproving}
+          >
+            Refresh
+          </button>
+          <button
+            className="px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-60"
+            disabled={loading || bulkApproving || rows.length === 0}
+            onClick={async () => {
+              if (rows.length === 0) return;
+              const ok = window.confirm(`Approve all ${rows.length} pending pre-registrations?`);
+              if (!ok) return;
+              setBulkApproving(true);
+              setError(null);
+              try {
+                let failed = 0;
+                for (const r of rows) {
+                  try {
+                    await api.post(`/api/prereg/${r.id}/approve`);
+                  } catch {
+                    failed++;
+                  }
+                }
+                await load();
+                if (failed > 0) {
+                  setError(`${failed} record(s) failed to approve.`);
+                }
+              } catch (e: any) {
+                setError(e?.response?.data?.error || 'Bulk approve failed');
+              } finally {
+                setBulkApproving(false);
+              }
+            }}
+          >
+            {bulkApproving ? 'Approving...' : 'Approve All'}
+          </button>
+        </div>
       </div>
       {error && <div className="text-rose-600 dark:text-red-400 text-sm mb-2">{error}</div>}
       <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-transparent">
