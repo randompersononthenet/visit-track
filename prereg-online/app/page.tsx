@@ -63,7 +63,7 @@ export default function Page() {
     }
   }
 
-  const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || '';
+  const logoUrl = '../public/VisitTrack.png';
   return (
     <div style={{ minHeight: '100vh', background: '#f1f5f9' }}>
       <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>

@@ -135,7 +135,15 @@ export function PreRegistrations() {
                   {previewLoading ? (
                     <div className="animate-pulse h-32 w-32 bg-slate-200 dark:bg-slate-700 rounded" />
                   ) : (preview?.photo_preview_url || preview?.photo_url) ? (
-                    <img src={preview.photo_preview_url || preview.photo_url} alt="Profile" className="object-cover w-full h-full" />
+                    <img
+                      src={(() => {
+                        const u = preview.photo_preview_url || preview.photo_url;
+                        if (!u) return '';
+                        return /^https?:\/\//i.test(u) ? u : `${(import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000'}${u}`;
+                      })()}
+                      alt="Profile"
+                      className="object-cover w-full h-full"
+                    />
                   ) : (
                     <div className="text-slate-500 text-sm">No photo</div>
                   )}
