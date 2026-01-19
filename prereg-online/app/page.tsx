@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 function getClient() {
@@ -20,6 +20,9 @@ export default function Page() {
   const [submitting, setSubmitting] = useState(false);
   const [ok, setOk] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,12 +58,13 @@ export default function Page() {
       const { error } = await sb.from('pre_registrations').insert(row);
       if (error) throw error;
       setOk('Submitted. You will be processed on-site by staff.');
-      setFirstName(''); setMiddleName(''); setLastName(''); setContact(''); setRelation(''); setPhotoUrl(''); setFile(null);
+      setFirstName(''); setMiddleName(''); setLastName(''); setContact(''); setRelation(''); setPhotoUrl(''); setFile(null); setLocalPreview(null);
     } catch (e: any) {
       setErr(e?.message || 'Failed to submit');
     } finally {
       setSubmitting(false);
     }
+
   }
 
   const logoUrl = '../public/VisitTrack.png';
@@ -106,11 +110,66 @@ export default function Page() {
               <input value={relation} onChange={(e)=> setRelation(e.target.value)} style={input} />
             </div>
             <div>
-              <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ display: 'grid', gap: 10 }}>
                 <div style={label}>Photo (JPEG/PNG, max 5MB)</div>
-                <input type="file" accept="image/*" onChange={(e)=> setFile(e.target.files?.[0] || null)} />
-                <div style={{ fontSize: 12, color: '#64748b' }}>If you already have a hosted image, paste the URL below:</div>
-                <input placeholder="https://example.com/photo.jpg" value={photoUrl} onChange={(e)=> setPhotoUrl(e.target.value)} style={input} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={thumb}>
+                    {(localPreview || photoUrl) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={localPreview || photoUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ fontSize: 12, color: '#64748b' }}>No photo</div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button type="button" style={btn} onClick={() => fileInputRef.current?.click()}>Upload Photo</button>
+                    <button type="button" style={btnSecondary} onClick={() => cameraInputRef.current?.click()}>Take Photo</button>
+                    {(localPreview || file || photoUrl) && (
+                      <button type="button" style={btnSecondary} onClick={() => { setFile(null); setPhotoUrl(''); setLocalPreview(null); }}>Clear</button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Hidden inputs for file and camera capture */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    if (f) {
+                      setFile(f);
+                      setPhotoUrl('');
+                      const url = URL.createObjectURL(f);
+                      setLocalPreview(url);
+                    }
+                  }}
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    if (f) {
+                      setFile(f);
+                      setPhotoUrl('');
+                      const url = URL.createObjectURL(f);
+                      setLocalPreview(url);
+                    }
+                  }}
+                />
+
+                <div style={{ fontSize: 12, color: '#64748b' }}>Or paste an existing image URL:</div>
+                <input
+                  placeholder="https://example.com/photo.jpg"
+                  value={photoUrl}
+                  onChange={(e)=> { setPhotoUrl(e.target.value); if (e.target.value) { setFile(null); setLocalPreview(null); } }}
+                  style={input}
+                />
               </div>
             </div>
             {err && <div style={{ color: '#b91c1c', fontSize: 14, background: '#fee2e2', border: '1px solid #fecaca', padding: '8px 10px', borderRadius: 8 }}>{err}</div>}
@@ -155,4 +214,25 @@ const btn: React.CSSProperties = {
   fontWeight: 600,
   cursor: 'pointer',
   boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+};
+const btnSecondary: React.CSSProperties = {
+  appearance: 'none',
+  border: '1px solid #cbd5e1',
+  padding: '10px 14px',
+  borderRadius: 8,
+  background: '#ffffff',
+  color: '#0f172a',
+  fontWeight: 600,
+  cursor: 'pointer'
+};
+const thumb: React.CSSProperties = {
+  width: 96,
+  height: 96,
+  border: '1px solid #e2e8f0',
+  borderRadius: 8,
+  background: '#f8fafc',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden'
 };
