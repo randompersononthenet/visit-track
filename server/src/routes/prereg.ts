@@ -174,13 +174,19 @@ router.post('/:id/approve', async (req, res) => {
     }
 
     const fullName = [prefill.firstName, prefill.middleName, prefill.lastName].filter(Boolean).join(' ');
+    const initials = `${(prefill.firstName || '').charAt(0)}${(prefill.lastName || '').charAt(0)}`.toUpperCase() || 'XX';
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const autoId = `VISIT${initials}${y}${m}${d}`;
     const created = await Visitor.create({
       firstName: prefill.firstName,
       middleName: prefill.middleName,
       lastName: prefill.lastName,
       fullName,
       contact: prefill.contact || undefined,
-      idNumber: prefill.idNumber || undefined,
+      idNumber: prefill.idNumber || autoId,
       relation: prefill.relation || undefined,
       qrCode: uuidv4(),
       photoUrl: localPhotoUrl,

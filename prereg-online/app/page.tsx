@@ -13,7 +13,7 @@ export default function Page() {
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
   const [contact, setContact] = useState('');
-  const [idNumber, setIdNumber] = useState('');
+  // ID number auto-assigned on approval in VisitTrack
   const [relation, setRelation] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -47,14 +47,13 @@ export default function Page() {
         last_name: lastName.trim(),
         contact_number: contact.trim() || null,
         relation: relation.trim() || null,
-        id_number: idNumber.trim() || null,
         status: 'PENDING',
       };
       if (finalPhotoUrl) row.photo_url = finalPhotoUrl;
       const { error } = await sb.from('pre_registrations').insert(row);
       if (error) throw error;
       setOk('Submitted. You will be processed on-site by staff.');
-      setFirstName(''); setMiddleName(''); setLastName(''); setContact(''); setIdNumber(''); setRelation(''); setPhotoUrl(''); setFile(null);
+      setFirstName(''); setMiddleName(''); setLastName(''); setContact(''); setRelation(''); setPhotoUrl(''); setFile(null);
     } catch (e: any) {
       setErr(e?.message || 'Failed to submit');
     } finally {
@@ -71,7 +70,7 @@ export default function Page() {
         <input placeholder="Middle name (optional)" value={middleName} onChange={(e)=> setMiddleName(e.target.value)} style={inp} />
         <input placeholder="Last name" value={lastName} onChange={(e)=> setLastName(e.target.value)} style={inp} />
         <input placeholder="Contact number (optional)" value={contact} onChange={(e)=> setContact(e.target.value)} style={inp} />
-        <input placeholder="ID number (optional)" value={idNumber} onChange={(e)=> setIdNumber(e.target.value)} style={inp} />
+        {/* ID number removed; auto-assigned on approval */}
         <input placeholder="Relation to visitor (optional)" value={relation} onChange={(e)=> setRelation(e.target.value)} style={inp} />
         <div style={{ display: 'grid', gap: 8 }}>
           <div style={{ fontSize: 12, color: '#475569' }}>Photo (JPEG/PNG, max 5MB)</div>

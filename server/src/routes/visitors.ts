@@ -46,13 +46,19 @@ const createVisitorSchema = z.object({
 router.post('/', requireRole('admin', 'staff'), validate(createVisitorSchema), async (req, res) => {
   const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus } = (req as any).parsed;
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+  const initials = `${(firstName || '').charAt(0)}${(lastName || '').charAt(0)}`.toUpperCase() || 'XX';
+  const ymd = new Date();
+  const yyyy = ymd.getFullYear();
+  const mm = String(ymd.getMonth() + 1).padStart(2, '0');
+  const dd = String(ymd.getDate()).padStart(2, '0');
+  const autoId = `VISIT${initials}${yyyy}${mm}${dd}`;
   const v = await Visitor.create({
     firstName,
     middleName,
     lastName,
     fullName,
     contact,
-    idNumber,
+    idNumber: idNumber || autoId,
     relation,
     qrCode: qrCode || uuidv4(),
     photoUrl,
