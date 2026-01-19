@@ -92,11 +92,11 @@ export default function Page() {
       </header>
 
       <main style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 20, boxShadow: '0 1px 2px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 28, boxShadow: '0 1px 2px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: '#0f172a' }}>Visitor Pre-Registration</h1>
           <p style={{ margin: '6px 0 16px', color: '#334155', fontSize: 14 }}>Provide your basic information and a recent photo.</p>
 
-          <form onSubmit={onSubmit} style={{ display: 'grid', gap: 14 }}>
+          <form onSubmit={onSubmit} style={{ display: 'grid', gap: 14, maxWidth: 420, width: '100%', margin: '0 auto' }}>
             <div>
               <label style={label}>First name</label>
               <input value={firstName} onChange={(e)=> setFirstName(e.target.value)} style={input} />
