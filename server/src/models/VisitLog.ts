@@ -11,6 +11,7 @@ export interface VisitLogAttributes {
   handledByUserId?: number | null;
   timeIn: Date;
   timeOut?: Date | null;
+  durationSeconds?: number | null;
   purpose?: string | null;
   notes?: string | null;
 }
@@ -24,6 +25,7 @@ export class VisitLog extends Model<VisitLogAttributes, VisitLogCreation> implem
   declare handledByUserId: number | null | undefined;
   declare timeIn: Date;
   declare timeOut: Date | null | undefined;
+  declare durationSeconds: number | null | undefined;
   declare purpose: string | null | undefined;
   declare notes: string | null | undefined;
 }
@@ -36,6 +38,7 @@ VisitLog.init(
     handledByUserId: { type: DataTypes.INTEGER, allowNull: true, field: 'handled_by_user_id', references: { model: 'users', key: 'id' } },
     timeIn: { type: DataTypes.DATE, allowNull: false, field: 'time_in' },
     timeOut: { type: DataTypes.DATE, allowNull: true, field: 'time_out' },
+    durationSeconds: { type: DataTypes.INTEGER, allowNull: true, field: 'duration_seconds' },
     purpose: { type: DataTypes.STRING(150), allowNull: true },
     notes: { type: DataTypes.TEXT, allowNull: true },
   },

@@ -114,7 +114,7 @@ export function Personnel() {
   return (
     <div className="grid md:grid-cols-3 gap-8">
       <section className="md:col-span-1 bg-white border border-slate-200 rounded-lg p-4 dark:bg-slate-800/40 dark:border-slate-700">
-        <h2 className="text-lg font-semibold mb-4">Register Personnel</h2>
+        <h1 className="text-lg font-semibold mb-4">Register Personnel</h1>
         {hasRole(['admin','staff']) ? (
         <form className="space-y-3" onSubmit={onCreate}>
           <div className="grid grid-cols-1 gap-3">

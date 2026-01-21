@@ -8,6 +8,8 @@ export function Scan() {
   const [loading, setLoading] = useState<'checkin' | 'checkout' | null>(null);
   const [result, setResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [elapsedSec, setElapsedSec] = useState<number | null>(null);
+  const elapsedTimerRef = useRef<number | null>(null);
   const [mode, setMode] = useState<'manual' | 'camera'>('manual');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -81,6 +83,43 @@ export function Scan() {
     } finally {
       setLoading(null);
     }
+  }
+
+  // Track elapsed time based on the latest scan result
+  useEffect(() => {
+    // clear any existing timer
+    if (elapsedTimerRef.current) {
+      window.clearInterval(elapsedTimerRef.current);
+      elapsedTimerRef.current = null;
+    }
+    setElapsedSec(null);
+    if (!result) return;
+    const atMs = result?.at ? new Date(result.at).getTime() : null;
+    if (result.event === 'checkin' && atMs) {
+      const tick = () => setElapsedSec(Math.max(0, Math.floor((Date.now() - atMs) / 1000)));
+      tick();
+      elapsedTimerRef.current = window.setInterval(tick, 1000);
+    } else if (result.event === 'checkout') {
+      const s = typeof result.elapsedSeconds === 'number' ? result.elapsedSeconds : null;
+      setElapsedSec(s);
+    }
+    return () => {
+      if (elapsedTimerRef.current) {
+        window.clearInterval(elapsedTimerRef.current);
+        elapsedTimerRef.current = null;
+      }
+    };
+  }, [result]);
+
+  function fmtDuration(sec: number | null): string {
+    if (sec == null) return '-';
+    const s = Math.max(0, sec);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const ss = s % 60;
+    const mm = m.toString().padStart(2, '0');
+    const sss = ss.toString().padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${sss}` : `${mm}:${sss}`;
   }
 
   function stopCamera() {
@@ -178,7 +217,7 @@ export function Scan() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Scan</h2>
+      <h1 className="text-xl font-semibold mb-4">Scan</h1>
       <div className="grid md:grid-cols-3 gap-8">
         <section className="md:col-span-1 bg-white border border-slate-200 rounded-lg p-4 dark:bg-slate-800/40 dark:border-slate-700">
           <div className="space-y-3">
@@ -392,6 +431,7 @@ export function Scan() {
                         </div>
                       );
                     })()}
+                    <div className="md:col-span-2"><span className="text-slate-700 dark:text-slate-400">Elapsed Time:</span> {fmtDuration(elapsedSec)}</div>
                     {result.subject.photoUrl && (
                       <div className="md:col-span-2 mt-1">
                         <div className="text-slate-700 dark:text-slate-400 text-sm mb-1">Photo</div>

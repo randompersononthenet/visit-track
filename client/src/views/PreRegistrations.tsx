@@ -45,7 +45,7 @@ export function PreRegistrations() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">Pre-Registrations (Pending)</h2>
+        <h1 className="text-lg font-semibold">Pre-Registrations</h1>
         <div className="flex items-center gap-2">
           <button
             className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"

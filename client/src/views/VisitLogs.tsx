@@ -54,7 +54,7 @@ export function VisitLogs() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Visit Logs</h2>
+      <h1 className="text-lg font-semibold">Visit Logs</h1>
       <div className="grid md:grid-cols-4 gap-3">
         <select className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={subjectType} onChange={(e) => { setPage(1); setSubjectType(e.target.value as any); }}>
           <option value="all">All subjects</option>

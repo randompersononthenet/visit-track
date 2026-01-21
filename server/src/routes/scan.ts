@@ -89,7 +89,7 @@ router.post('/', validate(scanSchema), async (req, res) => {
       purpose: undefined,
       notes: undefined,
     });
-    return res.json({ status: 'ok', event: 'checkin', at: now, logId: log.id, subjectType: subject.type, subject, alerts });
+    return res.json({ status: 'ok', event: 'checkin', at: now, logId: log.id, subjectType: subject.type, subject, alerts, elapsedSeconds: 0 });
   }
 
   // checkout
@@ -112,8 +112,9 @@ router.post('/', validate(scanSchema), async (req, res) => {
   if (existingOut) {
     return res.status(400).json({ error: 'Already checked out today' });
   }
-  await openLog.update({ timeOut: now, handledByUserId: (req as any).user?.id ?? openLog.handledByUserId });
-  return res.json({ status: 'ok', event: 'checkout', at: now, logId: openLog.id, subjectType: subject.type, subject, alerts });
+  const elapsedSeconds = Math.max(0, Math.round((now.getTime() - new Date(openLog.timeIn).getTime()) / 1000));
+  await openLog.update({ timeOut: now, durationSeconds: elapsedSeconds, handledByUserId: (req as any).user?.id ?? openLog.handledByUserId });
+  return res.json({ status: 'ok', event: 'checkout', at: now, logId: openLog.id, subjectType: subject.type, subject, alerts, elapsedSeconds });
 });
 
 export default router;

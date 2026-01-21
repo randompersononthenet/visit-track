@@ -42,7 +42,7 @@ export function Reports() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Reports</h2>
+      <h1 className="text-xl font-semibold mb-4">Reports</h1>
       <div className="space-y-4">
         <div className="grid md:grid-cols-4 gap-3">
           <div className="md:col-span-2 grid grid-cols-2 gap-3">
