@@ -33,8 +33,16 @@ router.get('/visitors.csv', async (req, res) => {
   const where: any = {};
   if (dateFrom || dateTo) {
     where.createdAt = {} as any;
-    if (dateFrom) (where.createdAt as any)[Op.gte] = new Date(dateFrom);
-    if (dateTo) (where.createdAt as any)[Op.lte] = new Date(dateTo);
+    if (dateFrom) {
+      const d = new Date(dateFrom);
+      d.setHours(0, 0, 0, 0);
+      (where.createdAt as any)[Op.gte] = d;
+    }
+    if (dateTo) {
+      const d = new Date(dateTo);
+      d.setHours(23, 59, 59, 999);
+      (where.createdAt as any)[Op.lte] = d;
+    }
   }
   const rows = await Visitor.findAll({ where, order: [['id', 'ASC']] });
   const header = ['ID', 'Full Name', 'First Name', 'Middle Name', 'Last Name', 'Contact', 'ID Number', 'Relation', 'QR Code', 'Blacklisted', 'Created At'];
@@ -79,8 +87,16 @@ router.get('/visit-logs.csv', async (req, res) => {
   }
   if (dateFrom || dateTo) {
     where.timeIn = {} as any;
-    if (dateFrom) (where.timeIn as any)[Op.gte] = new Date(dateFrom);
-    if (dateTo) (where.timeIn as any)[Op.lte] = new Date(dateTo);
+    if (dateFrom) {
+      const d = new Date(dateFrom);
+      d.setHours(0, 0, 0, 0);
+      (where.timeIn as any)[Op.gte] = d;
+    }
+    if (dateTo) {
+      const d = new Date(dateTo);
+      d.setHours(23, 59, 59, 999);
+      (where.timeIn as any)[Op.lte] = d;
+    }
   }
 
   const { rows } = await VisitLog.findAndCountAll({
@@ -127,8 +143,16 @@ router.get('/personnel.csv', async (req, res) => {
   const where: any = {};
   if (dateFrom || dateTo) {
     where.createdAt = {} as any;
-    if (dateFrom) (where.createdAt as any)[Op.gte] = new Date(dateFrom);
-    if (dateTo) (where.createdAt as any)[Op.lte] = new Date(dateTo);
+    if (dateFrom) {
+      const d = new Date(dateFrom);
+      d.setHours(0, 0, 0, 0);
+      (where.createdAt as any)[Op.gte] = d;
+    }
+    if (dateTo) {
+      const d = new Date(dateTo);
+      d.setHours(23, 59, 59, 999);
+      (where.createdAt as any)[Op.lte] = d;
+    }
   }
   const rows = await Personnel.findAll({ where, order: [['id', 'ASC']] });
   const header = ['ID', 'Full Name', 'First Name', 'Middle Name', 'Last Name', 'Role Title', 'QR Code', 'Created At'];

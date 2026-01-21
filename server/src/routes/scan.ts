@@ -21,7 +21,7 @@ router.use(requireRole('admin', 'staff', 'officer'));
  * Look up subject and recent alerts without creating a VisitLog.
  */
 router.get('/preview', async (req, res) => {
-  const qrCode = String(req.query.qrCode || '');
+  const qrCode = String(req.query.qrCode || '').trim();
   if (!qrCode) return res.status(400).json({ error: 'qrCode is required' });
   const visitor = await Visitor.findOne({ where: { qrCode } });
   const personnel = visitor ? null : await Personnel.findOne({ where: { qrCode } });
@@ -43,7 +43,8 @@ const scanSchema = z.object({
 });
 
 router.post('/', validate(scanSchema), async (req, res) => {
-  const { qrCode, action } = (req as any).parsed as { qrCode: string; action: 'checkin' | 'checkout' };
+  const { action } = (req as any).parsed as { qrCode: string; action: 'checkin' | 'checkout' };
+  const qrCode = String((req as any).parsed.qrCode).trim();
 
   // Try to match Visitor first, then Personnel
   const visitor = await Visitor.findOne({ where: { qrCode } });

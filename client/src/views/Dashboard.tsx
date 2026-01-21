@@ -33,6 +33,11 @@ export function Dashboard() {
   const [weekPeriods, setWeekPeriods] = useState(12);
   const [monthPeriods, setMonthPeriods] = useState(12);
   const [trendsOpen, setTrendsOpen] = useState(true);
+  const [fv, setFv] = useState<Array<{ visitorId: number; fullName: string; visits: number; daysVisited: number; lastVisit: string; avgDurationSeconds: number | null }>>([]);
+  const [fvLimit, setFvLimit] = useState(10);
+  const [fvMinVisits, setFvMinVisits] = useState(2);
+  const [loadingFv, setLoadingFv] = useState(true);
+  const [fvError, setFvError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -84,6 +89,23 @@ export function Dashboard() {
       } catch {}
     })();
   }, [heatmapDays, weekPeriods, monthPeriods]);
+
+  // Load frequent visitors (all-time)
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingFv(true);
+        setFvError(null);
+        const res = await api.get('/api/analytics/frequent-visitors-all', { params: { limit: fvLimit, minVisits: fvMinVisits } });
+        const payload = (res as any)?.data?.data;
+        setFv(Array.isArray(payload) ? payload : []);
+      } catch (e: any) {
+        setFvError(e?.response?.data?.error || 'Failed to load frequent visitors');
+      } finally {
+        setLoadingFv(false);
+      }
+    })();
+  }, [fvLimit, fvMinVisits]);
 
   // Persist legend toggles and restore on mount
   useEffect(() => {
@@ -167,6 +189,17 @@ export function Dashboard() {
     a.download = 'visitor-forecast.csv';
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function formatDuration(sec: number | null | undefined): string {
+    if (sec == null || isNaN(sec as any)) return '-';
+    const s = Math.max(0, Math.floor(sec));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const ss = s % 60;
+    const mm = m.toString().padStart(2, '0');
+    const sss = ss.toString().padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${sss}` : `${mm}:${sss}`;
   }
 
   return (
@@ -502,6 +535,54 @@ export function Dashboard() {
             <span>Low</span>
             <div className="h-2 w-32 bg-gradient-to-r from-indigo-200 to-indigo-600 rounded"></div>
             <span>High</span>
+          </div>
+        </div>
+        {/* Frequent Visitors (Top rankers, all-time) */}
+        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
+          <div className="font-semibold mb-3 flex items-center justify-between text-slate-900 dark:text-slate-100 text-lg">
+            <span className="flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              Frequent Visitors
+            </span>
+            <div className="flex items-center gap-2 text-xs">
+              <label htmlFor="fv-min" className="text-slate-600 dark:text-slate-300">Min Visits</label>
+              <input id="fv-min" type="number" min={1} max={50} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={fvMinVisits} onChange={(e)=> setFvMinVisits(Math.max(1, Math.min(50, parseInt(e.target.value)||2)))} />
+              <label htmlFor="fv-limit" className="text-slate-600 dark:text-slate-300">Top</label>
+              <select id="fv-limit" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={fvLimit} onChange={(e)=> setFvLimit(Math.max(1, Math.min(50, parseInt(e.target.value)||10)))}>
+                {[5,10,15,20].map(n => (<option key={n} value={n}>{n}</option>))}
+              </select>
+            </div>
+          </div>
+          {fvError && <div className="text-red-500 text-sm mb-2">{fvError}</div>}
+          <div className="overflow-x-auto">
+            {loadingFv ? (
+              <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+            ) : fv.length === 0 ? (
+              <div className="text-slate-600 dark:text-slate-400 text-sm">No frequent visitors found for the selected window.</div>
+            ) : (
+              <table className="min-w-full text-sm" aria-label="Frequent visitors table">
+                <thead className="text-slate-700 dark:text-slate-300 font-medium">
+                  <tr>
+                    <th className="text-left py-1.5">Visitor</th>
+                    <th className="text-left py-1.5">Visits</th>
+                    <th className="text-left py-1.5">Days</th>
+                    <th className="text-left py-1.5">Last Visit</th>
+                    <th className="text-left py-1.5">Avg Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(Array.isArray(fv) ? fv : []).map((row) => (
+                    <tr key={row.visitorId} className="border-t border-slate-200 dark:border-slate-700">
+                      <td className="py-1.5 pr-3">{row.fullName}</td>
+                      <td className="py-1.5 pr-3">{row.visits}</td>
+                      <td className="py-1.5 pr-3">{row.daysVisited}</td>
+                      <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{row.lastVisit ? new Date(row.lastVisit).toLocaleString() : '-'}</td>
+                      <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-400">{formatDuration(row.avgDurationSeconds)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

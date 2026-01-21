@@ -9,6 +9,7 @@ import { Register } from './views/Register'
 import { Scan } from './views/Scan'
 import { Reports } from './views/Reports'
 import { VisitLogs } from './views/VisitLogs'
+import { FrequentVisitors } from './views/FrequentVisitors'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Personnel } from './views/Personnel'
 import { RoleRoute } from './components/RoleRoute'
@@ -53,6 +54,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             element={
               <RoleRoute roles={["admin", "staff"]}>
                 <Reports />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/frequent-visitors"
+            element={
+              <RoleRoute roles={["admin", "staff"]}>
+                <FrequentVisitors />
               </RoleRoute>
             }
           />

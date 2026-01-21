@@ -282,7 +282,7 @@ router.get('/frequent-visitors', async (req, res) => {
   since.setDate(since.getDate() - (days - 1));
 
   // Raw SQL for efficiency: aggregate by visitor_id within timeframe
-  const [rows] = await sequelize.query(
+  const rows = await sequelize.query(
     `
       SELECT v.id AS "visitorId",
              v.full_name AS "fullName",
@@ -303,6 +303,40 @@ router.get('/frequent-visitors', async (req, res) => {
   );
 
   res.json({ days, limit, minVisits, data: rows });
+});
+
+// All-time frequent visitors with optional min/max filters
+// GET /api/analytics/frequent-visitors-all?minVisits=1&maxVisits=&limit=20
+router.get('/frequent-visitors-all', async (req, res) => {
+  const limit = Math.max(1, Math.min(200, parseInt(String(req.query.limit || '20')) || 20));
+  const minVisits = Math.max(1, Math.min(100000, parseInt(String(req.query.minVisits || '1')) || 1));
+  const maxVisitsRaw = req.query.maxVisits as string | undefined;
+  const maxVisits = maxVisitsRaw != null && maxVisitsRaw !== '' ? Math.max(minVisits, Math.min(100000, parseInt(String(maxVisitsRaw)) || minVisits)) : null;
+
+  const whereHaving = maxVisits == null
+    ? 'COUNT(l.id) >= :minVisits'
+    : 'COUNT(l.id) BETWEEN :minVisits AND :maxVisits';
+
+  const rows = await sequelize.query(
+    `
+      SELECT v.id AS "visitorId",
+             v.full_name AS "fullName",
+             COUNT(l.id) AS visits,
+             COUNT(DISTINCT DATE(l.time_in)) AS "daysVisited",
+             MAX(l.time_in) AS "lastVisit",
+             AVG(l.duration_seconds) FILTER (WHERE l.duration_seconds IS NOT NULL) AS "avgDurationSeconds"
+      FROM visit_logs l
+      JOIN visitors v ON v.id = l.visitor_id
+      WHERE l.visitor_id IS NOT NULL
+      GROUP BY v.id, v.full_name
+      HAVING ${whereHaving}
+      ORDER BY visits DESC, "lastVisit" DESC
+      LIMIT :limit
+    `,
+    { replacements: { limit, minVisits, maxVisits }, type: QueryTypes.SELECT as any }
+  );
+
+  res.json({ limit, minVisits, maxVisits, data: rows });
 });
 
 export default router;
