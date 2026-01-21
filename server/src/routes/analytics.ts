@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import { requireAuth } from '../middleware/auth';
 import { requireRole } from '../middleware/roles';
 import { Visitor } from '../models/Visitor';
 import { Personnel } from '../models/Personnel';
 import { VisitLog } from '../models/VisitLog';
+import { sequelize } from '../lib/db';
 
 const router = Router();
 
@@ -268,6 +269,40 @@ router.get('/trends', async (req, res) => {
     }
   }
   res.json({ granularity, series: out });
+});
+
+// Frequent visitors over a timeframe (defaults to last 30 days)
+// GET /api/analytics/frequent-visitors?days=30&limit=10&minVisits=2
+router.get('/frequent-visitors', async (req, res) => {
+  const days = Math.max(1, Math.min(365, parseInt(String(req.query.days || '30')) || 30));
+  const limit = Math.max(1, Math.min(100, parseInt(String(req.query.limit || '10')) || 10));
+  const minVisits = Math.max(1, Math.min(1000, parseInt(String(req.query.minVisits || '1')) || 1));
+  const since = new Date();
+  since.setHours(0,0,0,0);
+  since.setDate(since.getDate() - (days - 1));
+
+  // Raw SQL for efficiency: aggregate by visitor_id within timeframe
+  const [rows] = await sequelize.query(
+    `
+      SELECT v.id AS "visitorId",
+             v.full_name AS "fullName",
+             COUNT(l.id) AS visits,
+             COUNT(DISTINCT DATE(l.time_in)) AS "daysVisited",
+             MAX(l.time_in) AS "lastVisit",
+             AVG(l.duration_seconds) FILTER (WHERE l.duration_seconds IS NOT NULL) AS "avgDurationSeconds"
+      FROM visit_logs l
+      JOIN visitors v ON v.id = l.visitor_id
+      WHERE l.visitor_id IS NOT NULL
+        AND l.time_in >= :since
+      GROUP BY v.id, v.full_name
+      HAVING COUNT(l.id) >= :minVisits
+      ORDER BY visits DESC, "daysVisited" DESC, "lastVisit" DESC
+      LIMIT :limit
+    `,
+    { replacements: { since, limit, minVisits }, type: QueryTypes.SELECT as any }
+  );
+
+  res.json({ days, limit, minVisits, data: rows });
 });
 
 export default router;

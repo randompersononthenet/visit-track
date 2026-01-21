@@ -42,7 +42,10 @@ VisitLog.init(
     purpose: { type: DataTypes.STRING(150), allowNull: true },
     notes: { type: DataTypes.TEXT, allowNull: true },
   },
-  { sequelize, tableName: 'visit_logs', underscored: true }
+  { sequelize, tableName: 'visit_logs', underscored: true, indexes: [
+    { fields: ['visitor_id', 'time_in'] },
+    { fields: ['time_in'] }
+  ] }
 );
 
 VisitLog.belongsTo(Visitor, { foreignKey: 'visitorId', as: 'visitor' });
