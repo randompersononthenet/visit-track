@@ -45,19 +45,35 @@ const createVisitorSchema = z.object({
 
 router.post('/', requireRole('admin', 'staff'), validate(createVisitorSchema), async (req, res) => {
   const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus } = (req as any).parsed;
-  const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
-  const initials = `${(firstName || '').charAt(0)}${(lastName || '').charAt(0)}`.toUpperCase() || 'XX';
+  const normFirst = (firstName || '').trim().toUpperCase();
+  const normMiddleRaw = (middleName || '').trim();
+  const normMiddle = normMiddleRaw ? normMiddleRaw.toUpperCase() : undefined;
+  const normLast = (lastName || '').trim().toUpperCase();
+  const normFull = [normFirst, normMiddle, normLast].filter(Boolean).join(' ');
+  const normContact = (contact || '').trim();
+
+  if (normContact) {
+    const whereDup: any = {
+      firstName: normFirst,
+      lastName: normLast,
+      contact: normContact,
+    };
+    if (normMiddle) whereDup.middleName = normMiddle; else whereDup.middleName = { [Op.is]: null };
+    const existing = await Visitor.findOne({ where: whereDup });
+    if (existing) return res.status(409).json({ error: 'Duplicate visitor exists with same name and contact' });
+  }
+  const initials = `${(normFirst || '').charAt(0)}${(normLast || '').charAt(0)}`.toUpperCase() || 'XX';
   const ymd = new Date();
   const yyyy = ymd.getFullYear();
   const mm = String(ymd.getMonth() + 1).padStart(2, '0');
   const dd = String(ymd.getDate()).padStart(2, '0');
   const autoId = `VISIT${initials}${yyyy}${mm}${dd}`;
   const v = await Visitor.create({
-    firstName,
-    middleName,
-    lastName,
-    fullName,
-    contact,
+    firstName: normFirst,
+    middleName: normMiddle,
+    lastName: normLast,
+    fullName: normFull,
+    contact: normContact || undefined,
     idNumber: idNumber || autoId,
     relation,
     qrCode: qrCode || uuidv4(),
@@ -86,12 +102,39 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updateVisitorSchema
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
   const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus, riskLevel, flagReason } = (req as any).parsed;
-  const computedFullName = (
-    [firstName ?? v.firstName, middleName ?? v.middleName, lastName ?? v.lastName]
-      .filter(Boolean)
-      .join(' ')
-  );
-  const updates: any = { firstName, middleName, lastName, fullName: computedFullName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus };
+
+  // Determine effective fields after patch, then normalize names to uppercase and contact trimmed
+  const effFirstRaw = typeof firstName !== 'undefined' ? firstName : v.firstName;
+  const effMiddleRaw = typeof middleName !== 'undefined' ? middleName : v.middleName;
+  const effLastRaw = typeof lastName !== 'undefined' ? lastName : v.lastName;
+  const effContactRaw = typeof contact !== 'undefined' ? contact : v.contact;
+
+  const normFirst = (effFirstRaw || '').toString().trim().toUpperCase();
+  const normMiddle = (effMiddleRaw || '') ? (effMiddleRaw as string).toString().trim().toUpperCase() : undefined;
+  const normLast = (effLastRaw || '').toString().trim().toUpperCase();
+  const normFull = [normFirst, normMiddle, normLast].filter(Boolean).join(' ');
+  const normContact = (effContactRaw || '').toString().trim();
+
+  // Duplicate check if contact present: same normalized names + same contact, excluding this record
+  if (normContact) {
+    const whereDup: any = { firstName: normFirst, lastName: normLast, contact: normContact };
+    if (normMiddle) whereDup.middleName = normMiddle; else whereDup.middleName = { [Op.is]: null };
+    const existing = await Visitor.findOne({ where: { ...whereDup, id: { [Op.ne]: v.id } } });
+    if (existing) return res.status(409).json({ error: 'Duplicate visitor exists with same name and contact' });
+  }
+
+  const updates: any = {
+    firstName: normFirst,
+    middleName: normMiddle,
+    lastName: normLast,
+    fullName: normFull,
+    contact: normContact || undefined,
+    idNumber,
+    relation,
+    qrCode,
+    photoUrl,
+    blacklistStatus,
+  };
   const riskFieldsTouched = typeof riskLevel !== 'undefined' || typeof flagReason !== 'undefined';
   if (typeof riskLevel !== 'undefined') updates.riskLevel = riskLevel;
   if (typeof flagReason !== 'undefined') updates.flagReason = flagReason;

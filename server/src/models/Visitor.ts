@@ -1,4 +1,4 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, Model, Optional, Op } from 'sequelize';
 import { sequelize } from '../lib/db';
 
 export interface VisitorAttributes {
@@ -61,5 +61,13 @@ Visitor.init(
     flagUpdatedBy: { type: DataTypes.INTEGER, allowNull: true, field: 'flag_updated_by' },
     flagUpdatedAt: { type: DataTypes.DATE, allowNull: true, field: 'flag_updated_at' },
   },
-  { sequelize, tableName: 'visitors', underscored: true }
+  { sequelize, tableName: 'visitors', underscored: true, indexes: [
+    // Ensure no duplicates when contact is provided: names are normalized to uppercase in routes
+    {
+      unique: true,
+      fields: ['first_name', 'middle_name', 'last_name', 'contact'],
+      where: { contact: { [Op.ne]: null } },
+      name: 'uniq_visitors_name_contact_when_contact_not_null'
+    }
+  ] }
 );

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { Op } from 'sequelize';
 import { requireAuth } from '../middleware/auth';
 import { requireRole } from '../middleware/roles';
 import { fetchPending, markImported, markRejected, PreregRow } from '../lib/preregClient';
@@ -180,12 +181,27 @@ router.post('/:id/approve', async (req, res) => {
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
     const autoId = `VISIT${initials}${y}${m}${d}`;
+    // Normalize names to uppercase and de-dup by name+contact
+    const normFirst = (prefill.firstName || '').trim().toUpperCase();
+    const normMiddleRaw = (prefill.middleName || '').trim();
+    const normMiddle = normMiddleRaw ? normMiddleRaw.toUpperCase() : undefined;
+    const normLast = (prefill.lastName || '').trim().toUpperCase();
+    const normFull = [normFirst, normMiddle, normLast].filter(Boolean).join(' ');
+    const normContact = (prefill.contact || '').trim();
+
+    if (normContact) {
+      const whereDup: any = { firstName: normFirst, lastName: normLast, contact: normContact };
+      if (normMiddle) whereDup.middleName = normMiddle; else whereDup.middleName = { [Op.is]: null };
+      const existing = await Visitor.findOne({ where: whereDup });
+      if (existing) return res.status(409).json({ error: 'Duplicate visitor exists with same name and contact' });
+    }
+
     const created = await Visitor.create({
-      firstName: prefill.firstName,
-      middleName: prefill.middleName,
-      lastName: prefill.lastName,
-      fullName,
-      contact: prefill.contact || undefined,
+      firstName: normFirst,
+      middleName: normMiddle,
+      lastName: normLast,
+      fullName: normFull,
+      contact: normContact || undefined,
       idNumber: prefill.idNumber || autoId,
       relation: prefill.relation || undefined,
       qrCode: uuidv4(),
