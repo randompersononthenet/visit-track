@@ -115,9 +115,10 @@ export default function Page() {
                 type="tel"
                 inputMode="numeric"
                 pattern="[0-9]+"
+                maxLength={11}
                 value={contact}
                 onChange={(e)=> {
-                  const v = e.target.value.replace(/[^0-9]/g, '');
+                  const v = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
                   setContact(v);
                 }}
                 style={input}
@@ -196,8 +197,7 @@ export default function Page() {
               submitting ||
               !firstName.trim() ||
               !lastName.trim() ||
-              !contact.trim() ||
-              !/^\d+$/.test(contact.trim()) ||
+              !(contact.trim().length === 11 && /^\d+$/.test(contact.trim())) ||
               !relation.trim() ||
               (!file && !photoUrl.trim())
             } type="submit" style={btn}>
