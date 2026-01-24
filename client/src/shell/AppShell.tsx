@@ -76,8 +76,8 @@ export function AppShell() {
     { to: '/personnel', label: 'Personnel', icon: 'personnel' },
     { to: '/scan', label: 'Scan', icon: 'scan' },
     ...(hasRole(['admin', 'staff']) ? [{ to: '/prereg', label: 'Pre-Registrations', icon: 'register' }] : [] as any),
-    ...(hasRole(['admin', 'staff']) ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),
-    ...(hasRole(['admin', 'staff']) ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
+    ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),
+    ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
   ];
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex">

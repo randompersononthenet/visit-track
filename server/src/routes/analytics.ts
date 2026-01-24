@@ -10,7 +10,7 @@ import { sequelize } from '../lib/db';
 const router = Router();
 
 router.use(requireAuth);
-router.use(requireRole('admin', 'staff', 'officer'));
+router.use(requireRole('admin', 'staff', 'warden', 'analyst'));
 
 router.get('/summary', async (_req, res) => {
   const startOfDay = new Date();

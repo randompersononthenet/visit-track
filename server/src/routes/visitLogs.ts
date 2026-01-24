@@ -18,7 +18,7 @@ router.use(requireAuth);
  * Query: subjectType (visitor|personnel), subjectId, dateFrom, dateTo, page, pageSize
  * Returns paged visit logs ordered by timeIn desc, with subject info included.
  */
-router.get('/', requireRole('admin', 'staff'), async (req, res) => {
+router.get('/', requireRole('admin', 'staff', 'warden', 'analyst'), async (req, res) => {
   const { subjectType, subjectId, dateFrom, dateTo, page = '1', pageSize = '20' } = req.query as Record<string, string>;
 
   const p = Math.max(parseInt(page) || 1, 1);

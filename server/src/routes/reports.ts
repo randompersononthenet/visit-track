@@ -26,7 +26,7 @@ const router = Router();
 
 // All reports require auth + role (admin or staff)
 router.use(requireAuth);
-router.use(requireRole('admin', 'staff'));
+router.use(requireRole('admin', 'staff', 'warden', 'analyst'));
 
 router.get('/visitors.csv', async (req, res) => {
   const { dateFrom, dateTo } = req.query as Record<string, string>;
