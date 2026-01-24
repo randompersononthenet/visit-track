@@ -10,9 +10,8 @@ import { sequelize } from '../lib/db';
 const router = Router();
 
 router.use(requireAuth);
-router.use(requireRole('admin', 'staff', 'warden', 'analyst'));
 
-router.get('/summary', async (_req, res) => {
+router.get('/summary', requireRole('admin', 'staff', 'officer', 'warden', 'analyst'), async (_req, res) => {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date();
@@ -32,7 +31,7 @@ router.get('/summary', async (_req, res) => {
   });
 });
 
-router.get('/checkins-7d', async (_req, res) => {
+router.get('/checkins-7d', requireRole('admin', 'staff', 'warden', 'analyst'), async (_req, res) => {
   // Build last 7 calendar days including today
   const days: { date: string; start: Date; end: Date }[] = [];
   for (let i = 6; i >= 0; i--) {
@@ -55,7 +54,7 @@ router.get('/checkins-7d', async (_req, res) => {
   res.json({ days: counts });
 });
 
-router.get('/visitor-forecast', async (req, res) => {
+router.get('/visitor-forecast', requireRole('admin', 'staff', 'warden', 'analyst'), async (req, res) => {
   const window = Math.max(1, Math.min(30, parseInt(String(req.query.window || '7')) || 7));
   const daysParam = Math.max(window, Math.min(120, parseInt(String(req.query.days || '30')) || 30));
   const includePersonnel = String(req.query.includePersonnel || 'false') === 'true';
@@ -220,7 +219,7 @@ router.get('/visitor-forecast', async (req, res) => {
 });
 
 // Hourly heatmap: returns counts for dayOfWeek (0-6) x hour (0-23) for last N days
-router.get('/hourly-heatmap', async (req, res) => {
+router.get('/hourly-heatmap', requireRole('admin', 'staff', 'warden', 'analyst'), async (req, res) => {
   const days = Math.max(1, Math.min(120, parseInt(String(req.query.days || '30')) || 30));
   const now = new Date();
   const start = new Date(now);
@@ -239,7 +238,7 @@ router.get('/hourly-heatmap', async (req, res) => {
 });
 
 // Aggregated trends by week or month for last N periods
-router.get('/trends', async (req, res) => {
+router.get('/trends', requireRole('admin', 'staff', 'warden', 'analyst'), async (req, res) => {
   const granularity = String(req.query.granularity || 'week'); // 'week' | 'month'
   const periods = Math.max(1, Math.min(24, parseInt(String(req.query.periods || '12')) || 12));
   const out: { label: string; count: number }[] = [];
@@ -273,7 +272,7 @@ router.get('/trends', async (req, res) => {
 
 // Frequent visitors over a timeframe (defaults to last 30 days)
 // GET /api/analytics/frequent-visitors?days=30&limit=10&minVisits=2
-router.get('/frequent-visitors', async (req, res) => {
+router.get('/frequent-visitors', requireRole('admin', 'staff', 'warden', 'analyst'), async (req, res) => {
   const days = Math.max(1, Math.min(365, parseInt(String(req.query.days || '30')) || 30));
   const limit = Math.max(1, Math.min(100, parseInt(String(req.query.limit || '10')) || 10));
   const minVisits = Math.max(1, Math.min(1000, parseInt(String(req.query.minVisits || '1')) || 1));
@@ -307,7 +306,7 @@ router.get('/frequent-visitors', async (req, res) => {
 
 // All-time frequent visitors with optional min/max filters
 // GET /api/analytics/frequent-visitors-all?minVisits=1&maxVisits=&limit=20
-router.get('/frequent-visitors-all', async (req, res) => {
+router.get('/frequent-visitors-all', requireRole('admin', 'staff', 'warden', 'analyst'), async (req, res) => {
   const limit = Math.max(1, Math.min(200, parseInt(String(req.query.limit || '20')) || 20));
   const minVisits = Math.max(1, Math.min(100000, parseInt(String(req.query.minVisits || '1')) || 1));
   const maxVisitsRaw = req.query.maxVisits as string | undefined;

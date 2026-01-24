@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
+import { hasRole } from '../lib/auth';
 import { toPng } from 'html-to-image';
 
 export function Dashboard() {
@@ -45,12 +46,18 @@ export function Dashboard() {
         setLoading(true);
         const res = await api.get('/api/analytics/summary');
         setData(res.data);
-        const [logsRes, trendRes] = await Promise.all([
-          api.get('/api/visit-logs', { params: { page: 1, pageSize: 10 } }),
-          api.get('/api/analytics/checkins-7d'),
-        ]);
-        setRecent(logsRes.data?.data || []);
-        setTrend(trendRes.data?.days || []);
+        const canDeep = hasRole(['admin','staff','warden','analyst']);
+        if (canDeep) {
+          const [logsRes, trendRes] = await Promise.all([
+            api.get('/api/visit-logs', { params: { page: 1, pageSize: 10 } }),
+            api.get('/api/analytics/checkins-7d'),
+          ]);
+          setRecent(logsRes.data?.data || []);
+          setTrend(trendRes.data?.days || []);
+        } else {
+          setRecent([]);
+          setTrend([]);
+        }
       } catch (e: any) {
         setError(e?.response?.data?.error || 'Failed to load summary');
       } finally {
@@ -61,6 +68,8 @@ export function Dashboard() {
 
   useEffect(() => {
     (async () => {
+      const canDeep = hasRole(['admin','staff','warden','analyst']);
+      if (!canDeep) { setForecast(null); setLoadingForecast(false); return; }
       try {
         setLoadingForecast(true);
         setForecast(null);
@@ -77,6 +86,8 @@ export function Dashboard() {
   // Load depth analytics (heatmap and trends)
   useEffect(() => {
     (async () => {
+      const canDeep = hasRole(['admin','staff','warden','analyst']);
+      if (!canDeep) { setHeatmap(null); setTrendWeek(null); setTrendMonth(null); return; }
       try {
         const [hm, tw, tm] = await Promise.all([
           api.get('/api/analytics/hourly-heatmap', { params: { days: heatmapDays } }),
@@ -93,6 +104,8 @@ export function Dashboard() {
   // Load frequent visitors (all-time)
   useEffect(() => {
     (async () => {
+      const canDeep = hasRole(['admin','staff','warden','analyst']);
+      if (!canDeep) { setFv([]); setLoadingFv(false); return; }
       try {
         setLoadingFv(true);
         setFvError(null);

@@ -72,8 +72,8 @@ export function AppShell() {
   }, [showLogoutDialog]);
   const nav = [
     { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    ...(hasRole(['admin', 'staff']) ? [{ to: '/register', label: 'Register', icon: 'register' }] : [] as any),
-    ...(hasRole(['admin', 'staff']) ? [{ to: '/personnel', label: 'Personnel', icon: 'personnel' }] : [] as any),
+    ...(hasRole(['admin', 'staff', 'officer']) ? [{ to: '/register', label: 'Register', icon: 'register' }] : [] as any),
+    ...(hasRole(['admin', 'staff', 'officer']) ? [{ to: '/personnel', label: 'Personnel', icon: 'personnel' }] : [] as any),
     { to: '/scan', label: 'Scan', icon: 'scan' },
     ...(hasRole(['admin', 'staff']) ? [{ to: '/prereg', label: 'Pre-Registrations', icon: 'register' }] : [] as any),
     ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),

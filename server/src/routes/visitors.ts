@@ -13,7 +13,7 @@ const router = Router();
 router.use(requireAuth);
 
 // List visitors with simple filters and pagination
-router.get('/', requireRole('admin', 'staff', 'warden', 'analyst'), async (req, res) => {
+router.get('/', requireRole('admin', 'staff', 'officer', 'warden', 'analyst'), async (req, res) => {
   const { q, page = '1', pageSize = '20' } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
