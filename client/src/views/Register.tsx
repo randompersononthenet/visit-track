@@ -694,7 +694,7 @@ export function Register() {
           </div>
         </div>
       )}
-{idCard && hasRole(['admin','staff']) && (
+{idCard && hasRole(['admin','staff','officer']) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => setIdCard(null)} />
           <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(96vw,760px)] dark:bg-slate-900 dark:border-slate-700">
