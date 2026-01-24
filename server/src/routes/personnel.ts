@@ -13,7 +13,7 @@ const router = Router();
 router.use(requireAuth);
 
 // List personnel with filters and pagination
-router.get('/', requireRole('admin', 'staff', 'officer'), async (req, res) => {
+router.get('/', requireRole('admin', 'staff', 'warden', 'analyst'), async (req, res) => {
   const { q, page = '1', pageSize = '20' } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
@@ -48,7 +48,7 @@ router.post('/', requireRole('admin', 'staff'), validate(createPersonnelSchema),
 });
 
 // Get by id
-router.get('/:id', requireRole('admin', 'staff', 'officer'), async (req, res) => {
+router.get('/:id', requireRole('admin', 'staff', 'warden', 'analyst'), async (req, res) => {
   const rec = await Personnel.findByPk(Number(req.params.id));
   if (!rec) return res.status(404).json({ error: 'Not found' });
   res.json(rec);
