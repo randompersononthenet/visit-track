@@ -14,7 +14,7 @@ import { requireRole } from '../middleware/roles';
 const router = Router();
 
 router.use(requireAuth);
-router.use(requireRole('admin', 'staff', 'officer'));
+router.use(requireRole('staff', 'officer'));
 
 /**
  * GET /api/scan/preview?qrCode=...

@@ -319,7 +319,7 @@ export function Personnel() {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                       </button>
                       )}
-                      {hasRole(['admin','staff']) && (
+                      {hasRole(['admin','staff','officer']) && (
                       <button
                         className="p-1.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
                         title="Generate ID"
@@ -504,7 +504,7 @@ export function Personnel() {
         </div>
       )}
 
-      {idCard && hasRole(['admin','staff']) && (
+      {idCard && hasRole(['admin','staff','officer']) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => setIdCard(null)} />
           <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(96vw,760px)] dark:bg-slate-900 dark:border-slate-700">

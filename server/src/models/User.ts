@@ -7,6 +7,7 @@ export interface UserAttributes {
   username: string;
   passwordHash: string;
   roleId: number;
+  disabled?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -18,6 +19,7 @@ export class User extends Model<UserAttributes, UserCreation> implements UserAtt
   declare username: string;
   declare passwordHash: string;
   declare roleId: number;
+  declare disabled: boolean;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
   declare role?: Role;
@@ -29,6 +31,7 @@ User.init(
     username: { type: DataTypes.STRING(64), allowNull: false, unique: true },
     passwordHash: { type: DataTypes.STRING(255), allowNull: false },
     roleId: { type: DataTypes.INTEGER, allowNull: false, field: 'role_id', references: { model: 'roles', key: 'id' } },
+    disabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   },
   { sequelize, tableName: 'users', underscored: true }
 );

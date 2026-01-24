@@ -14,6 +14,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { Personnel } from './views/Personnel'
 import { RoleRoute } from './components/RoleRoute'
 import { PreRegistrations } from './views/PreRegistrations'
+import { Users } from './views/Users'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -54,6 +55,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             element={
               <RoleRoute roles={["admin", "staff"]}>
                 <Reports />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <RoleRoute roles={["admin"]}>
+                <Users />
               </RoleRoute>
             }
           />

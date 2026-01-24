@@ -13,6 +13,7 @@ router.post('/login', async (req, res) => {
   }
   const user = await User.findOne({ where: { username }, include: [{ model: Role, as: 'role' }] });
   if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+  if ((user as any).disabled) return res.status(403).json({ error: 'Account disabled' });
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
   const secret = process.env.JWT_SECRET || 'dev-secret';
