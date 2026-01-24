@@ -15,6 +15,7 @@ import visitLogsRouter from './routes/visitLogs';
 import reportsRouter from './routes/reports';
 import analyticsRouter from './routes/analytics';
 import violationsRouter from './routes/violations';
+import auditLogsRouter from './routes/auditLogs';
 import usersRouter from './routes/users';
 import uploadsRouter from './routes/uploads';
 import preregRouter from './routes/prereg';
@@ -63,6 +64,7 @@ app.use('/api/uploads', uploadsRouter);
 app.use('/api/violations', violationsRouter);
 app.use('/api/prereg', preregRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/audit-logs', auditLogsRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {

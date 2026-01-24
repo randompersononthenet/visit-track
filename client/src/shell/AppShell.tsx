@@ -81,13 +81,14 @@ export function AppShell() {
   }, [showLogoutDialog]);
   const nav = [
     { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    ...(hasRole(['admin', 'staff', 'officer']) ? [{ to: '/register', label: 'Register', icon: 'register' }] : [] as any),
-    ...(hasRole(['admin', 'staff', 'officer']) ? [{ to: '/personnel', label: 'Personnel', icon: 'personnel' }] : [] as any),
+    ...(hasRole(['admin', 'staff', 'officer', 'warden']) ? [{ to: '/register', label: 'Register', icon: 'register' }] : [] as any),
+    ...(hasRole(['admin', 'staff', 'officer', 'warden']) ? [{ to: '/personnel', label: 'Personnel', icon: 'personnel' }] : [] as any),
     ...(hasRole(['staff', 'officer']) ? [{ to: '/scan', label: 'Scan', icon: 'scan' }] : [] as any),
     ...(hasRole(['admin', 'staff']) ? [{ to: '/prereg', label: 'Pre-Registrations', icon: 'register' }] : [] as any),
     ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),
     ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
     ...(hasRole(['admin']) ? [{ to: '/users', label: 'Users', icon: 'users' }] : [] as any),
+    ...(hasRole(['admin']) ? [{ to: '/audit-logs', label: 'Audit Trails', icon: 'logs' }] : [] as any),
   ];
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex">

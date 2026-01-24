@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { validate } from '../lib/validation';
 import { v4 as uuidv4 } from 'uuid';
 import { requireRole } from '../middleware/roles';
+import { audit } from '../lib/audit';
 
 const router = Router();
 
@@ -80,6 +81,7 @@ router.post('/', requireRole('admin', 'staff'), validate(createVisitorSchema), a
     photoUrl,
     blacklistStatus,
   });
+  await audit(req as any, 'create', 'visitor', v.id, { fullName: normFull, idNumber: v.idNumber });
   res.status(201).json(v);
 });
 
@@ -143,6 +145,7 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updateVisitorSchema
     updates.flagUpdatedAt = new Date();
   }
   await v.update(updates);
+  await audit(req as any, 'update', 'visitor', v.id, { fields: Object.keys(updates) });
   res.json(v);
 });
 
@@ -152,6 +155,7 @@ router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
   await v.destroy();
+  await audit(req as any, 'delete', 'visitor', v.id, { fullName: v.fullName });
   res.status(204).send();
 });
 

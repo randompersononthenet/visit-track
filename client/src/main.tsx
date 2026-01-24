@@ -15,6 +15,7 @@ import { Personnel } from './views/Personnel'
 import { RoleRoute } from './components/RoleRoute'
 import { PreRegistrations } from './views/PreRegistrations'
 import { Users } from './views/Users'
+import { AuditLogs } from './views/AuditLogs'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -45,7 +46,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route
             path="/logs"
             element={
-              <RoleRoute roles={["admin", "staff"]}>
+              <RoleRoute roles={["admin", "staff", "warden"]}>
                 <VisitLogs />
               </RoleRoute>
             }
@@ -53,7 +54,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route
             path="/reports"
             element={
-              <RoleRoute roles={["admin", "staff"]}>
+              <RoleRoute roles={["admin", "staff", "warden"]}>
                 <Reports />
               </RoleRoute>
             }
@@ -63,6 +64,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             element={
               <RoleRoute roles={["admin"]}>
                 <Users />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <RoleRoute roles={["admin"]}>
+                <AuditLogs />
               </RoleRoute>
             }
           />

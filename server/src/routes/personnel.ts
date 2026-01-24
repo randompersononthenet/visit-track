@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { validate } from '../lib/validation';
 import { requireRole } from '../middleware/roles';
+import { audit } from '../lib/audit';
 
 const router = Router();
 
@@ -44,6 +45,7 @@ router.post('/', requireRole('admin', 'staff'), validate(createPersonnelSchema),
   const { firstName, middleName, lastName, roleTitle, qrCode, photoUrl } = (req as any).parsed;
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
   const rec = await Personnel.create({ firstName, middleName, lastName, fullName, roleTitle, qrCode: qrCode || uuidv4(), photoUrl });
+  await audit(req as any, 'create', 'personnel', rec.id, { fullName, roleTitle });
   res.status(201).json(rec);
 });
 
@@ -68,6 +70,7 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updatePersonnelSche
       .join(' ')
   );
   await rec.update({ firstName, middleName, lastName, fullName: computedFullName, roleTitle, qrCode, photoUrl });
+  await audit(req as any, 'update', 'personnel', rec.id, { fields: ['firstName','middleName','lastName','fullName','roleTitle','qrCode','photoUrl'].filter((k) => typeof (eval(k) as any) !== 'undefined') });
   res.json(rec);
 });
 
@@ -77,6 +80,7 @@ router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });
   await rec.destroy();
+  await audit(req as any, 'delete', 'personnel', rec.id, { fullName: rec.fullName });
   res.status(204).send();
 });
 

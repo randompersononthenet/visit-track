@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth';
 import { requireRole } from '../middleware/roles';
 import { User } from '../models/User';
 import { Role } from '../models/Role';
+import { audit } from '../lib/audit';
 
 const router = Router();
 router.use(requireAuth);
@@ -29,6 +30,7 @@ router.post('/', async (req, res) => {
   if (!roleRec) return res.status(400).json({ error: 'Role not found' });
   const hash = await bcrypt.hash(password, 10);
   const created = await User.create({ username, passwordHash: hash, roleId: roleRec.id });
+  await audit(req as any, 'create', 'user', created.id, { username, role: roleName });
   const safe = { id: created.id, username: created.username, roleId: created.roleId, disabled: (created as any).disabled, createdAt: created.createdAt, updatedAt: created.updatedAt };
   res.status(201).json(safe);
 });
@@ -45,6 +47,7 @@ router.patch('/:id/password', async (req, res) => {
   if (!user) return res.status(404).json({ error: 'User not found' });
   const hash = await bcrypt.hash(password, 10);
   await user.update({ passwordHash: hash });
+  await audit(req as any, 'reset_password', 'user', user.id, { username: user.username });
   res.json({ status: 'ok' });
 });
 
@@ -63,6 +66,7 @@ router.patch('/:id/disabled', async (req, res) => {
   const user = await User.findByPk(id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   await user.update({ disabled });
+  await audit(req as any, disabled ? 'disable' : 'enable', 'user', user.id, { username: user.username });
   res.json({ id: user.id, disabled: (user as any).disabled });
 });
 
