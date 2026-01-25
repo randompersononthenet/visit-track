@@ -27,6 +27,7 @@ import { Role } from './models/Role';
 import selfsigned from 'selfsigned';
 
 const app = express();
+app.set('trust proxy', true);
 app.use(helmet({
   // Allow images (e.g., /uploads/*) to be fetched from other origins like http://localhost:5173
   crossOriginResourcePolicy: { policy: 'cross-origin' },
