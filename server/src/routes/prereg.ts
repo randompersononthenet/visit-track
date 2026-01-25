@@ -6,6 +6,7 @@ import { fetchPending, markImported, markRejected, PreregRow } from '../lib/prer
 import fs from 'fs';
 import path from 'path';
 import { Visitor } from '../models/Visitor';
+import { audit } from '../lib/audit';
 import { v4 as uuidv4 } from 'uuid';
 import fsPromises from 'fs/promises';
 
@@ -208,6 +209,7 @@ router.post('/:id/approve', async (req, res) => {
       photoUrl: localPhotoUrl,
     });
     await markImported(id);
+    await audit(req as any, 'prereg_approve', 'visitor', created.id, { preregId: id, fullName: normFull });
     res.status(201).json({ status: 'ok', visitor: created });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'Approve failed' });
@@ -218,6 +220,7 @@ router.post('/:id/reject', async (req, res) => {
   const { id } = req.params as { id: string };
   try {
     await markRejected(id);
+    await audit(req as any, 'prereg_reject', 'prereg', null, { preregId: id });
     res.json({ status: 'ok' });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'Reject failed' });

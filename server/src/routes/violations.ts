@@ -5,6 +5,7 @@ import { requireRole } from '../middleware/roles';
 import { z } from 'zod';
 import { validate } from '../lib/validation';
 import { Violation } from '../models/Violation';
+import { audit } from '../lib/audit';
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.post('/visitor/:id', requireRole('admin', 'staff'), validate(createViolat
   const visitorId = Number(req.params.id);
   const { level, details, recordedAt } = (req as any).parsed;
   const v = await Violation.create({ visitorId, level, details: details ?? null, recordedAt: recordedAt ? new Date(recordedAt) : new Date() });
+  await audit(req as any, 'create', 'violation', v.id, { visitorId, level });
   res.status(201).json(v);
 });
 
