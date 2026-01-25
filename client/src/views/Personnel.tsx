@@ -140,7 +140,7 @@ export function Personnel() {
           <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(96vw,760px)] dark:bg-slate-900 dark:border-slate-700">
             <div className="flex items-center justify-between mb-3">
               <div className="font-semibold">Capture Photo</div>
-              <button className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setCapOpen(null)}>Close</button>
+              <button type="button" className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setCapOpen(null)}>Close</button>
             </div>
             {capError && <div className="text-rose-600 dark:text-red-400 text-sm mb-2">{capError}</div>}
             <div className="grid md:grid-cols-2 gap-4">
@@ -155,6 +155,7 @@ export function Personnel() {
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button
+                type="button"
                 className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
                 onClick={() => {
                   const video = capVideoRef.current;
@@ -177,6 +178,7 @@ export function Personnel() {
                 Capture Frame
               </button>
               <button
+                type="button"
                 className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white"
                 onClick={async () => {
                   const canvas = capCanvasRef.current;
@@ -187,7 +189,9 @@ export function Personnel() {
                     if (capOpen === 'create') setPhotoUrl(res.data?.url || '');
                     else setEditPhotoUrl(res.data?.url || '');
                     setCapOpen(null);
-                  } catch {}
+                  } catch (e: any) {
+                    setError(e?.response?.data?.error || 'Upload failed');
+                  }
                 }}
               >
                 Use Photo
