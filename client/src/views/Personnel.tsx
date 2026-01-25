@@ -129,7 +129,7 @@ export function Personnel() {
               <div className="w-20 h-20 rounded bg-slate-100 border border-slate-300 overflow-hidden">
                 {photoUrl ? (
                   // eslint-disable-next-line jsx-a11y/alt-text
-                  <img src={/^https?:\/\//i.test(photoUrl) ? photoUrl : `${(import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000'}${photoUrl}` } className="w-full h-full object-cover" />
+                  <img src={(() => { const base = (typeof window !== 'undefined' && !((import.meta as any).env?.VITE_API_BASE)) ? window.location.origin : (((import.meta as any).env?.VITE_API_BASE) || 'http://localhost:4000'); return /^https?:\/\//i.test(photoUrl) ? photoUrl : `${base}${photoUrl}`; })()} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-500">No photo</div>
                 )}
@@ -442,7 +442,7 @@ export function Personnel() {
                   <div className="w-20 h-20 rounded bg-slate-100 border border-slate-300 overflow-hidden">
                     {editPhotoUrl ? (
                       // eslint-disable-next-line jsx-a11y/alt-text
-                      <img src={/^https?:\/\//i.test(editPhotoUrl) ? editPhotoUrl : `${(import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000'}${editPhotoUrl}` } className="w-full h-full object-cover" />
+                      <img src={(() => { const base = (typeof window !== 'undefined' && !((import.meta as any).env?.VITE_API_BASE)) ? window.location.origin : (((import.meta as any).env?.VITE_API_BASE) || 'http://localhost:4000'); return /^https?:\/\//i.test(editPhotoUrl) ? editPhotoUrl : `${base}${editPhotoUrl}`; })()} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-500">No photo</div>
                     )}

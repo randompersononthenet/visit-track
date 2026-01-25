@@ -248,7 +248,9 @@ export function Scan() {
                 className="hidden"
                 onChange={async (e) => {
                   setError(null);
-                  const file = e.target.files?.[0];                  try {
+                  const file = e.target.files?.[0];
+                  if (!file) { setError('No file selected'); return; }
+                  try {
                     const dataUrl = await new Promise<string>((resolve, reject) => {
                       const reader = new FileReader();
                       reader.onload = () => resolve(reader.result as string);
@@ -496,11 +498,12 @@ export function Scan() {
                 {/* Square crop overlay in image coordinates */}
                 {cropImgNatural && cropImgRef.current && (() => {
                   const img = cropImgRef.current!;
+                  const nat = cropImgNatural!;
                   // Compute scale from natural to displayed size
                   const dispW = img.clientWidth;
                   const dispH = img.clientHeight;
-                  const scaleX = dispW / cropImgNatural.w;
-                  const scaleY = dispH / cropImgNatural.h;
+                  const scaleX = dispW / nat.w;
+                  const scaleY = dispH / nat.h;
                   const sx = cropBox.x * scaleX;
                   const sy = cropBox.y * scaleY;
                   const ss = cropBox.size * Math.min(scaleX, scaleY);
@@ -525,8 +528,8 @@ export function Scan() {
                     cropDraggingRef.current.ox = cx;
                     cropDraggingRef.current.oy = cy;
                     setCropBox((b) => {
-                      const nx = Math.max(0, Math.min(cropImgNatural.w - b.size, b.x + dx));
-                      const ny = Math.max(0, Math.min(cropImgNatural.h - b.size, b.y + dy));
+                      const nx = Math.max(0, Math.min(nat.w - b.size, b.x + dx));
+                      const ny = Math.max(0, Math.min(nat.h - b.size, b.y + dy));
                       return { ...b, x: Math.round(nx), y: Math.round(ny), size: b.size };
                     });
                   }

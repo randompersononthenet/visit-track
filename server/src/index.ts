@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import https from 'https';
+import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -22,6 +24,7 @@ import preregRouter from './routes/prereg';
 import bcrypt from 'bcryptjs';
 import { User } from './models/User';
 import { Role } from './models/Role';
+import selfsigned from 'selfsigned';
 
 const app = express();
 app.use(helmet({
@@ -77,6 +80,9 @@ app.get('/health', async (_req: Request, res: Response) => {
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 const HOST = process.env.HOST || '0.0.0.0';
+const USE_HTTPS = process.env.HTTPS === 'true';
+const REDIRECT_HTTP = process.env.HTTP_REDIRECT === 'true';
+const SERVE_CLIENT = process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production';
 
 async function start() {
   try {
@@ -84,9 +90,59 @@ async function start() {
     console.log('Database connection established');
     await syncSchema();
     await bootstrapAdmin();
-    app.listen(PORT, HOST, () => {
-      console.log(`Server listening on http://${HOST}:${PORT}`);
-    });
+
+    if (SERVE_CLIENT) {
+      // Serve built client if available
+      const distPath = path.join(process.cwd(), '..', 'client', 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (_req, res, next) => {
+        if (_req.path.startsWith('/api') || _req.path.startsWith('/uploads')) return next();
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
+
+    if (USE_HTTPS) {
+      const attrs = [{ name: 'commonName', value: 'VisitTrack Local' }];
+      const lanIp = process.env.LAN_IP || process.env.SERVER_IP || '';
+      const altNames: any[] = [
+        { type: 2, value: 'localhost' }, // DNS
+        { type: 7, ip: '127.0.0.1' },    // IP
+      ];
+      if (lanIp) altNames.push({ type: 7, ip: lanIp });
+      const pems = selfsigned.generate(attrs, {
+        days: 365,
+        keySize: 2048,
+        algorithm: 'sha256',
+        // Add SAN to satisfy modern browsers
+        extensions: [
+          { name: 'basicConstraints', cA: false },
+          { name: 'keyUsage', digitalSignature: true, keyEncipherment: true },
+          { name: 'extKeyUsage', serverAuth: true },
+          { name: 'subjectAltName', altNames },
+        ],
+      } as any);
+      const httpsServer = https.createServer({ key: pems.private, cert: pems.cert }, app);
+      httpsServer.listen(PORT, HOST, () => {
+        console.log(`Server listening on https://${HOST}:${PORT}`);
+        console.log(`Note: Using self-signed certificate. Browsers will show a warning; proceed to continue.`);
+      });
+      if (REDIRECT_HTTP) {
+        const redirectServer = http.createServer((req, res) => {
+          const host = (req.headers.host || '').split(':')[0] || HOST;
+          const location = `https://${host}:${PORT}${req.url || '/'}`;
+          res.statusCode = 302;
+          res.setHeader('Location', location);
+          res.end(`Redirecting to ${location}`);
+        });
+        redirectServer.listen(PORT + 1, HOST, () => {
+          console.log(`HTTP redirect server on http://${HOST}:${PORT + 1} -> https://${HOST}:${PORT}`);
+        });
+      }
+    } else {
+      app.listen(PORT, HOST, () => {
+        console.log(`Server listening on http://${HOST}:${PORT}`);
+      });
+    }
   } catch (error) {
     console.error('Unable to connect to the database:', error);
     process.exit(1);

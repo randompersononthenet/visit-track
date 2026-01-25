@@ -16,12 +16,17 @@ import { RoleRoute } from './components/RoleRoute'
 import { PreRegistrations } from './views/PreRegistrations'
 import { Users } from './views/Users'
 import { AuditLogs } from './views/AuditLogs'
+import { isAuthenticated } from './lib/auth'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />}
+        />
         <Route
           path="/"
           element={

@@ -174,7 +174,10 @@ export function PreRegistrations() {
                       src={(() => {
                         const u = preview.photo_preview_url || preview.photo_url;
                         if (!u) return '';
-                        return /^https?:\/\//i.test(u) ? u : `${(import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000'}${u}`;
+                        const base = (typeof window !== 'undefined' && window.location.protocol === 'https:')
+                          ? window.location.origin
+                          : (((import.meta as any).env?.VITE_API_BASE) || 'http://localhost:4000');
+                        return /^https?:\/\//i.test(u) ? u : `${base}${u}`;
                       })()}
                       alt="Profile"
                       className="object-cover w-full h-full"

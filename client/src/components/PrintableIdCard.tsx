@@ -15,8 +15,8 @@ export type PrintableIdCardProps = {
 export const PrintableIdCard = React.forwardRef<HTMLDivElement, PrintableIdCardProps>(
   ({ type, fullName, secondaryLabel, qrValue, issuedAt, photoUrl }, ref) => {
     const issued = issuedAt ? new Date(issuedAt) : new Date();
-    const API_BASE = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000';
-    const resolvedPhoto = photoUrl && !/^https?:\/\//i.test(photoUrl) ? `${API_BASE}${photoUrl}` : photoUrl;
+    const ORIGIN_BASE = (typeof window !== 'undefined') ? window.location.origin : 'http://localhost:4000';
+    const resolvedPhoto = photoUrl && !/^https?:\/\//i.test(photoUrl) ? `${ORIGIN_BASE}${photoUrl}` : photoUrl;
     return (
       <div ref={ref} className="print-area w-[504px] h-[318px] bg-white text-slate-900 shadow rounded border border-slate-200 p-3 flex flex-col">
         <div className="flex items-center justify-between mb-2">

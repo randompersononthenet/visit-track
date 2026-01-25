@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { setRole } from './auth';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
+const API_BASE = (typeof window !== 'undefined' && window.location && window.location.origin && !import.meta.env.VITE_API_BASE)
+  ? window.location.origin
+  : (import.meta.env.VITE_API_BASE || 'http://localhost:4000');
 
 export const api = axios.create({
   baseURL: API_BASE,
