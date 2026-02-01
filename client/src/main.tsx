@@ -6,6 +6,7 @@ import { AppShell } from './shell/AppShell'
 import { Dashboard } from './views/Dashboard'
 import { Login } from './views/Login'
 import { Register } from './views/Register'
+import { RegisterExternal } from './views/RegisterExternal'
 import { Scan } from './views/Scan'
 import { Reports } from './views/Reports'
 import { VisitLogs } from './views/VisitLogs'
@@ -38,6 +39,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/register-external" element={<RegisterExternal />} />
           <Route path="/personnel" element={<Personnel />} />
           <Route path="/scan" element={<Scan />} />
           <Route

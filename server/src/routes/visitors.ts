@@ -15,13 +15,14 @@ router.use(requireAuth);
 
 // List visitors with simple filters and pagination
 router.get('/', requireRole('admin', 'staff', 'officer', 'warden', 'analyst'), async (req, res) => {
-  const { q, page = '1', pageSize = '20' } = req.query as Record<string, string>;
+  const { q, page = '1', pageSize = '20', type } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
   const where: any = {};
   if (q) {
     where.fullName = { [Op.iLike]: `%${q}%` };
   }
+  if (type === 'regular' || type === 'special') where.type = type;
   const { rows, count } = await Visitor.findAndCountAll({
     where,
     order: [['id', 'DESC']],
@@ -42,10 +43,11 @@ const createVisitorSchema = z.object({
   qrCode: z.string().max(200).optional(),
   photoUrl: z.string().max(500).optional(),
   blacklistStatus: z.boolean().optional(),
+  type: z.enum(['regular','special']).optional(),
 });
 
 router.post('/', requireRole('admin', 'staff'), validate(createVisitorSchema), async (req, res) => {
-  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus } = (req as any).parsed;
+  const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus, type } = (req as any).parsed;
   const normFirst = (firstName || '').trim().toUpperCase();
   const normMiddleRaw = (middleName || '').trim();
   const normMiddle = normMiddleRaw ? normMiddleRaw.toUpperCase() : undefined;
@@ -80,6 +82,7 @@ router.post('/', requireRole('admin', 'staff'), validate(createVisitorSchema), a
     qrCode: qrCode || uuidv4(),
     photoUrl,
     blacklistStatus,
+    type: type || 'regular',
   });
   await audit(req as any, 'create', 'visitor', v.id, { fullName: normFull, idNumber: v.idNumber });
   res.status(201).json(v);
