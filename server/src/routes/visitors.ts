@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { Op } from 'sequelize';
 import { Visitor } from '../models/Visitor';
+import { Violation } from '../models/Violation';
 import { requireAuth } from '../middleware/auth';
 import { z } from 'zod';
 import { validate } from '../lib/validation';
@@ -15,7 +16,7 @@ router.use(requireAuth);
 
 // List visitors with simple filters and pagination
 router.get('/', requireRole('admin', 'staff', 'officer', 'warden', 'analyst'), async (req, res) => {
-  const { q, page = '1', pageSize = '20', type } = req.query as Record<string, string>;
+  const { q, page = '1', pageSize = '20', type, includeArchived } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
   const where: any = {};
@@ -23,6 +24,7 @@ router.get('/', requireRole('admin', 'staff', 'officer', 'warden', 'analyst'), a
     where.fullName = { [Op.iLike]: `%${q}%` };
   }
   if (type === 'regular' || type === 'special') where.type = type;
+  if (!(includeArchived === '1' || includeArchived === 'true')) where.archivedAt = { [Op.is]: null };
   const { rows, count } = await Visitor.findAndCountAll({
     where,
     order: [['id', 'DESC']],
@@ -153,13 +155,36 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updateVisitorSchema
 });
 
 // Delete visitor
+// Soft delete (archive)
 router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
-  await v.destroy();
-  await audit(req as any, 'delete', 'visitor', v.id, { fullName: v.fullName });
+  await v.update({ archivedAt: new Date() });
+  await audit(req as any, 'archive', 'visitor', v.id, { fullName: v.fullName });
   res.status(204).send();
+});
+
+// Hard delete (admin only)
+router.delete('/:id/hard', requireRole('admin'), async (req, res) => {
+  const id = Number(req.params.id);
+  const v = await Visitor.findByPk(id);
+  if (!v) return res.status(404).json({ error: 'Not found' });
+  // Hard delete violations first to satisfy FK
+  await Violation.destroy({ where: { visitorId: id } });
+  await v.destroy();
+  await audit(req as any, 'delete', 'visitor', id, { fullName: v.fullName });
+  res.status(204).send();
+});
+
+// Restore (unarchive)
+router.patch('/:id/restore', requireRole('admin', 'staff'), async (req, res) => {
+  const id = Number(req.params.id);
+  const v = await Visitor.findByPk(id);
+  if (!v) return res.status(404).json({ error: 'Not found' });
+  await v.update({ archivedAt: null });
+  await audit(req as any, 'restore', 'visitor', v.id, { fullName: v.fullName });
+  res.json(v);
 });
 
 export default router;

@@ -8,6 +8,7 @@ export interface ViolationAttributes {
   level: string;
   details?: string | null;
   recordedAt: Date;
+  archivedAt?: Date | null;
 }
 
 type ViolationCreation = Optional<ViolationAttributes, 'id' | 'details' | 'recordedAt'>;
@@ -18,6 +19,7 @@ export class Violation extends Model<ViolationAttributes, ViolationCreation> imp
   declare level: string;
   declare details: string | null | undefined;
   declare recordedAt: Date;
+  declare archivedAt: Date | null | undefined;
 }
 
 Violation.init(
@@ -27,6 +29,7 @@ Violation.init(
     level: { type: DataTypes.STRING(50), allowNull: false },
     details: { type: DataTypes.TEXT, allowNull: true },
     recordedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, field: 'recorded_at' },
+    archivedAt: { type: DataTypes.DATE, allowNull: true, field: 'archived_at' },
   },
   { sequelize, tableName: 'violations', underscored: true }
 );

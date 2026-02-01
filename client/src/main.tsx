@@ -7,6 +7,7 @@ import { Dashboard } from './views/Dashboard'
 import { Login } from './views/Login'
 import { Register } from './views/Register'
 import { RegisterExternal } from './views/RegisterExternal'
+import { ArchivedVisitors } from './views/ArchivedVisitors'
 import { Scan } from './views/Scan'
 import { Reports } from './views/Reports'
 import { VisitLogs } from './views/VisitLogs'
@@ -40,6 +41,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/register" element={<Register />} />
           <Route path="/register-external" element={<RegisterExternal />} />
+          <Route path="/archived" element={<ArchivedVisitors />} />
           <Route path="/personnel" element={<Personnel />} />
           <Route path="/scan" element={<Scan />} />
           <Route

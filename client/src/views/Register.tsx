@@ -393,11 +393,19 @@ export function Register() {
                           Edit
                         </button>
                         <button
-                          className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white"
-                          onClick={async () => { if (!violationsOpen) return; const ok = window.confirm('Delete this incident?'); if (!ok) return; try { await api.delete(`/api/violations/${v.id}`); await loadViolations(violationsOpen.visitorId); } catch {} }}
+                          className="px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white"
+                          onClick={async () => { if (!violationsOpen) return; const ok = window.confirm('Archive this incident?'); if (!ok) return; try { await api.delete(`/api/violations/${v.id}`); await loadViolations(violationsOpen.visitorId); } catch {} }}
                         >
-                          Delete
+                          Archive
                         </button>
+                        {hasRole(['admin']) && (
+                          <button
+                            className="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white"
+                            onClick={async () => { if (!violationsOpen) return; const ok = window.confirm('PERMANENTLY delete this incident? This cannot be undone.'); if (!ok) return; try { await api.delete(`/api/violations/${v.id}/hard`); await loadViolations(violationsOpen.visitorId); } catch {} }}
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -518,13 +526,29 @@ export function Register() {
                       )}
                       {hasRole(['admin','staff']) && (
                       <button
-                        className="p-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white"
-                        title="Delete"
-                        aria-label="Delete visitor"
+                        className="p-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white"
+                        title="Archive"
+                        aria-label="Archive visitor"
                         onClick={async () => {
-                          if (!confirm('Delete this visitor?')) return;
+                          if (!confirm('Archive this visitor?')) return;
                           try {
                             await api.delete(`/api/visitors/${r.id}`);
+                            await load();
+                          } catch {}
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 7H3"/><path d="M7 7v10a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7"/><path d="M10 11v6M14 11v6"/></svg>
+                      </button>
+                      )}
+                      {hasRole(['admin']) && (
+                      <button
+                        className="p-1.5 rounded bg-rose-700 hover:bg-rose-600 text-white"
+                        title="Delete"
+                        aria-label="Hard delete visitor"
+                        onClick={async () => {
+                          if (!confirm('PERMANENTLY delete this visitor and related incidents? This cannot be undone.')) return;
+                          try {
+                            await api.delete(`/api/visitors/${r.id}/hard`);
                             await load();
                           } catch {}
                         }}

@@ -86,6 +86,7 @@ export function AppShell() {
     ...(hasRole(['admin', 'staff', 'officer', 'warden']) ? [{ to: '/personnel', label: 'Personnel', icon: 'personnel' }] : [] as any),
     ...(hasRole(['staff', 'officer']) ? [{ to: '/scan', label: 'Scan', icon: 'scan' }] : [] as any),
     ...(hasRole(['admin', 'staff']) ? [{ to: '/prereg', label: 'Pre-Registrations', icon: 'register' }] : [] as any),
+    ...(hasRole(['admin', 'staff']) ? [{ to: '/archived', label: 'Archived Visitors', icon: 'logs' }] : [] as any),
     ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),
     ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
     ...(hasRole(['admin']) ? [{ to: '/users', label: 'Users', icon: 'users' }] : [] as any),

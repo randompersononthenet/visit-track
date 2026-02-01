@@ -18,6 +18,7 @@ export interface VisitorAttributes {
   flagUpdatedBy?: number | null;
   flagUpdatedAt?: Date | null;
   type?: 'regular' | 'special' | null;
+  archivedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -41,6 +42,7 @@ export class Visitor extends Model<VisitorAttributes, VisitorCreation> implement
   declare flagUpdatedBy: number | null | undefined;
   declare flagUpdatedAt: Date | null | undefined;
   declare type: 'regular' | 'special' | null | undefined;
+  declare archivedAt: Date | null | undefined;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 }
@@ -63,6 +65,7 @@ Visitor.init(
     flagUpdatedBy: { type: DataTypes.INTEGER, allowNull: true, field: 'flag_updated_by' },
     flagUpdatedAt: { type: DataTypes.DATE, allowNull: true, field: 'flag_updated_at' },
     type: { type: DataTypes.STRING(20), allowNull: true, defaultValue: 'regular' },
+    archivedAt: { type: DataTypes.DATE, allowNull: true, field: 'archived_at' },
   },
   { sequelize, tableName: 'visitors', underscored: true, indexes: [
     // Ensure no duplicates when contact is provided: names are normalized to uppercase in routes

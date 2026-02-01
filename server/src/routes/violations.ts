@@ -13,11 +13,12 @@ router.use(requireAuth);
 
 // List violations (optionally filter by visitorId), basic pagination
 router.get('/', requireRole('admin', 'staff', 'officer'), async (req, res) => {
-  const { visitorId, page = '1', pageSize = '20' } = req.query as Record<string, string>;
+  const { visitorId, page = '1', pageSize = '20', includeArchived } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
   const where: any = {};
   if (visitorId) where.visitorId = Number(visitorId);
+  if (!(includeArchived === '1' || includeArchived === 'true')) where.archivedAt = { [Op.is]: null };
   const { rows, count } = await Violation.findAndCountAll({
     where,
     order: [['recordedAt', 'DESC']],
@@ -30,7 +31,7 @@ router.get('/', requireRole('admin', 'staff', 'officer'), async (req, res) => {
 // Alias: list by visitor
 router.get('/visitor/:id', requireRole('admin', 'staff', 'officer'), async (req, res) => {
   const id = Number(req.params.id);
-  const rows = await Violation.findAll({ where: { visitorId: id }, order: [['recordedAt', 'DESC']], limit: 200 });
+  const rows = await Violation.findAll({ where: { visitorId: id, archivedAt: { [Op.is]: null } }, order: [['recordedAt', 'DESC']], limit: 200 });
   res.json({ data: rows });
 });
 
@@ -69,7 +70,18 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updateViolationSche
 });
 
 // Delete a violation
+// Soft delete (archive)
 router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
+  const id = Number(req.params.id);
+  const v = await Violation.findByPk(id);
+  if (!v) return res.status(404).json({ error: 'Not found' });
+  await v.update({ archivedAt: new Date() });
+  await audit(req as any, 'archive', 'violation', id, { visitorId: v.visitorId });
+  res.status(204).end();
+});
+
+// Hard delete (admin only)
+router.delete('/:id/hard', requireRole('admin'), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Violation.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
