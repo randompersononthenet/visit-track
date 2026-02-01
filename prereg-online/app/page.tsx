@@ -71,7 +71,7 @@ export default function Page() {
   return (
     <div style={{ minHeight: '100vh', background: '#f1f5f9' }}>
       <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '12px 16px', display: 'flex', alignItems: 'center' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '16px 16px', display: 'flex', alignItems: 'center' }}>
           {/* Left spacer */}
           <div style={{ flex: 1 }} />
           {/* Centered logos with VisitTrack in the middle */}
@@ -180,14 +180,6 @@ export default function Page() {
                       setLocalPreview(url);
                     }
                   }}
-                />
-
-                <div style={{ fontSize: 12, color: '#64748b' }}>Or paste an existing image URL:</div>
-                <input
-                  placeholder="https://example.com/photo.jpg"
-                  value={photoUrl}
-                  onChange={(e)=> { setPhotoUrl(e.target.value); if (e.target.value) { setFile(null); setLocalPreview(null); } }}
-                  style={input}
                 />
               </div>
             </div>

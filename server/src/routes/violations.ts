@@ -48,4 +48,34 @@ router.post('/visitor/:id', requireRole('admin', 'staff'), validate(createViolat
   res.status(201).json(v);
 });
 
+// Update a violation
+const updateViolationSchema = z.object({
+  level: z.string().min(1).max(50).optional(),
+  details: z.string().nullable().optional(),
+  recordedAt: z.string().datetime().optional(),
+});
+
+router.patch('/:id', requireRole('admin', 'staff'), validate(updateViolationSchema), async (req, res) => {
+  const id = Number(req.params.id);
+  const v = await Violation.findByPk(id);
+  if (!v) return res.status(404).json({ error: 'Not found' });
+  const { level, details, recordedAt } = (req as any).parsed;
+  if (level !== undefined) v.level = level;
+  if (details !== undefined) v.details = details as any;
+  if (recordedAt !== undefined) v.recordedAt = new Date(recordedAt);
+  await v.save();
+  await audit(req as any, 'update', 'violation', v.id, { level: v.level });
+  res.json(v);
+});
+
+// Delete a violation
+router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
+  const id = Number(req.params.id);
+  const v = await Violation.findByPk(id);
+  if (!v) return res.status(404).json({ error: 'Not found' });
+  await v.destroy();
+  await audit(req as any, 'delete', 'violation', id, { visitorId: v.visitorId });
+  res.status(204).end();
+});
+
 export default router;

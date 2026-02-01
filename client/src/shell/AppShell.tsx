@@ -100,7 +100,7 @@ export function AppShell() {
             <img
               src="/Visittrack.png"
               alt="VisitTrack"
-              className={`${collapsed ? 'w-8 h-8' : 'w-10 h-10'} rounded`}
+              className={`${collapsed ? 'w-12 h-12' : 'w-10 h-10'} rounded`}
               onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
             />
             {!collapsed && <div className="text-lg font-semibold tracking-tight">VisitTrack</div>}

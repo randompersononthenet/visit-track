@@ -40,7 +40,7 @@ export function Login() {
           <img
             src="/Visittrack.png"
             alt="VisitTrack logo"
-            className="w-12 h-12 rounded"
+            className="w-30 h-30 rounded"
             onError={(e:any)=>{ e.currentTarget.style.display='none'; }}
           />
           <div className="w-10 h-10 rounded overflow-hidden bg-white border border-slate-200 flex items-center justify-center dark:bg-slate-900 dark:border-slate-700">

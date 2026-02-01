@@ -44,6 +44,7 @@ export function Register() {
   const [creatingViolation, setCreatingViolation] = useState(false);
   const [newViolLevel, setNewViolLevel] = useState('low');
   const [newViolDetails, setNewViolDetails] = useState('');
+  const [editViolId, setEditViolId] = useState<number | null>(null);
   const capVideoRef = useRef<HTMLVideoElement | null>(null);
   const capCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const capStreamRef = useRef<MediaStream | null>(null);
@@ -343,15 +344,28 @@ export function Register() {
                   if (!violationsOpen) return;
                   setCreatingViolation(true);
                   try {
-                    await api.post(`/api/violations/visitor/${violationsOpen.visitorId}`, { level: newViolLevel, details: newViolDetails || undefined });
-                    setNewViolDetails('');
+                    if (editViolId) {
+                      await api.patch(`/api/violations/${editViolId}`, { level: newViolLevel, details: newViolDetails || null });
+                      setEditViolId(null);
+                    } else {
+                      await api.post(`/api/violations/visitor/${violationsOpen.visitorId}`, { level: newViolLevel, details: newViolDetails || undefined });
+                      setNewViolDetails('');
+                    }
                     await loadViolations(violationsOpen.visitorId);
                   } catch {}
                   finally { setCreatingViolation(false); }
                 }}
               >
-                {creatingViolation ? 'Saving...' : 'Add Incident'}
+                {creatingViolation ? 'Saving...' : (editViolId ? 'Save Changes' : 'Add Incident')}
               </button>
+              {editViolId && (
+                <button
+                  className="ml-2 px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                  onClick={() => { setEditViolId(null); setNewViolDetails(''); }}
+                >
+                  Cancel Edit
+                </button>
+              )}
             </div>
           </div>
           <div className="border border-slate-200 dark:border-slate-700 rounded">
@@ -361,6 +375,7 @@ export function Register() {
                   <th className="text-left px-3 py-2">When</th>
                   <th className="text-left px-3 py-2">Severity</th>
                   <th className="text-left px-3 py-2">Details</th>
+                  <th className="text-left px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -369,11 +384,27 @@ export function Register() {
                     <td className="px-3 py-2">{new Date(v.recordedAt).toLocaleString()}</td>
                     <td className="px-3 py-2">{v.level}</td>
                     <td className="px-3 py-2">{v.details || '-'}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex gap-2">
+                        <button
+                          className="px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                          onClick={() => { setEditViolId(v.id); setNewViolLevel(v.level); setNewViolDetails(v.details || ''); }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white"
+                          onClick={async () => { if (!violationsOpen) return; const ok = window.confirm('Delete this incident?'); if (!ok) return; try { await api.delete(`/api/violations/${v.id}`); await loadViolations(violationsOpen.visitorId); } catch {} }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {violations.length === 0 && (
                   <tr>
-                    <td className="px-3 py-6 text-center text-slate-600 dark:text-slate-400" colSpan={3}>No incidents</td>
+                    <td className="px-3 py-6 text-center text-slate-600 dark:text-slate-400" colSpan={4}>No incidents</td>
                   </tr>
                 )}
               </tbody>
@@ -403,7 +434,7 @@ export function Register() {
                 <th className="text-left px-3 py-2 hidden md:table-cell">ID</th>
                 <th className="text-left px-3 py-2">Full name</th>
                 <th className="text-left px-3 py-2 hidden lg:table-cell">Risk</th>
-                <th className="text-left px-3 py-2 hidden lg:table-cell">Do not admit</th>
+                <th className="text-left px-3 py-2 hidden lg:table-cell">Blacklist</th>
                 <th className="text-left px-3 py-2 hidden xl:table-cell">Contact</th>
                 <th className="text-left px-3 py-2 hidden xl:table-cell">ID #</th>
                 <th className="text-left px-3 py-2 hidden lg:table-cell">QR</th>
@@ -661,7 +692,7 @@ export function Register() {
                 </div>
                 <label className="inline-flex items-center gap-2 text-sm mt-1">
                   <input type="checkbox" className="accent-rose-600" checked={editBlacklist} onChange={(e)=> setEditBlacklist(e.target.checked)} />
-                  Do not admit (admin controlled)
+                  Blacklist this visitor (admin controlled)
                 </label>
               </div>
             </div>
