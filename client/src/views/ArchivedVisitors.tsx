@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import { hasRole } from '../lib/auth';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export function ArchivedVisitors() {
   const [q, setQ] = useState('');
@@ -10,6 +11,8 @@ export function ArchivedVisitors() {
   const [total, setTotal] = useState(0);
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
   const [type, setType] = useState<'all'|'regular'|'special'>('all');
+  const [confirmRestoreId, setConfirmRestoreId] = useState<number | null>(null);
+  const [confirmHardDeleteId, setConfirmHardDeleteId] = useState<number | null>(null);
 
   async function load() {
     const params: any = { q, page, pageSize, includeArchived: 1 };
@@ -56,9 +59,9 @@ export function ArchivedVisitors() {
                 <td className="px-3 py-2 hidden xl:table-cell">{r.contact || '-'}</td>
                 <td className="px-3 py-2">
                   <div className="flex gap-1.5">
-                    <button className="p-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white" title="Restore" onClick={async () => { try { await api.patch(`/api/visitors/${r.id}/restore`); await load(); } catch {} }}>Restore</button>
+                    <button className="p-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white" title="Restore" onClick={() => setConfirmRestoreId(r.id)}>Restore</button>
                     {hasRole(['admin']) && (
-                      <button className="p-1.5 rounded bg-rose-700 hover:bg-rose-600 text-white" title="Delete" onClick={async () => { if (!confirm('PERMANENTLY delete this visitor and related incidents? This cannot be undone.')) return; try { await api.delete(`/api/visitors/${r.id}/hard`); await load(); } catch {} }}>Delete</button>
+                      <button className="p-1.5 rounded bg-rose-700 hover:bg-rose-600 text-white" title="Delete" onClick={() => setConfirmHardDeleteId(r.id)}>Delete</button>
                     )}
                   </div>
                 </td>
@@ -79,6 +82,23 @@ export function ArchivedVisitors() {
           <button disabled={page >= totalPages} className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button>
         </div>
       </div>
+      {/* Confirm modals */}
+      <ConfirmModal
+        open={confirmRestoreId !== null}
+        title="Restore visitor"
+        message="Are you sure you want to restore this visitor?"
+        confirmText="Restore"
+        onConfirm={async () => { const id = confirmRestoreId!; setConfirmRestoreId(null); try { await api.patch(`/api/visitors/${id}/restore`); await load(); } catch {} }}
+        onCancel={() => setConfirmRestoreId(null)}
+      />
+      <ConfirmModal
+        open={confirmHardDeleteId !== null}
+        title="Delete visitor"
+        message="PERMANENTLY delete this visitor and related incidents? This cannot be undone."
+        confirmText="Delete"
+        onConfirm={async () => { const id = confirmHardDeleteId!; setConfirmHardDeleteId(null); try { await api.delete(`/api/visitors/${id}/hard`); await load(); } catch {} }}
+        onCancel={() => setConfirmHardDeleteId(null)}
+      />
     </div>
   );
 }

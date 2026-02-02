@@ -11,7 +11,7 @@ export function VisitLogs() {
     return `${year}-${month}-${day}`;
   }
   const [subjectType, setSubjectType] = useState<'all' | 'visitor' | 'personnel'>('all');
-  const [subjectId, setSubjectId] = useState('');
+  const [q, setQ] = useState('');
   const [dateFrom, setDateFrom] = useState(todayLocalISODate());
   const [dateTo, setDateTo] = useState(todayLocalISODate());
   const [rows, setRows] = useState<any[]>([]);
@@ -28,7 +28,7 @@ export function VisitLogs() {
     try {
       const params: any = { page, pageSize };
       if (subjectType !== 'all') params.subjectType = subjectType;
-      if (subjectId.trim() !== '') params.subjectId = subjectId.trim();
+      if (q.trim() !== '') params.q = q.trim();
       if (dateFrom) {
         const from = new Date(`${dateFrom}T00:00:00`);
         params.dateFrom = from.toISOString();
@@ -61,12 +61,12 @@ export function VisitLogs() {
           <option value="visitor">Visitors</option>
           <option value="personnel">Personnel</option>
         </select>
-        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Subject ID (optional)" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} />
+        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Name (optional)" value={q} onChange={(e) => setQ(e.target.value)} />
         <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
         <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         <div className="md:col-span-4 flex gap-2">
           <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { setPage(1); load(); }}>Apply</button>
-          <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { const t = todayLocalISODate(); setSubjectType('all'); setSubjectId(''); setDateFrom(t); setDateTo(t); setPage(1); load(); }}>Reset</button>
+          <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { const t = todayLocalISODate(); setSubjectType('all'); setQ(''); setDateFrom(t); setDateTo(t); setPage(1); load(); }}>Reset</button>
         </div>
       </div>
       {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}

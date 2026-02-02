@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { hasRole } from '../lib/auth';
 import { QRCodeSVG } from 'qrcode.react';
 import { PrintableIdCard } from '../components/PrintableIdCard';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { toPng } from 'html-to-image';
 
 export function Register() {
@@ -49,6 +50,10 @@ export function Register() {
   const capCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const capStreamRef = useRef<MediaStream | null>(null);
   const [capError, setCapError] = useState<string | null>(null);
+  const [confirmArchiveId, setConfirmArchiveId] = useState<number | null>(null);
+  const [confirmHardDeleteId, setConfirmHardDeleteId] = useState<number | null>(null);
+  const [confirmViolArchiveId, setConfirmViolArchiveId] = useState<number | null>(null);
+  const [confirmViolHardDeleteId, setConfirmViolHardDeleteId] = useState<number | null>(null);
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -394,14 +399,14 @@ export function Register() {
                         </button>
                         <button
                           className="px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white"
-                          onClick={async () => { if (!violationsOpen) return; const ok = window.confirm('Archive this incident?'); if (!ok) return; try { await api.delete(`/api/violations/${v.id}`); await loadViolations(violationsOpen.visitorId); } catch {} }}
+                          onClick={() => setConfirmViolArchiveId(v.id)}
                         >
                           Archive
                         </button>
                         {hasRole(['admin']) && (
                           <button
                             className="px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white"
-                            onClick={async () => { if (!violationsOpen) return; const ok = window.confirm('PERMANENTLY delete this incident? This cannot be undone.'); if (!ok) return; try { await api.delete(`/api/violations/${v.id}/hard`); await loadViolations(violationsOpen.visitorId); } catch {} }}
+                            onClick={() => setConfirmViolHardDeleteId(v.id)}
                           >
                             Delete
                           </button>
@@ -529,13 +534,7 @@ export function Register() {
                         className="p-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white"
                         title="Archive"
                         aria-label="Archive visitor"
-                        onClick={async () => {
-                          if (!confirm('Archive this visitor?')) return;
-                          try {
-                            await api.delete(`/api/visitors/${r.id}`);
-                            await load();
-                          } catch {}
-                        }}
+                        onClick={() => setConfirmArchiveId(r.id)}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 7H3"/><path d="M7 7v10a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7"/><path d="M10 11v6M14 11v6"/></svg>
                       </button>
@@ -545,13 +544,7 @@ export function Register() {
                         className="p-1.5 rounded bg-rose-700 hover:bg-rose-600 text-white"
                         title="Delete"
                         aria-label="Hard delete visitor"
-                        onClick={async () => {
-                          if (!confirm('PERMANENTLY delete this visitor and related incidents? This cannot be undone.')) return;
-                          try {
-                            await api.delete(`/api/visitors/${r.id}/hard`);
-                            await load();
-                          } catch {}
-                        }}
+                        onClick={() => setConfirmHardDeleteId(r.id)}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                       </button>
@@ -799,6 +792,51 @@ export function Register() {
           </div>
         </div>
       )}
+      {/* Confirm modals */}
+      <ConfirmModal
+        open={confirmArchiveId !== null}
+        title="Archive visitor"
+        message="Are you sure you want to archive this visitor?"
+        confirmText="Archive"
+        onConfirm={async () => {
+          const id = confirmArchiveId!; setConfirmArchiveId(null);
+          try { await api.delete(`/api/visitors/${id}`); await load(); } catch {}
+        }}
+        onCancel={() => setConfirmArchiveId(null)}
+      />
+      <ConfirmModal
+        open={confirmHardDeleteId !== null}
+        title="Delete visitor"
+        message="PERMANENTLY delete this visitor and related incidents? This cannot be undone."
+        confirmText="Delete"
+        onConfirm={async () => {
+          const id = confirmHardDeleteId!; setConfirmHardDeleteId(null);
+          try { await api.delete(`/api/visitors/${id}/hard`); await load(); } catch {}
+        }}
+        onCancel={() => setConfirmHardDeleteId(null)}
+      />
+      <ConfirmModal
+        open={confirmViolArchiveId !== null}
+        title="Archive incident"
+        message="Are you sure you want to archive this incident?"
+        confirmText="Archive"
+        onConfirm={async () => {
+          const id = confirmViolArchiveId!; setConfirmViolArchiveId(null);
+          try { await api.delete(`/api/violations/${id}`); if (violationsOpen) await loadViolations(violationsOpen.visitorId); } catch {}
+        }}
+        onCancel={() => setConfirmViolArchiveId(null)}
+      />
+      <ConfirmModal
+        open={confirmViolHardDeleteId !== null}
+        title="Delete incident"
+        message="PERMANENTLY delete this incident? This cannot be undone."
+        confirmText="Delete"
+        onConfirm={async () => {
+          const id = confirmViolHardDeleteId!; setConfirmViolHardDeleteId(null);
+          try { await api.delete(`/api/violations/${id}/hard`); if (violationsOpen) await loadViolations(violationsOpen.visitorId); } catch {}
+        }}
+        onCancel={() => setConfirmViolHardDeleteId(null)}
+      />
     </div>
   );
 }

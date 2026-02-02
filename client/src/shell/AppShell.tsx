@@ -276,14 +276,14 @@ export function AppShell() {
           }}
         >
           <div className="absolute inset-0 bg-black/60" />
-          <div className="relative w-full max-w-sm mx-4 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-5">
+          <div className="relative w-full max-w-sm mx-4 bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-700 rounded-lg shadow-xl p-5">
             <div className="flex items-center gap-3 mb-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5"/><path d="M19 12H5"/></svg>
               <h3 id="logout-title" className="text-lg font-semibold">Sign out</h3>
             </div>
-            <p id="logout-desc" className="text-slate-300 text-sm mb-4">Are you sure you want to log out?</p>
+            <p id="logout-desc" className="text-slate-700 dark:text-slate-300 text-sm mb-4">Are you sure you want to log out?</p>
             <div className="flex items-center justify-end gap-2">
-              <button onClick={closeLogoutDialog} className="px-3 py-2 rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200">Cancel</button>
+              <button onClick={closeLogoutDialog} className="px-3 py-2 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200">Cancel</button>
               <button ref={confirmBtnRef} onClick={confirmLogout} className="px-3 py-2 rounded bg-rose-600 hover:bg-rose-500 text-white">Log out</button>
             </div>
           </div>
