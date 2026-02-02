@@ -47,10 +47,12 @@ export function VisitLogs() {
     }
   }
 
+  // Auto-apply filters. Debounce name search to reduce requests.
   useEffect(() => {
-    load();
+    const t = setTimeout(() => { load(); }, 250);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, subjectType, dateFrom, dateTo]);
+  }, [page, subjectType, dateFrom, dateTo, q]);
 
   return (
     <div className="space-y-4">
@@ -61,13 +63,9 @@ export function VisitLogs() {
           <option value="visitor">Visitors</option>
           <option value="personnel">Personnel</option>
         </select>
-        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Name (optional)" value={q} onChange={(e) => setQ(e.target.value)} />
-        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-        <div className="md:col-span-4 flex gap-2">
-          <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { setPage(1); load(); }}>Apply</button>
-          <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { const t = todayLocalISODate(); setSubjectType('all'); setQ(''); setDateFrom(t); setDateTo(t); setPage(1); load(); }}>Reset</button>
-        </div>
+        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Name (optional)" value={q} onChange={(e) => { setPage(1); setQ(e.target.value); }} />
+        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateFrom} onChange={(e) => { setPage(1); setDateFrom(e.target.value); }} />
+        <input className="bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" type="date" value={dateTo} onChange={(e) => { setPage(1); setDateTo(e.target.value); }} />
       </div>
       {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
       <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-transparent">
