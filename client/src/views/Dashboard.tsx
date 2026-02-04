@@ -8,7 +8,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<any[]>([]);
   const [trend, setTrend] = useState<{ date: string; count: number }[]>([]);
-  const [forecast, setForecast] = useState<{ window: number; algo?: 'ma'|'hw'; seasonLen?: number; series: { date: string; count: number }[]; movingAverage: { date: string; ma: number }[]; smoothed?: { date: string; value: number }[]; metrics?: { mae: number; rmse: number; mape?: number; ci?: { lo: number; hi: number } }; nextDayForecast: number | null; seriesPersonnel?: { date: string; count: number }[]; movingAveragePersonnel?: { date: string; ma: number }[]; nextDayForecastPersonnel?: number | null } | null>(null);
+  const [forecast, setForecast] = useState<{ window: number; algo?: 'ma'|'hw'; seasonLen?: number; series: { date: string; count: number }[]; movingAverage: { date: string; ma: number }[]; smoothed?: { date: string; value: number }[]; metrics?: { mae: number; rmse: number; mape?: number; ci?: { lo: number; hi: number } }; nextDayForecast: number | null; seriesPersonnel?: { date: string; count: number }[]; movingAveragePersonnel?: { date: string; ma: number }[]; nextDayForecastPersonnel?: number | null; baseline?: number; confidence?: 'high'|'medium'|'low'|string; explanation?: string } | null>(null);
   const [showPersonnel, setShowPersonnel] = useState(false);
   const [windowSize, setWindowSize] = useState(7);
   const [loading, setLoading] = useState(true);
@@ -26,6 +26,7 @@ export function Dashboard() {
   const [beta, setBeta] = useState(0.1);
   const [gamma, setGamma] = useState(0.3);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
   const forecastSvgRef = useRef<SVGSVGElement | null>(null);
   const [heatmap, setHeatmap] = useState<{ days: number; grid: number[][] } | null>(null);
   const [trendWeek, setTrendWeek] = useState<{ granularity: string; series: { label: string; count: number }[] } | null>(null);
@@ -170,6 +171,43 @@ export function Dashboard() {
     return { mae, rmse, mape, ci };
   }, [forecast]);
 
+  // Actionable forecast mapping: baseline from last movingAverage
+  const actionable = useMemo(() => {
+    if (!forecast || forecast.nextDayForecast == null || !forecast.movingAverage?.length) return null as null | {
+      label: string; category: 'very_low'|'low'|'normal'|'high'|'spike'; color: string; suggestion: string; ratio: number; baseline: number; value: number;
+    };
+    const baselineRaw = forecast.movingAverage[forecast.movingAverage.length - 1]?.ma as any;
+    const baseline = typeof baselineRaw === 'number' && !isNaN(baselineRaw) ? Math.max(1, baselineRaw) : 1;
+    const value = Math.max(0, forecast.nextDayForecast);
+    const ratio = value / baseline;
+    let category: 'very_low'|'low'|'normal'|'high'|'spike' = 'normal';
+    if (ratio < 0.6) category = 'very_low';
+    else if (ratio < 0.85) category = 'low';
+    else if (ratio <= 1.15) category = 'normal';
+    else if (ratio <= 1.4) category = 'high';
+    else category = 'spike';
+    const label = (
+      category === 'very_low' ? 'Very Low' :
+      category === 'low' ? 'Low' :
+      category === 'normal' ? 'Normal' :
+      category === 'high' ? 'High' : 'Spike'
+    );
+    const color = (
+      category === 'very_low' ? 'bg-slate-100 text-slate-700' :
+      category === 'low' ? 'bg-emerald-100 text-emerald-800' :
+      category === 'normal' ? 'bg-indigo-100 text-indigo-800' :
+      category === 'high' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
+    );
+    const suggestion = (
+      category === 'very_low' ? 'Consider reduced staffing; handle backlog/admin tasks.' :
+      category === 'low' ? 'Normal staffing; schedule trainings/maintenance as needed.' :
+      category === 'normal' ? 'Maintain current staffing; no special actions.' :
+      category === 'high' ? 'Pre-stage queueing; add an extra officer; prep overflow seating.' :
+      'All-hands alert: open extra lanes, notify staff group, prep incident protocols.'
+    );
+    return { label, category, color, suggestion, ratio, baseline: Math.round(baseline), value: Math.round(value) };
+  }, [forecast]);
+
   async function downloadForecastPNG() {
     const node = forecastSvgRef.current;
     if (!node) return;
@@ -270,6 +308,7 @@ export function Dashboard() {
                 {algo === 'hw' && (
                   <button onClick={()=> setShowAdvanced((v)=>!v)} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">{showAdvanced ? 'Hide Advanced' : 'Advanced'}</button>
                 )}
+                <button onClick={()=> setShowLegend((v)=>!v)} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">{showLegend ? 'Hide Legend' : 'Legend'}</button>
               </div>
             </div>
           </div>
@@ -303,6 +342,22 @@ export function Dashboard() {
             <div className="text-3xl md:text-5xl font-extrabold text-slate-800 dark:text-slate-100">{loadingForecast ? '—' : (forecast?.nextDayForecast ?? '—')}</div>
             {metrics?.ci && (
               <div className="text-[11px] text-slate-500 dark:text-slate-400">95% CI: {metrics.ci.lo}–{metrics.ci.hi}</div>
+            )}
+            {(forecast?.confidence || forecast?.explanation) && (
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                {forecast?.confidence && <span>Confidence: {String(forecast.confidence)}. </span>}
+                {forecast?.explanation}
+              </div>
+            )}
+            {actionable && (
+              <div className="mt-2 text-left">
+                <span className={`inline-block px-2 py-0.5 text-xs rounded ${actionable.color}`} title={`Baseline ${actionable.baseline}, ratio ${(actionable.ratio*100).toFixed(0)}%`} aria-label={`Forecast ${actionable.label}. Baseline ${actionable.baseline}. Ratio ${(actionable.ratio*100).toFixed(0)} percent.`}>
+                  {actionable.label}
+                </span>
+                <div className="mt-1 text-[11px] text-slate-600 dark:text-slate-300 max-w-xs">
+                  {actionable.suggestion}
+                </div>
+              </div>
             )}
           </div>
           {loadingForecast ? (
@@ -490,6 +545,18 @@ export function Dashboard() {
               <div className="text-slate-600 dark:text-slate-400 text-sm">No forecast data available for the selected window.</div>
             )}
         </div>
+        {showLegend && (
+          <div className="mt-2 px-2 py-2 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-[12px] text-slate-700 dark:text-slate-300">
+            <div className="font-semibold mb-1">Forecast Legend</div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-slate-200"></span> Very Low: &lt;60% of baseline</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-emerald-300"></span> Low: 60–85%</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-indigo-300"></span> Normal: 85–115%</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-amber-300"></span> High: 115–140%</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-rose-300"></span> Spike: &gt;140%</span>
+            </div>
+          </div>
+        )}
         {(forecast as any)?.fallbackUsed && algo === 'hw' && (
           <div className="mt-2 text-xs text-amber-600 dark:text-yellow-400">Insufficient seasonal history for Holt-Winters. Falling back to Moving Average for next-day estimate.</div>
         )}

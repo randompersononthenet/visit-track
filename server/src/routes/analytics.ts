@@ -198,6 +198,29 @@ router.get('/visitor-forecast', requireRole('admin', 'staff', 'warden', 'analyst
       })
     : ma.map((d) => (isNaN(d.ma) ? null : d.ma));
   const metrics = computeMetrics(actualVec, predictedVec);
+  // derive baseline (last moving average) and confidence label
+  const baseline = (() => {
+    const last = ma.length ? ma[ma.length - 1] : null;
+    const v = last && typeof last.ma === 'number' && !isNaN(last.ma) ? last.ma : undefined;
+    return v != null ? Number(v.toFixed(0)) : undefined;
+  })();
+  const confidence = (() => {
+    const mape = (metrics as any)?.mape as number | undefined;
+    if (mape == null) return undefined;
+    if (mape <= 10) return 'high';
+    if (mape <= 20) return 'medium';
+    return 'low';
+  })();
+  const explanation = (() => {
+    const parts: string[] = [];
+    parts.push(algo === 'hw' ? `Holt-Winters (season=${seasonLen})` : `Moving Average (window=${window})`);
+    if (algo === 'hw') {
+      parts.push(`α=${alpha}, β=${beta}, γ=${gamma}`);
+      if (fallbackUsed) parts.push('fallback to MA due to limited season data');
+    }
+    if (confidence) parts.push(`confidence: ${confidence}`);
+    return parts.join('; ');
+  })();
 
   res.json({
     window,
@@ -215,6 +238,9 @@ router.get('/visitor-forecast', requireRole('admin', 'staff', 'warden', 'analyst
     nextDayForecastPersonnel: includePersonnel ? nextForecastPersonnel : undefined,
     metrics,
     fallbackUsed: algo === 'hw' ? fallbackUsed : undefined,
+    baseline,
+    confidence,
+    explanation,
   });
 });
 

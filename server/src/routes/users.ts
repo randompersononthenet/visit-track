@@ -70,4 +70,22 @@ router.patch('/:id/disabled', async (req, res) => {
   res.json({ id: user.id, disabled: (user as any).disabled });
 });
 
+// Rename a user (admin-only)
+// PATCH /api/users/:id/username { username: string }
+router.patch('/:id/username', async (req, res) => {
+  const id = Number(req.params.id);
+  const { username } = req.body || {};
+  if (!username || typeof username !== 'string' || username.trim().length < 3) {
+    return res.status(400).json({ error: 'Username must be at least 3 characters' });
+  }
+  const user = await User.findByPk(id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const exists = await User.findOne({ where: { username }, attributes: ['id'] });
+  if (exists && exists.id !== user.id) return res.status(409).json({ error: 'Username already exists' });
+  const old = user.username;
+  await user.update({ username });
+  await audit(req as any, 'rename', 'user', user.id, { from: old, to: username });
+  res.json({ id: user.id, username: user.username });
+});
+
 export default router;

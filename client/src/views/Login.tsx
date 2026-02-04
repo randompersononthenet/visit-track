@@ -2,7 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, setToken } from '../lib/api';
-import { setRole } from '../lib/auth';
+import { setRole, setUsername } from '../lib/auth';
 
 export function Login() {
   const navigate = useNavigate();
@@ -22,6 +22,7 @@ export function Login() {
       if (!token) throw new Error('No token received');
       setToken(token);
       try { setRole(res.data?.user?.role || null); } catch {}
+      try { setUsername(res.data?.user?.username || null); } catch {}
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Login failed');

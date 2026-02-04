@@ -11,6 +11,7 @@ export function logout() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('vt_token');
   localStorage.removeItem('vt_role');
+  localStorage.removeItem('vt_username');
 }
 
 export function getRole(): string | null {
@@ -28,4 +29,15 @@ export function hasRole(roles: string[]): boolean {
   const r = getRole();
   if (!r) return false;
   return roles.includes(r);
+}
+
+export function getUsername(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('vt_username');
+}
+
+export function setUsername(username: string | null) {
+  if (typeof window === 'undefined') return;
+  if (username) localStorage.setItem('vt_username', username);
+  else localStorage.removeItem('vt_username');
 }

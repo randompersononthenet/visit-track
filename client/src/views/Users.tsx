@@ -16,6 +16,9 @@ export function Users() {
   const [savingCreate, setSavingCreate] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [renameFor, setRenameFor] = useState<{ id: number; username: string } | null>(null);
+  const [renameTo, setRenameTo] = useState('');
+  const [savingRename, setSavingRename] = useState(false);
 
   async function loadUsers() {
     try {
@@ -81,6 +84,12 @@ export function Users() {
                     onClick={() => setResetFor({ id: u.id, username: u.username })}
                   >
                     Reset password
+                  </button>
+                  <button
+                    className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                    onClick={() => { setRenameFor({ id: u.id, username: u.username }); setRenameTo(u.username); }}
+                  >
+                    Rename
                   </button>
                   <button
                     className={`${u.disabled ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-rose-600 hover:bg-rose-500 text-white'} px-3 py-1 rounded`}
@@ -223,6 +232,49 @@ export function Users() {
                   }}
                 >
                   {savingCreate ? 'Creating…' : 'Create'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {renameFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => { if (!savingRename) setRenameFor(null); }} />
+          <div className="relative bg-white border border-slate-200 rounded-lg p-4 z-10 w-[min(92vw,520px)] dark:bg-slate-900 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Rename user — {renameFor.username}</div>
+              <button className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { if (!savingRename) setRenameFor(null); }}>Close</button>
+            </div>
+            <div className="space-y-3">
+              <input
+                className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
+                placeholder="New username"
+                value={renameTo}
+                onChange={(e) => setRenameTo(e.target.value)}
+              />
+              <div className="flex justify-end gap-2">
+                <button className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200" onClick={() => { if (!savingRename) setRenameFor(null); }}>Cancel</button>
+                <button
+                  className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-60"
+                  disabled={savingRename || renameTo.trim().length < 3}
+                  onClick={async () => {
+                    if (!renameFor) return;
+                    setSavingRename(true);
+                    try {
+                      await api.patch(`/api/users/${renameFor.id}/username`, { username: renameTo.trim() });
+                      setRenameFor(null);
+                      setRenameTo('');
+                      await loadUsers();
+                    } catch (e: any) {
+                      alert(e?.response?.data?.error || 'Failed to rename user');
+                    } finally {
+                      setSavingRename(false);
+                    }
+                  }}
+                >
+                  {savingRename ? 'Saving…' : 'Save'}
                 </button>
               </div>
             </div>
