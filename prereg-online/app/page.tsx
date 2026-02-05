@@ -79,7 +79,10 @@ export default function Page() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/agooDJ-logo.jpg" alt="Agoo DJ Logo" style={{ height: 28 }} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/Visittrack.png" alt="VisitTrack" style={{ height: 28 }} />
+            <a href="/dashboard" title="Go to Dashboard" style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Visittrack.png" alt="VisitTrack" style={{ height: 56, cursor: 'pointer' }} />
+            </a>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/rbjmp1-logo.jpg" alt="RBJMP1 Logo" style={{ height: 28 }} />
           </div>
