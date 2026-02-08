@@ -15,12 +15,15 @@ router.use(requireAuth);
 
 // List personnel with filters and pagination
 router.get('/', requireRole('admin', 'staff', 'officer', 'warden', 'analyst'), async (req, res) => {
-  const { q, page = '1', pageSize = '20' } = req.query as Record<string, string>;
+  const { q, page = '1', pageSize = '20', includeArchived } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
   const where: any = {};
   if (q) {
     where.fullName = { [Op.iLike]: `%${q}%` };
+  }
+  if (!(includeArchived === '1' || includeArchived === 'true')) {
+    where.archivedAt = { [Op.is]: null };
   }
   const { rows, count } = await Personnel.findAndCountAll({
     where,
@@ -74,14 +77,34 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updatePersonnelSche
   res.json(rec);
 });
 
-// Delete
+// Soft delete (archive)
 router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
+  const id = Number(req.params.id);
+  const rec = await Personnel.findByPk(id);
+  if (!rec) return res.status(404).json({ error: 'Not found' });
+  await rec.update({ archivedAt: new Date() });
+  await audit(req as any, 'archive', 'personnel', rec.id, { fullName: rec.fullName });
+  res.status(204).send();
+});
+
+// Hard delete (admin only)
+router.delete('/:id/hard', requireRole('admin'), async (req, res) => {
   const id = Number(req.params.id);
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });
   await rec.destroy();
   await audit(req as any, 'delete', 'personnel', rec.id, { fullName: rec.fullName });
   res.status(204).send();
+});
+
+// Restore (unarchive)
+router.patch('/:id/restore', requireRole('admin', 'staff'), async (req, res) => {
+  const id = Number(req.params.id);
+  const rec = await Personnel.findByPk(id);
+  if (!rec) return res.status(404).json({ error: 'Not found' });
+  await rec.update({ archivedAt: null });
+  await audit(req as any, 'restore', 'personnel', rec.id, { fullName: rec.fullName });
+  res.json(rec);
 });
 
 export default router;

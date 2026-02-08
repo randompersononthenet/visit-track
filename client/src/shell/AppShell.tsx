@@ -87,6 +87,7 @@ export function AppShell() {
     ...(hasRole(['staff', 'officer']) ? [{ to: '/scan', label: 'Scan', icon: 'scan' }] : [] as any),
     ...(hasRole(['admin', 'staff']) ? [{ to: '/prereg', label: 'Pre-Registrations', icon: 'register' }] : [] as any),
     ...(hasRole(['admin', 'staff']) ? [{ to: '/archived', label: 'Archived Visitors', icon: 'logs' }] : [] as any),
+    ...(hasRole(['admin', 'staff']) ? [{ to: '/archived-personnel', label: 'Archived Personnel', icon: 'logs' }] : [] as any),
     ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),
     ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
     ...(hasRole(['admin']) ? [{ to: '/users', label: 'Users', icon: 'users' }] : [] as any),
@@ -99,13 +100,15 @@ export function AppShell() {
       >
         <div className="flex items-center justify-between px-2 py-1">
           <div className={`flex items-center ${collapsed ? 'justify-center w-full' : 'gap-2'}`}>
-            <img
-              src="/Visittrack.png"
-              alt="VisitTrack"
-              className={`${collapsed ? 'w-12 h-12' : 'w-10 h-10'} rounded`}
-              onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
-            />
-            {!collapsed && <div className="text-lg font-semibold tracking-tight">VisitTrack</div>}
+            <Link to="/dashboard" title="Go to Dashboard" className="inline-flex items-center gap-2">
+              <img
+                src="/Visittrack.png"
+                alt="VisitTrack"
+                className={`${collapsed ? 'w-16 h-16' : 'w-16 h-16'} rounded`}
+                onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
+              />
+              {!collapsed && <div className="text-xl font-semibold tracking-tight">VisitTrack</div>}
+            </Link>
           </div>
           {/* Right controls */}
           <div className={`flex items-center ${collapsed ? 'hidden' : ''}`}>

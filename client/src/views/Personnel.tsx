@@ -44,9 +44,36 @@ export function Personnel() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
 
   async function load() {
-    const res = await api.get('/api/personnel', { params: { q, page, pageSize } });
+    const res = await api.get('/api/personnel', { 
+      params: { 
+        q, 
+        page, 
+        pageSize, 
+        includeArchived: false 
+      } 
+    });
     setRows(res.data?.data || []);
     setTotal(res.data?.total || 0);
+  }
+
+  async function archivePersonnel(id: number) {
+    if (!confirm('Archive this personnel record? It will be moved to the archived personnel list.')) return;
+    try {
+      await api.delete(`/api/personnel/${id}`);
+      await load();
+    } catch (error) {
+      console.error('Error archiving personnel:', error);
+    }
+  }
+
+  async function hardDeletePersonnel(id: number) {
+    if (!confirm('Permanently delete this personnel record? This action cannot be undone.')) return;
+    try {
+      await api.delete(`/api/personnel/${id}/hard`);
+      await load();
+    } catch (error) {
+      console.error('Error deleting personnel:', error);
+    }
   }
 
   async function startCamera() {
@@ -334,20 +361,33 @@ export function Personnel() {
                       </button>
                       )}
                       {hasRole(['admin','staff']) && (
-                      <button
-                        className="p-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white"
-                        title="Delete"
-                        aria-label="Delete personnel"
-                        onClick={async () => {
-                          if (!confirm('Delete this personnel record?')) return;
-                          try {
-                            await api.delete(`/api/personnel/${r.id}`);
-                            await load();
-                          } catch {}
-                        }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                      </button>
+                        <>
+                          <button
+                            className="p-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white"
+                            title="Archive"
+                            aria-label="Archive personnel"
+                            onClick={() => archivePersonnel(r.id)}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2.5"/>
+                              <path d="M4 6v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6"/>
+                              <path d="M10 10h4"/>
+                            </svg>
+                          </button>
+                          <button
+                            className="p-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white"
+                            title="Delete Permanently"
+                            aria-label="Delete personnel permanently"
+                            onClick={() => hardDeletePersonnel(r.id)}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 6h18"/>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              <path d="M10 11v6"/>
+                              <path d="M14 11v6"/>
+                            </svg>
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>

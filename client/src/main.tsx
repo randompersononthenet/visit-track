@@ -8,6 +8,7 @@ import { Login } from './views/Login'
 import { Register } from './views/Register'
 import { RegisterExternal } from './views/RegisterExternal'
 import { ArchivedVisitors } from './views/ArchivedVisitors'
+import { ArchivedPersonnel } from './views/ArchivedPersonnel'
 import { Scan } from './views/Scan'
 import { Reports } from './views/Reports'
 import { VisitLogs } from './views/VisitLogs'
@@ -42,6 +43,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/register" element={<Register />} />
           <Route path="/register-external" element={<RegisterExternal />} />
           <Route path="/archived" element={<ArchivedVisitors />} />
+          <Route path="/archived-personnel" element={<ArchivedPersonnel />} />
           <Route path="/personnel" element={<Personnel />} />
           <Route path="/scan" element={<Scan />} />
           <Route

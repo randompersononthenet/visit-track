@@ -10,6 +10,7 @@ export interface PersonnelAttributes {
   roleTitle?: string | null;
   qrCode?: string | null;
   photoUrl?: string | null;
+  archivedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,6 +26,7 @@ export class Personnel extends Model<PersonnelAttributes, PersonnelCreation> imp
   declare roleTitle: string | null | undefined;
   declare qrCode: string | null | undefined;
   declare photoUrl: string | null | undefined;
+  declare archivedAt: Date | null | undefined;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 }
@@ -39,6 +41,7 @@ Personnel.init(
     roleTitle: { type: DataTypes.STRING(100), allowNull: true, field: 'role_title' },
     qrCode: { type: DataTypes.STRING(200), allowNull: true, unique: true, field: 'qr_code' },
     photoUrl: { type: DataTypes.STRING(500), allowNull: true, field: 'photo_url' },
+    archivedAt: { type: DataTypes.DATE, allowNull: true, field: 'archived_at' },
   },
   { sequelize, tableName: 'personnel', underscored: true }
 );
