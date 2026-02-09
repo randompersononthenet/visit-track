@@ -5,7 +5,7 @@
 ---
 
 **Version:** 1.0  
-**Date:** November 2025  
+**Date:** February 2026  
 **Authors:** Aedrian R. Sagap, et al.  
 **Institution:** Don Mariano Marcos Memorial State University – South La Union Campus  
 **Program:** BS Computer Science  
@@ -72,6 +72,8 @@ This PRD defines the **key features, user experience flow, milestones, success c
 - Register BJMP personnel details and roles.
 - Generate individual QR codes for attendance.
 - Maintain attendance records per shift.
+- **Archive personnel records** (soft delete) with restore capability.
+- **Permanent deletion** of personnel records for admin users.
 
 ### 4.3 Check-in/Check-out Module
 - Scan QR codes for entry/exit using camera or scanner.
@@ -93,13 +95,28 @@ This PRD defines the **key features, user experience flow, milestones, success c
 - Predict future visitor volume using **moving average forecasting**.
 
 ### 4.7 Role-Based Access Control (RBAC)
-- Three main roles: Admin, Officer, Staff.
+- Five main roles: Admin, Staff, Officer, Warden, Analyst.
 - RBAC enforced through JWT authentication.
 - Passwords hashed using bcrypt.
 
+### 4.8 Audit Trails System
+- **Complete audit logging** of all user actions across the system.
+- Track create, update, delete, password reset, enable/disable operations.
+- **Flexible metadata storage** using PostgreSQL JSONB for action details.
+- **Advanced filtering** by action type, entity type, actor, and date range.
+- **Admin-only access** with tamper-proof, immutable audit logs.
+- **Comprehensive coverage** across users, visitors, personnel, and violations.
+
+### 4.9 User Management System
+- **Admin user lifecycle management** (create, edit, disable, rename).
+- **Secure password management** with admin-controlled password resets.
+- **Role assignment and modification** for admin/staff/officer/warden/analyst roles.
+- **User account controls** (enable/disable accounts, username changes).
+- **Audit logging** of all user management operations.
+
 ---
 
-### 4.8 Current Implementation Status (Nov 2025)
+### 4.10 Current Implementation Status (Feb 2026)
 - Visitors/Personnel registration modules functional, with QR code generation and print/download options.
 - Scan module functional for check-in/out; violation lookup and alert surfaced in scan response for visitors.
 - Visit Logs API and UI available with filters and pagination.
@@ -109,11 +126,16 @@ This PRD defines the **key features, user experience flow, milestones, success c
   - `/api/reports/visit-logs.csv?subjectType=visitor|personnel&subjectId=&dateFrom=&dateTo=&page=&pageSize=`
 - RBAC enforced server-side; client UI gated by role for logs/reports.
 - Dashboard summary implemented (`/api/analytics/summary`): totals, today check-ins, currently inside.
+- Archive functionality implemented for personnel: soft delete (archive), hard delete, and dedicated archived personnel page with restore capabilities.
+- Database migration added for `archived_at` column in personnel table.
+- **Audit Trails System**: Complete audit logging system tracking all user actions (create, update, delete, password reset, enable/disable) across all entities (users, visitors, personnel, violations). Admin-only access with advanced filtering by action, entity type, actor, and date range. Built with PostgreSQL JSONB for flexible detail storage.
+- **User Management System**: Comprehensive admin user management with create/edit/disable users, password reset, username changes, and role assignment. Role-based access control with admin/staff/officer/warden/analyst roles. Secure password hashing with bcrypt.
 
-### 4.9 Next Steps (Planned)
+### 4.11 Next Steps (Planned)
 - Dashboard expansion: recent activity table and 7-day check-ins chart.
 - Reports: PDF generation and print-ready layouts; large export UX.
 - RBAC hardening: no-permission view and stricter UI gating of write actions for officers.
+- Personnel archive page enhancements: bulk operations and search filters.
 
 ---
 
@@ -127,7 +149,7 @@ This PRD defines the **key features, user experience flow, milestones, success c
 - **Cache:** Redis  
 - **Realtime:** Socket.IO  
 - **Reports:** PDFKit + CSV Export  
-- **QR Handling:** `jsQR`, `qrcode.react`  
+- **QR Handling:** `jsQR`, `@zxing/browser`, `qrcode.react`  
 
 ### 5.2 Deployment
 - Runs on BJMP local server.  
@@ -161,11 +183,13 @@ This PRD defines the **key features, user experience flow, milestones, success c
 | **Backend** | Express.js (Node.js), Socket.IO |
 | **Database** | PostgreSQL + Sequelize ORM |
 | **Authentication** | JWT + bcrypt |
-| **QR Processing** | jsQR, qrcode.react |
+| **Audit System** | PostgreSQL JSONB storage, Sequelize ORM |
+| **User Management** | bcrypt password hashing, Sequelize ORM |
+| **QR Processing** | jsQR, @zxing/browser, qrcode.react |
 | **Reporting** | PDFKit, CSV Export |
 | **Version Control** | Git & GitHub |
 | **Project Board** | Trello (Scrumban workflow) |
-| **Testing Tools** | Postman, UAT Checklist |
+| 
 | **Evaluation Tool** | PSSUQ |
 
 ---

@@ -3,7 +3,7 @@
 **Project Duration:** 15 Weeks  
 **Development Methodology:** Scrumban (Scrum + Kanban Hybrid)  
 **Prepared by:** Aedrian R. Sagap, et al.  
-**Date:** November 2025  
+**Date:** February 2026  
 
 ---
 
@@ -17,8 +17,11 @@ This roadmap will guide both development and project documentation up to system 
 
 ---
 
-### Progress Update (Nov 2025)
+### Progress Update (Feb 2026)
 - Implemented: Registration (visitors/personnel) with QR, Scan with check-in/out and violation checks, Visit Logs UI/API, Reports CSV with filters (visitors, personnel, visit-logs), RBAC (server + client gating), Dashboard summary metrics, API contract updated.
+- Recently added: Archive functionality for personnel (soft delete, hard delete, archived personnel page), database migration for archived_at column, enhanced personnel management with archive/restore capabilities.
+- **Audit Trails System**: Complete audit logging implementation tracking all user actions across the system. Built with PostgreSQL JSONB for flexible metadata storage, admin-only access with advanced filtering capabilities (action, entity type, actor, date range). Integrated audit calls throughout all CRUD operations.
+- **User Management System**: Comprehensive admin user management interface with create/edit/disable/rename users, secure password reset functionality, and role-based access control. Uses bcrypt for password hashing and Sequelize ORM for database operations. Supports admin/staff/officer/warden/analyst roles.
 - In progress next: Dashboard expansion (recent activity, 7-day check-ins chart), Reports PDF generation, RBAC hardening (no-permission UX, stricter write gating for officers).
 
 ---
@@ -215,7 +218,7 @@ This roadmap will guide both development and project documentation up to system 
 |-----------|--------|
 | **Frontend** | React.js, Tailwind CSS, Chart.js |
 | **Backend** | Node.js (Express), Socket.IO |
-| **Database** | PostgreSQL + Sequelize |
+| **Database** | PostgreSQL + Sequelize ORM |
 | **Version Control** | Git, GitHub |
 | **Task Board** | Trello (Scrumban) |
 | **Testing** | Postman, Manual QA |
@@ -223,6 +226,10 @@ This roadmap will guide both development and project documentation up to system 
 | **Reporting** | PDFKit, CSV Export |
 | **Analytics** | Chart.js |
 | **Forecasting** | Moving Average Algorithm |
+| **Audit System** | PostgreSQL JSONB, Sequelize ORM |
+| **User Management** | bcrypt, Sequelize ORM |
+| **Authentication** | JWT, bcrypt |
+| **QR Processing** | jsQR, @zxing/browser, qrcode.react |
 
 ---
 
@@ -348,6 +355,138 @@ Photo ID specific:
 - Optional: Multi-select batch print in tables (Phase 2).
 
 **Milestone:** Staff can print or download a single ID card for any visitor/personnel record directly from the app.
+
+---
+
+## 9. Feature Spec: Audit Trails System
+
+**Objective:** Implement a comprehensive audit logging system to track all user actions within the system for security, compliance, and accountability purposes.
+
+### Scope
+- Tracks all CRUD operations across all entities (users, visitors, personnel, violations, preregistrations).
+- Captures actor information (user ID and username).
+- Stores flexible metadata using JSONB for action details.
+- Admin-only access with advanced filtering capabilities.
+
+### Actions Tracked
+- User management: create, password reset, enable/disable, rename
+- Entity operations: create, update, delete (soft/hard)
+- Authentication: login attempts (future enhancement)
+- System changes: role assignments, permission changes
+
+### Data Structure
+- **actorId**: ID of the user performing the action
+- **actorUsername**: Username of the actor for quick reference
+- **action**: Action type (create, update, delete, reset_password, enable, disable, rename, etc.)
+- **entityType**: Type of entity affected (user, visitor, personnel, violation)
+- **entityId**: ID of the affected entity (nullable for some actions)
+- **details**: JSONB field storing additional context (old/new values, metadata)
+- **createdAt**: Timestamp of the action
+
+### Implementation Plan
+- **Backend (Node.js/Express)**
+  - `AuditLog` model using Sequelize with PostgreSQL JSONB
+  - `audit()` utility function for consistent logging across routes
+  - Integrated audit calls in all CRUD operations
+  - Admin-only API endpoints with filtering capabilities
+- **Frontend (React)**
+  - `AuditLogs` component with advanced filtering (action, entity type, actor, date range)
+  - Paginated table view with sorting
+  - Role-based access control (admin only)
+- **Database**
+  - PostgreSQL table with JSONB column for flexible metadata storage
+  - Indexes on frequently queried fields (createdAt, actorId, entityType)
+
+### Security Considerations
+- Audit logs cannot be modified or deleted by users
+- Admin-only access to prevent unauthorized viewing
+- Sensitive data in details field is controlled (passwords not logged)
+
+### Acceptance Criteria
+- All user actions are automatically logged with complete context
+- Admin users can filter audit logs by multiple criteria
+- Audit logs are tamper-proof and immutable
+- System performance is not significantly impacted by logging
+
+### Tasks
+- Create AuditLog model and database migration
+- Implement audit utility function
+- Integrate audit logging throughout all API routes
+- Build admin audit logs UI with filtering
+- Add audit logs navigation and role-based access
+
+**Milestone:** Complete audit trail system operational with full action tracking and admin access.
+
+---
+
+## 10. Feature Spec: User Management System
+
+**Objective:** Provide comprehensive administrative user management capabilities for system administrators to manage user accounts, roles, and access controls.
+
+### Scope
+- Admin-only functionality for managing system users
+- Support for multiple user roles (admin, staff, officer, warden, analyst)
+- Secure password management with proper hashing
+- User lifecycle management (create, modify, disable, delete)
+
+### User Roles
+- **Admin**: Full system access including user management and audit logs
+- **Staff**: Administrative functions (reports, analytics, personnel/visitor management)
+- **Officer**: Gate operations (scanning, check-in/out)
+- **Warden**: Monitoring and oversight capabilities
+- **Analyst**: Read-only access to reports and analytics
+
+### Features
+- **User Creation**: Create new users with username, password, and role assignment
+- **Password Management**: Secure password reset by admin (no self-reset for security)
+- **User Modification**: Enable/disable users, rename usernames
+- **Role Management**: Assign and change user roles
+- **User Listing**: View all users with their status and roles
+
+### Security Implementation
+- **Password Hashing**: bcrypt with salt rounds for secure storage
+- **Authentication**: JWT tokens with role-based middleware
+- **Access Control**: Server-side role validation on all endpoints
+- **Password Requirements**: Minimum 6 characters, enforced on creation and reset
+
+### Implementation Plan
+- **Backend (Node.js/Express)**
+  - `User` and `Role` models with Sequelize relationships
+  - bcrypt integration for password hashing
+  - RESTful API endpoints with admin-only access
+  - Role-based middleware for access control
+- **Frontend (React)**
+  - `Users` component with CRUD operations
+  - Role selection dropdowns
+  - Secure password reset dialogs
+  - Status indicators for user accounts
+- **Database**
+  - Users table with passwordHash, roleId, disabled flag
+  - Roles table with predefined system roles
+  - Foreign key relationships and constraints
+
+### User Interface
+- User management table with actions (edit, disable, reset password)
+- Create user modal with validation
+- Password reset confirmation dialogs
+- Role-based UI element visibility
+
+### Acceptance Criteria
+- Admin users can create, modify, and disable user accounts
+- Secure password hashing prevents credential exposure
+- Role-based access control properly enforced
+- User management UI provides clear feedback and validation
+- All user actions are audited in the audit trail system
+
+### Tasks
+- Implement User and Role database models
+- Create user management API endpoints
+- Build React user management interface
+- Integrate bcrypt for password security
+- Add role-based access control
+- Implement audit logging for user actions
+
+**Milestone:** Complete user management system with secure authentication and role-based access control.
 
 ---
 
