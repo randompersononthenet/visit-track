@@ -86,8 +86,6 @@ export function AppShell() {
     ...(hasPermission('personnel:view') ? [{ to: '/personnel', label: 'Personnel', icon: 'personnel' }] : [] as any),
     ...(hasPermission('scan:perform') ? [{ to: '/scan', label: 'Scan', icon: 'scan' }] : [] as any),
     ...(hasPermission('prereg:manage') ? [{ to: '/prereg', label: 'Pre-Registrations', icon: 'register' }] : [] as any),
-    ...(hasPermission('visitors:manage') ? [{ to: '/archived', label: 'Archived Visitors', icon: 'logs' }] : [] as any),
-    ...(hasPermission('personnel:manage') ? [{ to: '/archived-personnel', label: 'Archived Personnel', icon: 'logs' }] : [] as any),
     ...(hasPermission('logs:view') ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),
     ...(hasPermission('reports:view') ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
     ...(hasPermission('users:manage') ? [{ to: '/users', label: 'Users', icon: 'users' }] : [] as any),
