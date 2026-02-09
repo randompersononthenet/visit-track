@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { requireAuth } from '../middleware/auth';
-import { requireRole } from '../middleware/roles';
+import { requirePermission } from '../middleware/permissions';
 import { User } from '../models/User';
 import { Role } from '../models/Role';
 import { audit } from '../lib/audit';
 
 const router = Router();
 router.use(requireAuth);
-router.use(requireRole('admin'));
+router.use(requirePermission('users:manage'));
 
 // Create a user (admin-only). Only non-admin roles are allowed.
 // POST /api/users { username: string, password: string, role: 'staff'|'officer' }
@@ -21,9 +21,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
   const roleName = String(role || '').toLowerCase();
-  if (!['staff','officer'].includes(roleName)) {
-    return res.status(400).json({ error: 'Invalid role. Allowed roles: staff, officer' });
-  }
+  // Removed hardcoded check to allow dynamic roles
   const exists = await User.findOne({ where: { username } });
   if (exists) return res.status(409).json({ error: 'Username already exists' });
   const roleRec = await Role.findOne({ where: { name: roleName } });

@@ -21,6 +21,8 @@ import auditLogsRouter from './routes/auditLogs';
 import usersRouter from './routes/users';
 import uploadsRouter from './routes/uploads';
 import preregRouter from './routes/prereg';
+import rolesRouter from './routes/roles';
+import permissionsRouter from './routes/permissions';
 import bcrypt from 'bcryptjs';
 import { User } from './models/User';
 import { Role } from './models/Role';
@@ -69,6 +71,8 @@ app.use('/api/violations', violationsRouter);
 app.use('/api/prereg', preregRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/audit-logs', auditLogsRouter);
+app.use('/api/roles', rolesRouter);
+app.use('/api/permissions', permissionsRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {
@@ -158,7 +162,7 @@ async function bootstrapAdmin() {
   if (!shouldBootstrap) return;
 
   // Ensure roles exist
-  const roleNames: Array<'admin'|'staff'|'officer'> = ['admin','staff','officer'];
+  const roleNames: Array<'admin' | 'staff' | 'officer'> = ['admin', 'staff', 'officer'];
   for (const name of roleNames) {
     // @ts-ignore
     await Role.findOrCreate({ where: { name }, defaults: { name } });

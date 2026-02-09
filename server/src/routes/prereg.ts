@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Op } from 'sequelize';
 import { requireAuth } from '../middleware/auth';
-import { requireRole } from '../middleware/roles';
+import { requirePermission } from '../middleware/permissions';
 import { fetchPending, markImported, markRejected, PreregRow } from '../lib/preregClient';
 import fs from 'fs';
 import path from 'path';
@@ -13,7 +13,7 @@ import fsPromises from 'fs/promises';
 const router = Router();
 
 router.use(requireAuth);
-router.use(requireRole('admin', 'staff'));
+router.use(requirePermission('prereg:manage'));
 
 function splitFullName(full: string): { firstName: string; middleName?: string; lastName: string } {
   const name = (full || '').trim().replace(/\s+/g, ' ');
@@ -45,7 +45,7 @@ async function ensurePendingPhotoCached(row: PreregRow): Promise<string | undefi
     try {
       await fsPromises.access(filePath);
       return `/uploads/pending/${filename}`;
-    } catch {}
+    } catch { }
     const ab = await resp.arrayBuffer();
     const buffer = Buffer.from(ab);
     if (buffer.length > 5 * 1024 * 1024) return undefined;
@@ -140,7 +140,7 @@ router.post('/:id/approve', async (req, res) => {
     const uploadsDir = path.join(process.cwd(), 'uploads');
     const pendingDir = path.join(uploadsDir, 'pending');
     let moved = false;
-    for (const ext of ['png','jpg','jpeg']) {
+    for (const ext of ['png', 'jpg', 'jpeg']) {
       const pendingFile = path.join(pendingDir, `${row.id}.${ext === 'jpeg' ? 'jpg' : ext}`);
       try {
         await fsPromises.access(pendingFile);
@@ -150,7 +150,7 @@ router.post('/:id/approve', async (req, res) => {
         localPhotoUrl = `/uploads/${finalName}`;
         moved = true;
         break;
-      } catch {}
+      } catch { }
     }
     if (!moved && row.photo_url && /^https?:\/\//i.test(row.photo_url)) {
       try {
@@ -172,7 +172,7 @@ router.post('/:id/approve', async (req, res) => {
             }
           }
         }
-      } catch {}
+      } catch { }
     }
 
     const fullName = [prefill.firstName, prefill.middleName, prefill.lastName].filter(Boolean).join(' ');

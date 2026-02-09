@@ -2,30 +2,30 @@
 // Sidebar is sticky and scrolls independently; theme persists in localStorage.
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { hasRole, logout } from '../lib/auth';
+import { hasRole, hasPermission, logout } from '../lib/auth';
 
 function Icon({ name }: { name: string }) {
   const props = { width: 16, height: 16, className: 'mr-2 inline-block align-[-2px]' } as any;
   switch (name) {
     case 'dashboard':
-      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 13h8V3H3v10zm10 8h8V3h-8v18zM3 21h8v-6H3v6z"/></svg>);
+      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 13h8V3H3v10zm10 8h8V3h-8v18zM3 21h8v-6H3v6z" /></svg>);
     case 'register':
-      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3H5a2 2 0 0 0-2 2v11m0 0V5a2 2 0 0 1 2-2h11m-13 13l4-4 4 4 7-7"/></svg>);
+      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3H5a2 2 0 0 0-2 2v11m0 0V5a2 2 0 0 1 2-2h11m-13 13l4-4 4 4 7-7" /></svg>);
     case 'personnel':
-      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>);
+      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>);
     case 'scan':
-      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><rect x="7" y="7" width="10" height="10" rx="2"/></svg>);
+      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3" /><rect x="7" y="7" width="10" height="10" rx="2" /></svg>);
     case 'logs':
-      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v4H4zM4 12h16v8H4z"/></svg>);
+      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v4H4zM4 12h16v8H4z" /></svg>);
     case 'reports':
-      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 3H6a2 2 0 0 0-2 2v14l4-4h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>);
+      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 3H6a2 2 0 0 0-2 2v14l4-4h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z" /></svg>);
     case 'users':
       return (
         <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
       );
     default:
@@ -39,8 +39,8 @@ export function AppShell() {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
   const [showMobileNav, setShowMobileNav] = useState(false);
-  const [theme, setTheme] = useState<'light'|'dark'>(
-    (typeof window !== 'undefined' && (localStorage.getItem('vt_theme') as 'light'|'dark')) || 'light'
+  const [theme, setTheme] = useState<'light' | 'dark'>(
+    (typeof window !== 'undefined' && (localStorage.getItem('vt_theme') as 'light' | 'dark')) || 'light'
   );
   const [collapsed, setCollapsed] = useState<boolean>(
     typeof window !== 'undefined' ? localStorage.getItem('vt_nav_collapsed') === '1' : false
@@ -50,11 +50,11 @@ export function AppShell() {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
     if (theme === 'dark') root.classList.add('dark'); else root.classList.remove('dark');
-    try { localStorage.setItem('vt_theme', theme); } catch {}
+    try { localStorage.setItem('vt_theme', theme); } catch { }
   }, [theme]);
 
   useEffect(() => {
-    try { localStorage.setItem('vt_nav_collapsed', collapsed ? '1' : '0'); } catch {}
+    try { localStorage.setItem('vt_nav_collapsed', collapsed ? '1' : '0'); } catch { }
   }, [collapsed]);
 
   function openLogoutDialog() {
@@ -64,7 +64,7 @@ export function AppShell() {
     setShowLogoutDialog(false);
   }
   function confirmLogout() {
-    try { logout(); } catch {}
+    try { logout(); } catch { }
     setShowLogoutDialog(false);
     navigate('/login', { replace: true });
   }
@@ -81,17 +81,18 @@ export function AppShell() {
   }, [showLogoutDialog]);
   const nav = [
     { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    ...(hasRole(['admin', 'staff', 'officer', 'warden']) ? [{ to: '/register', label: 'Visitor', icon: 'register' }] : [] as any),
-    ...(hasRole(['admin', 'staff', 'officer', 'warden']) ? [{ to: '/register-external', label: 'Officials/Doctors', icon: 'register' }] : [] as any),
-    ...(hasRole(['admin', 'staff', 'officer', 'warden']) ? [{ to: '/personnel', label: 'Personnel', icon: 'personnel' }] : [] as any),
-    ...(hasRole(['staff', 'officer']) ? [{ to: '/scan', label: 'Scan', icon: 'scan' }] : [] as any),
-    ...(hasRole(['admin', 'staff']) ? [{ to: '/prereg', label: 'Pre-Registrations', icon: 'register' }] : [] as any),
-    ...(hasRole(['admin', 'staff']) ? [{ to: '/archived', label: 'Archived Visitors', icon: 'logs' }] : [] as any),
-    ...(hasRole(['admin', 'staff']) ? [{ to: '/archived-personnel', label: 'Archived Personnel', icon: 'logs' }] : [] as any),
-    ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),
-    ...(hasRole(['admin', 'staff', 'warden', 'analyst']) ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
-    ...(hasRole(['admin']) ? [{ to: '/users', label: 'Users', icon: 'users' }] : [] as any),
-    ...(hasRole(['admin']) ? [{ to: '/audit-logs', label: 'Audit Trails', icon: 'logs' }] : [] as any),
+    ...(hasPermission('visitors:create') ? [{ to: '/register', label: 'Visitor', icon: 'register' }] : [] as any),
+    ...(hasPermission('visitors:create') ? [{ to: '/register-external', label: 'Officials/Doctors', icon: 'register' }] : [] as any),
+    ...(hasPermission('personnel:view') ? [{ to: '/personnel', label: 'Personnel', icon: 'personnel' }] : [] as any),
+    ...(hasPermission('scan:perform') ? [{ to: '/scan', label: 'Scan', icon: 'scan' }] : [] as any),
+    ...(hasPermission('prereg:manage') ? [{ to: '/prereg', label: 'Pre-Registrations', icon: 'register' }] : [] as any),
+    ...(hasPermission('visitors:manage') ? [{ to: '/archived', label: 'Archived Visitors', icon: 'logs' }] : [] as any),
+    ...(hasPermission('personnel:manage') ? [{ to: '/archived-personnel', label: 'Archived Personnel', icon: 'logs' }] : [] as any),
+    ...(hasPermission('logs:view') ? [{ to: '/logs', label: 'Visit Logs', icon: 'logs' }] : [] as any),
+    ...(hasPermission('reports:view') ? [{ to: '/reports', label: 'Reports', icon: 'reports' }] : [] as any),
+    ...(hasPermission('users:manage') ? [{ to: '/users', label: 'Users', icon: 'users' }] : [] as any),
+    ...(hasPermission('roles:manage') ? [{ to: '/roles', label: 'Roles', icon: 'users' }] : [] as any),
+    ...(hasPermission('audit:view') ? [{ to: '/audit-logs', label: 'Audit Trails', icon: 'logs' }] : [] as any),
   ];
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex">
@@ -121,9 +122,9 @@ export function AppShell() {
             >
               {/* Collapse/Expand icon */}
               {collapsed ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
               )}
             </div>
             <div
@@ -134,9 +135,9 @@ export function AppShell() {
               title="Theme"
             >
               {theme === 'dark' ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364l-1.414-1.414M8.05 8.05L6.636 6.636m10.728 0l-1.414 1.414M8.05 15.95l-1.414 1.414"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364l-1.414-1.414M8.05 8.05L6.636 6.636m10.728 0l-1.414 1.414M8.05 15.95l-1.414 1.414" /></svg>
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
               )}
             </div>
           </div>
@@ -149,7 +150,7 @@ export function AppShell() {
               onClick={() => setCollapsed(false)}
               title="Expand"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
             </div>
           )}
         </div>
@@ -181,7 +182,7 @@ export function AppShell() {
             onClick={openLogoutDialog}
             title="Log out"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5"/><path d="M19 12H5"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5" /><path d="M19 12H5" /></svg>
             {!collapsed && <span className="text-sm">Log out</span>}
           </div>
         </div>
@@ -195,7 +196,7 @@ export function AppShell() {
               className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
               onClick={() => setShowMobileNav(true)}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
             </button>
             <div className="font-semibold">VisitTrack</div>
           </div>
@@ -207,9 +208,9 @@ export function AppShell() {
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
               {theme === 'dark' ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364l-1.414-1.414M8.05 8.05L6.636 6.636m10.728 0l-1.414 1.414M8.05 15.95l-1.414 1.414"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364l-1.414-1.414M8.05 8.05L6.636 6.636m10.728 0l-1.414 1.414M8.05 15.95l-1.414 1.414" /></svg>
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
               )}
             </div>
             <div
@@ -218,7 +219,7 @@ export function AppShell() {
               className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
               onClick={openLogoutDialog}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5"/><path d="M19 12H5"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5" /><path d="M19 12H5" /></svg>
               <span className="text-sm">Log out</span>
             </div>
           </div>
@@ -244,7 +245,7 @@ export function AppShell() {
                 className="p-2 rounded-md hover:bg-slate-100 text-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
                 onClick={() => setShowMobileNav(false)}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             <ul className="mt-1 divide-y divide-slate-200 dark:divide-slate-800">
@@ -281,7 +282,7 @@ export function AppShell() {
           <div className="absolute inset-0 bg-black/60" />
           <div className="relative w-full max-w-sm mx-4 bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-700 rounded-lg shadow-xl p-5">
             <div className="flex items-center gap-3 mb-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5"/><path d="M19 12H5"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 17l5-5-5-5" /><path d="M19 12H5" /></svg>
               <h3 id="logout-title" className="text-lg font-semibold">Sign out</h3>
             </div>
             <p id="logout-desc" className="text-slate-700 dark:text-slate-300 text-sm mb-4">Are you sure you want to log out?</p>

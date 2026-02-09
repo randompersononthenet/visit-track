@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { validate } from '../lib/validation';
-import { requireRole } from '../middleware/roles';
+import { requirePermission } from '../middleware/permissions';
 import { audit } from '../lib/audit';
 
 const router = Router();
@@ -14,7 +14,7 @@ const router = Router();
 router.use(requireAuth);
 
 // List personnel with filters and pagination
-router.get('/', requireRole('admin', 'staff', 'officer', 'warden', 'analyst'), async (req, res) => {
+router.get('/', requirePermission('personnel:view'), async (req, res) => {
   const { q, page = '1', pageSize = '20', includeArchived } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
@@ -44,7 +44,7 @@ const createPersonnelSchema = z.object({
   photoUrl: z.string().max(500).optional(),
 });
 
-router.post('/', requireRole('admin', 'staff'), validate(createPersonnelSchema), async (req, res) => {
+router.post('/', requirePermission('personnel:create'), validate(createPersonnelSchema), async (req, res) => {
   const { firstName, middleName, lastName, roleTitle, qrCode, photoUrl } = (req as any).parsed;
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
   const rec = await Personnel.create({ firstName, middleName, lastName, fullName, roleTitle, qrCode: qrCode || uuidv4(), photoUrl });
@@ -53,7 +53,7 @@ router.post('/', requireRole('admin', 'staff'), validate(createPersonnelSchema),
 });
 
 // Get by id
-router.get('/:id', requireRole('admin', 'staff', 'officer', 'warden', 'analyst'), async (req, res) => {
+router.get('/:id', requirePermission('personnel:view'), async (req, res) => {
   const rec = await Personnel.findByPk(Number(req.params.id));
   if (!rec) return res.status(404).json({ error: 'Not found' });
   res.json(rec);
@@ -62,7 +62,7 @@ router.get('/:id', requireRole('admin', 'staff', 'officer', 'warden', 'analyst')
 // Update
 const updatePersonnelSchema = createPersonnelSchema.partial();
 
-router.patch('/:id', requireRole('admin', 'staff'), validate(updatePersonnelSchema), async (req, res) => {
+router.patch('/:id', requirePermission('personnel:update'), validate(updatePersonnelSchema), async (req, res) => {
   const id = Number(req.params.id);
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });
@@ -73,12 +73,12 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updatePersonnelSche
       .join(' ')
   );
   await rec.update({ firstName, middleName, lastName, fullName: computedFullName, roleTitle, qrCode, photoUrl });
-  await audit(req as any, 'update', 'personnel', rec.id, { fields: ['firstName','middleName','lastName','fullName','roleTitle','qrCode','photoUrl'].filter((k) => typeof (eval(k) as any) !== 'undefined') });
+  await audit(req as any, 'update', 'personnel', rec.id, { fields: ['firstName', 'middleName', 'lastName', 'fullName', 'roleTitle', 'qrCode', 'photoUrl'].filter((k) => typeof (eval(k) as any) !== 'undefined') });
   res.json(rec);
 });
 
 // Soft delete (archive)
-router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
+router.delete('/:id', requirePermission('personnel:delete'), async (req, res) => {
   const id = Number(req.params.id);
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });
@@ -88,7 +88,7 @@ router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
 });
 
 // Hard delete (admin only)
-router.delete('/:id/hard', requireRole('admin'), async (req, res) => {
+router.delete('/:id/hard', requirePermission('personnel:delete:hard'), async (req, res) => {
   const id = Number(req.params.id);
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });
@@ -98,7 +98,7 @@ router.delete('/:id/hard', requireRole('admin'), async (req, res) => {
 });
 
 // Restore (unarchive)
-router.patch('/:id/restore', requireRole('admin', 'staff'), async (req, res) => {
+router.patch('/:id/restore', requirePermission('personnel:restore'), async (req, res) => {
   const id = Number(req.params.id);
   const rec = await Personnel.findByPk(id);
   if (!rec) return res.status(404).json({ error: 'Not found' });

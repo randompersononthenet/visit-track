@@ -7,6 +7,7 @@ export interface AuthPayload {
   id: number;
   username: string;
   role: string;
+  roleId: number;
 }
 
 /**

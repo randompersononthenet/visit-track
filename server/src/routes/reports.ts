@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Op } from 'sequelize';
 import { requireAuth } from '../middleware/auth';
-import { requireRole } from '../middleware/roles';
+import { requirePermission } from '../middleware/permissions';
 import { Visitor } from '../models/Visitor';
 import { Personnel } from '../models/Personnel';
 import { VisitLog } from '../models/VisitLog';
@@ -26,7 +26,7 @@ const router = Router();
 
 // All reports require auth + role (admin or staff)
 router.use(requireAuth);
-router.use(requireRole('admin', 'staff', 'warden', 'analyst'));
+router.use(requirePermission('reports:view'));
 
 router.get('/visitors.csv', async (req, res) => {
   const { dateFrom, dateTo } = req.query as Record<string, string>;

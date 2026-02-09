@@ -12,7 +12,10 @@ export function Users() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState<'staff'|'officer'>('staff');
+
+  const [roles, setRoles] = useState<any[]>([]);
+  const [newRole, setNewRole] = useState<string>('');
+
   const [savingCreate, setSavingCreate] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -20,22 +23,30 @@ export function Users() {
   const [renameTo, setRenameTo] = useState('');
   const [savingRename, setSavingRename] = useState(false);
 
-  async function loadUsers() {
+  async function loadData() {
     try {
       setLoading(true);
       setError(null);
-      const res = await api.get('/api/users');
-      setRows(res.data?.data || []);
+      const [uRes, rRes] = await Promise.all([
+        api.get('/api/users'),
+        api.get('/api/roles')
+      ]);
+      setRows(uRes.data?.data || []);
+      setRoles(rRes.data || []);
+      if (rRes.data?.length > 0) setNewRole(rRes.data[0].name);
     } catch (e: any) {
-      setError(e?.response?.data?.error || 'Failed to load users');
+      setError(e?.response?.data?.error || 'Failed to load data');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadUsers();
+    loadData();
   }, []);
+
+  // ... existing code ...
+
 
   if (!hasRole(['admin'])) {
     return <div className="text-sm text-slate-600 dark:text-slate-400">You do not have access to this page.</div>;
@@ -44,7 +55,7 @@ export function Users() {
   return (
     <div className="space-y-4">
       <div className="text-xl font-semibold flex items-center gap-2">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
         Users
       </div>
       <div>
@@ -96,7 +107,7 @@ export function Users() {
                     onClick={async () => {
                       try {
                         await api.patch(`/api/users/${u.id}/disabled`, { disabled: !u.disabled });
-                        await loadUsers();
+                        await loadData();
                       } catch (e: any) {
                         alert(e?.response?.data?.error || 'Failed to update status');
                       }
@@ -204,10 +215,11 @@ export function Users() {
                 <select
                   className="w-full bg-white border border-slate-300 text-slate-900 rounded px-2 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
                   value={newRole}
-                  onChange={(e) => setNewRole((e.target.value as 'staff'|'officer') || 'staff')}
+                  onChange={(e) => setNewRole(e.target.value)}
                 >
-                  <option value="staff">staff</option>
-                  <option value="officer">officer</option>
+                  {roles.map(r => (
+                    <option key={r.id} value={r.name}>{r.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="flex justify-end gap-2">
@@ -223,7 +235,7 @@ export function Users() {
                       setNewPassword('');
                       setNewRole('staff');
                       setCreateOpen(false);
-                      await loadUsers();
+                      await loadData();
                     } catch (e: any) {
                       alert(e?.response?.data?.error || 'Failed to create user');
                     } finally {
@@ -266,7 +278,7 @@ export function Users() {
                       await api.patch(`/api/users/${renameFor.id}/username`, { username: renameTo.trim() });
                       setRenameFor(null);
                       setRenameTo('');
-                      await loadUsers();
+                      await loadData();
                     } catch (e: any) {
                       alert(e?.response?.data?.error || 'Failed to rename user');
                     } finally {

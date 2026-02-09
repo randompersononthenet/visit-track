@@ -1,4 +1,6 @@
 import { sequelize } from '../lib/db';
+export { Permission } from './Permission';
+export { RolePermission } from './RolePermission';
 export { Role } from './Role';
 export { User } from './User';
 export { Visitor } from './Visitor';

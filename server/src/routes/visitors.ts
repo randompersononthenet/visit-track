@@ -6,7 +6,7 @@ import { requireAuth } from '../middleware/auth';
 import { z } from 'zod';
 import { validate } from '../lib/validation';
 import { v4 as uuidv4 } from 'uuid';
-import { requireRole } from '../middleware/roles';
+import { requirePermission } from '../middleware/permissions';
 import { audit } from '../lib/audit';
 
 const router = Router();
@@ -15,7 +15,7 @@ const router = Router();
 router.use(requireAuth);
 
 // List visitors with simple filters and pagination
-router.get('/', requireRole('admin', 'staff', 'officer', 'warden', 'analyst'), async (req, res) => {
+router.get('/', requirePermission('visitors:view'), async (req, res) => {
   const { q, page = '1', pageSize = '20', type, includeArchived } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
@@ -45,10 +45,10 @@ const createVisitorSchema = z.object({
   qrCode: z.string().max(200).optional(),
   photoUrl: z.string().max(500).optional(),
   blacklistStatus: z.boolean().optional(),
-  type: z.enum(['regular','special']).optional(),
+  type: z.enum(['regular', 'special']).optional(),
 });
 
-router.post('/', requireRole('admin', 'staff'), validate(createVisitorSchema), async (req, res) => {
+router.post('/', requirePermission('visitors:create'), validate(createVisitorSchema), async (req, res) => {
   const { firstName, middleName, lastName, contact, idNumber, relation, qrCode, photoUrl, blacklistStatus, type } = (req as any).parsed;
   const normFirst = (firstName || '').trim().toUpperCase();
   const normMiddleRaw = (middleName || '').trim();
@@ -91,7 +91,7 @@ router.post('/', requireRole('admin', 'staff'), validate(createVisitorSchema), a
 });
 
 // Get visitor by id
-router.get('/:id', requireRole('admin', 'staff', 'officer'), async (req, res) => {
+router.get('/:id', requirePermission('visitors:view'), async (req, res) => {
   const v = await Visitor.findByPk(Number(req.params.id));
   if (!v) return res.status(404).json({ error: 'Not found' });
   res.json(v);
@@ -99,12 +99,12 @@ router.get('/:id', requireRole('admin', 'staff', 'officer'), async (req, res) =>
 
 // Update visitor
 const updateVisitorSchema = createVisitorSchema.partial().extend({
-  riskLevel: z.enum(['none','low','medium','high']).optional(),
+  riskLevel: z.enum(['none', 'low', 'medium', 'high']).optional(),
   flagReason: z.string().max(1000).optional().or(z.literal('')).transform((v) => (v === '' ? undefined : v)),
   blacklistStatus: z.boolean().optional(),
 });
 
-router.patch('/:id', requireRole('admin', 'staff'), validate(updateVisitorSchema), async (req, res) => {
+router.patch('/:id', requirePermission('visitors:update'), validate(updateVisitorSchema), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
@@ -156,7 +156,7 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updateVisitorSchema
 
 // Delete visitor
 // Soft delete (archive)
-router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
+router.delete('/:id', requirePermission('visitors:delete'), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
@@ -166,7 +166,7 @@ router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
 });
 
 // Hard delete (admin only)
-router.delete('/:id/hard', requireRole('admin'), async (req, res) => {
+router.delete('/:id/hard', requirePermission('visitors:delete:hard'), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
@@ -178,7 +178,7 @@ router.delete('/:id/hard', requireRole('admin'), async (req, res) => {
 });
 
 // Restore (unarchive)
-router.patch('/:id/restore', requireRole('admin', 'staff'), async (req, res) => {
+router.patch('/:id/restore', requirePermission('visitors:restore'), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Visitor.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });

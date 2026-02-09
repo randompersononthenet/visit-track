@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { Op } from 'sequelize';
 import { requireAuth } from '../middleware/auth';
-import { requireRole } from '../middleware/roles';
+import { requirePermission } from '../middleware/permissions';
 import { AuditLog } from '../models/AuditLog';
 
 const router = Router();
 router.use(requireAuth);
-router.use(requireRole('admin'));
+router.use(requirePermission('audit:view'));
 
 router.get('/', async (req, res) => {
   const { q, action, entityType, actor, page = '1', pageSize = '20', from, to } = req.query as Record<string, string>;

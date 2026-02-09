@@ -9,13 +9,13 @@ import { Visitor } from '../models/Visitor';
 import { Personnel } from '../models/Personnel';
 import { VisitLog } from '../models/VisitLog';
 import { Violation } from '../models/Violation';
-import { requireRole } from '../middleware/roles';
+import { requirePermission } from '../middleware/permissions';
 import { audit } from '../lib/audit';
 
 const router = Router();
 
 router.use(requireAuth);
-router.use(requireRole('staff', 'officer'));
+router.use(requirePermission('scan:perform'));
 
 /**
  * GET /api/scan/preview?qrCode=...
@@ -117,7 +117,7 @@ router.post('/', validate(scanSchema), async (req, res) => {
   }
   const elapsedSeconds = Math.max(0, Math.round((now.getTime() - new Date(openLog.timeIn).getTime()) / 1000));
   await openLog.update({ timeOut: now, durationSeconds: elapsedSeconds, handledByUserId: (req as any).user?.id ?? openLog.handledByUserId });
-    await audit(req as any, 'checkout', 'visit_log', openLog.id, { subjectType: subject.type, subjectId: subject.id, durationSeconds: elapsedSeconds });
+  await audit(req as any, 'checkout', 'visit_log', openLog.id, { subjectType: subject.type, subjectId: subject.id, durationSeconds: elapsedSeconds });
   return res.json({ status: 'ok', event: 'checkout', at: now, logId: openLog.id, subjectType: subject.type, subject, alerts, elapsedSeconds });
 });
 

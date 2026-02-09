@@ -41,3 +41,22 @@ export function setUsername(username: string | null) {
   if (username) localStorage.setItem('vt_username', username);
   else localStorage.removeItem('vt_username');
 }
+
+export function getPermissions(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const s = localStorage.getItem('vt_permissions');
+    return s ? JSON.parse(s) : [];
+  } catch { return []; }
+}
+
+export function setPermissions(perms: string[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('vt_permissions', JSON.stringify(perms));
+}
+
+export function hasPermission(slug: string): boolean {
+  if (getRole() === 'admin') return true;
+  const perms = getPermissions();
+  return perms.includes(slug);
+}

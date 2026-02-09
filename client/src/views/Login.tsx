@@ -2,7 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, setToken } from '../lib/api';
-import { setRole, setUsername } from '../lib/auth';
+import { setRole, setUsername, setPermissions } from '../lib/auth';
 
 export function Login() {
   const navigate = useNavigate();
@@ -21,8 +21,9 @@ export function Login() {
       const token = res.data?.token as string;
       if (!token) throw new Error('No token received');
       setToken(token);
-      try { setRole(res.data?.user?.role || null); } catch {}
-      try { setUsername(res.data?.user?.username || null); } catch {}
+      try { setRole(res.data?.user?.role || null); } catch { }
+      try { setUsername(res.data?.user?.username || null); } catch { }
+      try { setPermissions(res.data?.user?.permissions || []); } catch { }
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Login failed');
@@ -42,7 +43,7 @@ export function Login() {
             src="/Visittrack.png"
             alt="VisitTrack logo"
             className="w-30 h-30 rounded"
-            onError={(e:any)=>{ e.currentTarget.style.display='none'; }}
+            onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
           <div className="w-10 h-10 rounded overflow-hidden bg-white border border-slate-200 flex items-center justify-center dark:bg-slate-900 dark:border-slate-700">
             <img src="/agooDJ-logo.jpg" alt="Agoo District Jail" className="w-full h-full object-contain" />
@@ -83,9 +84,9 @@ export function Login() {
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                 ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.46-1.07 1.13-2.06 2-2.94M10.58 10.58a2 2 0 0 0 2.84 2.84M6.1 6.1l11.8 11.8"/><path d="M9.88 5.09A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8- .23.52-.51 1.02-.84 1.5"/></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.46-1.07 1.13-2.06 2-2.94M10.58 10.58a2 2 0 0 0 2.84 2.84M6.1 6.1l11.8 11.8" /><path d="M9.88 5.09A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8- .23.52-.51 1.02-.84 1.5" /></svg>
                 )}
               </button>
             </div>

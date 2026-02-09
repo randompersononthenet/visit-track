@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Op } from 'sequelize';
 import { requireAuth } from '../middleware/auth';
-import { requireRole } from '../middleware/roles';
+import { requirePermission } from '../middleware/permissions';
 import { z } from 'zod';
 import { validate } from '../lib/validation';
 import { Violation } from '../models/Violation';
@@ -12,7 +12,7 @@ const router = Router();
 router.use(requireAuth);
 
 // List violations (optionally filter by visitorId), basic pagination
-router.get('/', requireRole('admin', 'staff', 'officer'), async (req, res) => {
+router.get('/', requirePermission('violations:view'), async (req, res) => {
   const { visitorId, page = '1', pageSize = '20', includeArchived } = req.query as Record<string, string>;
   const p = Math.max(parseInt(page) || 1, 1);
   const ps = Math.min(Math.max(parseInt(pageSize) || 20, 1), 100);
@@ -29,7 +29,7 @@ router.get('/', requireRole('admin', 'staff', 'officer'), async (req, res) => {
 });
 
 // Alias: list by visitor
-router.get('/visitor/:id', requireRole('admin', 'staff', 'officer'), async (req, res) => {
+router.get('/visitor/:id', requirePermission('violations:view'), async (req, res) => {
   const id = Number(req.params.id);
   const rows = await Violation.findAll({ where: { visitorId: id, archivedAt: { [Op.is]: null } }, order: [['recordedAt', 'DESC']], limit: 200 });
   res.json({ data: rows });
@@ -41,7 +41,7 @@ const createViolationSchema = z.object({
   recordedAt: z.string().datetime().optional(),
 });
 
-router.post('/visitor/:id', requireRole('admin', 'staff'), validate(createViolationSchema), async (req, res) => {
+router.post('/visitor/:id', requirePermission('violations:manage'), validate(createViolationSchema), async (req, res) => {
   const visitorId = Number(req.params.id);
   const { level, details, recordedAt } = (req as any).parsed;
   const v = await Violation.create({ visitorId, level, details: details ?? null, recordedAt: recordedAt ? new Date(recordedAt) : new Date() });
@@ -56,7 +56,7 @@ const updateViolationSchema = z.object({
   recordedAt: z.string().datetime().optional(),
 });
 
-router.patch('/:id', requireRole('admin', 'staff'), validate(updateViolationSchema), async (req, res) => {
+router.patch('/:id', requirePermission('violations:manage'), validate(updateViolationSchema), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Violation.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
@@ -71,7 +71,7 @@ router.patch('/:id', requireRole('admin', 'staff'), validate(updateViolationSche
 
 // Delete a violation
 // Soft delete (archive)
-router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
+router.delete('/:id', requirePermission('violations:manage'), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Violation.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });
@@ -81,7 +81,7 @@ router.delete('/:id', requireRole('admin', 'staff'), async (req, res) => {
 });
 
 // Hard delete (admin only)
-router.delete('/:id/hard', requireRole('admin'), async (req, res) => {
+router.delete('/:id/hard', requirePermission('violations:delete:hard'), async (req, res) => {
   const id = Number(req.params.id);
   const v = await Violation.findByPk(id);
   if (!v) return res.status(404).json({ error: 'Not found' });

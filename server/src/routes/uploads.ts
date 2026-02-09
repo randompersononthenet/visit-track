@@ -2,14 +2,14 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { requireAuth } from '../middleware/auth';
-import { requireRole } from '../middleware/roles';
+import { requirePermission } from '../middleware/permissions';
 
 const router = Router();
 
 router.use(requireAuth);
 
 // POST /api/uploads/image { dataUrl: 'data:image/png;base64,...' }
-router.post('/image', requireRole('admin', 'staff'), async (req, res) => {
+router.post('/image', requirePermission('uploads:manage'), async (req, res) => {
   try {
     const { dataUrl } = req.body as { dataUrl?: string };
     if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) {
@@ -40,7 +40,7 @@ router.post('/image', requireRole('admin', 'staff'), async (req, res) => {
 });
 
 // POST /api/uploads/import { url: 'https://...' }
-router.post('/import', requireRole('admin', 'staff'), async (req, res) => {
+router.post('/import', requirePermission('uploads:manage'), async (req, res) => {
   try {
     const { url } = req.body as { url?: string };
     if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url)) {

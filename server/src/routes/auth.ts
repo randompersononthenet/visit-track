@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 import { Role } from '../models/Role';
+import { Permission } from '../models/Permission';
 
 const router = Router();
 
@@ -11,14 +12,33 @@ router.post('/login', async (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ error: 'username and password are required' });
   }
-  const user = await User.findOne({ where: { username }, include: [{ model: Role, as: 'role' }] });
+  const user = await User.findOne({
+    where: { username },
+    include: [{ model: Role, as: 'role', include: [{ model: Permission, as: 'permissions' }] }]
+  });
   if (!user) return res.status(401).json({ error: 'Invalid credentials' });
   if ((user as any).disabled) return res.status(403).json({ error: 'Account disabled' });
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
   const secret = process.env.JWT_SECRET || 'dev-secret';
-  const token = jwt.sign({ id: user.id, username: user.username, role: user.role ? (user.role as any).name : undefined }, secret, { expiresIn: '8h' });
-  return res.json({ token, user: { id: user.id, username: user.username, role: user.role ? (user.role as any).name : undefined } });
+  const roleName = user.role ? (user.role as any).name : undefined;
+  const permissions = user.role?.permissions?.map(p => p.slug) || [];
+
+  const token = jwt.sign({
+    id: user.id,
+    username: user.username,
+    role: roleName,
+    roleId: (user as any).roleId
+  }, secret, { expiresIn: '8h' });
+  return res.json({
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      role: roleName,
+      permissions
+    }
+  });
 });
 
 router.get('/me', async (req, res) => {
@@ -29,9 +49,13 @@ router.get('/me', async (req, res) => {
   try {
     const secret = process.env.JWT_SECRET || 'dev-secret';
     const payload = jwt.verify(token, secret) as any;
-    const user = await User.findByPk(payload.id, { include: [{ model: Role, as: 'role' }] });
+    const user = await User.findByPk(payload.id, {
+      include: [{ model: Role, as: 'role', include: [{ model: Permission, as: 'permissions' }] }]
+    });
     if (!user) return res.status(404).json({ error: 'User not found' });
-    return res.json({ id: user.id, username: user.username, role: user.role ? (user.role as any).name : undefined });
+    const roleName = user.role ? (user.role as any).name : undefined;
+    const permissions = user.role?.permissions?.map(p => p.slug) || [];
+    return res.json({ id: user.id, username: user.username, role: roleName, permissions });
   } catch {
     return res.status(401).json({ error: 'Invalid token' });
   }
