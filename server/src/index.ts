@@ -29,7 +29,9 @@ import { Role } from './models/Role';
 import selfsigned from 'selfsigned';
 
 const app = express();
-app.set('trust proxy', true);
+// Fixing ERR_ERL_PERMISSIVE_TRUST_PROXY: Use 'loopback' to trust localhost proxies, or false if no proxy.
+// 'true' is too permissive and causes express-rate-limit to fail.
+app.set('trust proxy', 'loopback');
 app.use(helmet({
   // Allow images (e.g., /uploads/*) to be fetched from other origins like http://localhost:5173
   crossOriginResourcePolicy: { policy: 'cross-origin' },

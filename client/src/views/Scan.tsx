@@ -34,10 +34,10 @@ export function Scan() {
     try {
       // @ts-ignore Vite worker import
       workerRef.current = new Worker(new URL('../workers/qrWorker.ts', import.meta.url), { type: 'module' });
-    } catch {}
+    } catch { }
     return () => {
       if (workerRef.current) {
-        try { workerRef.current.terminate(); } catch {}
+        try { workerRef.current.terminate(); } catch { }
         workerRef.current = null;
       }
     };
@@ -128,11 +128,11 @@ export function Scan() {
       rafRef.current = null;
     }
     if (zxingControlsRef.current) {
-      try { zxingControlsRef.current.stop(); } catch {}
+      try { zxingControlsRef.current.stop(); } catch { }
       zxingControlsRef.current = null;
     }
     if (zxingReaderRef.current) {
-      try { zxingReaderRef.current.reset?.(); } catch {}
+      try { zxingReaderRef.current.reset?.(); } catch { }
       zxingReaderRef.current = null;
     }
     if (streamRef.current) {
@@ -200,10 +200,24 @@ export function Scan() {
       try {
         const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
         await openManualCropWithDataUrl(dataUrl);
-      } catch {}
+      } catch { }
       setError('No QR found. Try adjusting the crop to the QR area.');
     }
   }
+
+  // Active Visits Logic
+  const [activeVisits, setActiveVisits] = useState<any[]>([]);
+
+  async function loadActiveVisits() {
+    try {
+      const res = await api.get('/api/scan/active');
+      setActiveVisits(res.data || []);
+    } catch { }
+  }
+
+  useEffect(() => { loadActiveVisits(); }, []);
+  // Reload active visits also when scan result updates (checkin/checkout)
+  useEffect(() => { if (result) loadActiveVisits(); }, [result]);
 
   useEffect(() => {
     if (mode === 'camera') {
@@ -219,166 +233,219 @@ export function Scan() {
     <div>
       <h1 className="text-xl font-semibold mb-4">Scan</h1>
       <div className="grid md:grid-cols-3 gap-8">
-        <section className="md:col-span-1 bg-white border border-slate-200 rounded-lg p-4 dark:bg-slate-800/40 dark:border-slate-700">
-          <div className="space-y-3">
-            <div className="flex gap-2 text-sm">
-              <button
-                className={`px-3 py-1 rounded ${mode === 'manual' ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white'}`}
-                onClick={() => setMode('manual')}
-              >
-                Manual
-              </button>
-              <button
-                className={`px-3 py-1 rounded ${mode === 'camera' ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white'}`}
-                onClick={() => setMode('camera')}
-              >
-                Camera
-              </button>
-            </div>
-            <input
-              className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
-              placeholder="Paste or scan QR code value"
-              value={qrCode}
-              onChange={(e) => setQrCode(e.target.value)}
-            />
-            <label className="inline-flex items-center px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 cursor-pointer">
+        <section className="md:col-span-1 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-lg p-4 dark:bg-slate-800/40 dark:border-slate-700">
+            <h3 className="font-semibold mb-3">Scanner</h3>
+            <div className="space-y-3">
+              <div className="flex gap-2 text-sm">
+                <button
+                  className={`px-3 py-1 rounded ${mode === 'manual' ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white'}`}
+                  onClick={() => setMode('manual')}
+                >
+                  Manual
+                </button>
+                <button
+                  className={`px-3 py-1 rounded ${mode === 'camera' ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white'}`}
+                  onClick={() => setMode('camera')}
+                >
+                  Camera
+                </button>
+              </div>
               <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  setError(null);
-                  const file = e.target.files?.[0];
-                  if (!file) { setError('No file selected'); return; }
-                  try {
-                    const dataUrl = await new Promise<string>((resolve, reject) => {
-                      const reader = new FileReader();
-                      reader.onload = () => resolve(reader.result as string);
-                      reader.onerror = () => reject(new Error('Failed to read image'));
-                      reader.readAsDataURL(file);
-                    });
-                    const imgEl = await new Promise<HTMLImageElement>((resolve, reject) => {
-                      const img = new Image();
-                      img.onload = () => resolve(img);
-                      img.onerror = () => reject(new Error('Invalid image'));
-                      img.src = dataUrl;
-                    });
-                    const canvas = canvasRef.current;
-                    if (!canvas) return;
-                    const maxW = 1600;
-                    const s = Math.min(1, maxW / (imgEl.naturalWidth || maxW));
-                    const w = Math.max(1, Math.round((imgEl.naturalWidth || maxW) * s));
-                    const h = Math.max(1, Math.round((imgEl.naturalHeight || maxW) * s));
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) return;
-                    ctx.drawImage(imgEl, 0, 0, w, h);
-                    const imageData = ctx.getImageData(0, 0, w, h);
-                    const text = await decodeViaWorker(imageData);
-                    if (text) setQrCode(text);
-                    else {
-                      // Open manual crop editor to allow user to adjust
-                      try {
-                        const url = canvas.toDataURL('image/jpeg', 0.92);
-                        await openManualCropWithDataUrl(url);
-                      } catch {}
-                      setError('No QR found in image. Try cropping to the QR area.');
-                    }
-                  } catch (e: any) {
-                    setError(e?.message || 'Failed to decode image');
-                  } finally {
-                    // reset the input so selecting same file again triggers change
-                    e.currentTarget.value = '';
-                  }
-                }}
+                className="w-full bg-white border border-slate-300 text-slate-900 rounded px-3 py-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
+                placeholder="Paste or scan QR code value"
+                value={qrCode}
+                onChange={(e) => setQrCode(e.target.value)}
               />
-              Upload QR Image
-            </label>
-            {mode === 'camera' && (
-              <div className="space-y-2">
-                {cameraError && <div className="text-rose-600 dark:text-red-400 text-sm">{cameraError}</div>}
-                <div className="relative">
-                  <video ref={videoRef} className="w-full rounded bg-black" muted playsInline />
-                  {/* Scan guide (center square) */}
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <div className="w-[70%] h-[70%] max-w-[420px] max-h-[420px] border-2 border-emerald-400 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]"></div>
+              {/* ... (File Input & Camera UI - retained) ... */}
+              <label className="inline-flex items-center px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    setError(null);
+                    const file = e.target.files?.[0];
+                    if (!file) { setError('No file selected'); return; }
+                    try {
+                      const dataUrl = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = () => reject(new Error('Failed to read image'));
+                        reader.readAsDataURL(file);
+                      });
+                      const imgEl = await new Promise<HTMLImageElement>((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.onerror = () => reject(new Error('Invalid image'));
+                        img.src = dataUrl;
+                      });
+                      const canvas = canvasRef.current;
+                      if (!canvas) return;
+                      const maxW = 1600;
+                      const s = Math.min(1, maxW / (imgEl.naturalWidth || maxW));
+                      const w = Math.max(1, Math.round((imgEl.naturalWidth || maxW) * s));
+                      const h = Math.max(1, Math.round((imgEl.naturalHeight || maxW) * s));
+                      canvas.width = w;
+                      canvas.height = h;
+                      const ctx = canvas.getContext('2d');
+                      if (!ctx) return;
+                      ctx.drawImage(imgEl, 0, 0, w, h);
+                      const imageData = ctx.getImageData(0, 0, w, h);
+                      const text = await decodeViaWorker(imageData);
+                      if (text) setQrCode(text);
+                      else {
+                        // Open manual crop editor to allow user to adjust
+                        try {
+                          const url = canvas.toDataURL('image/jpeg', 0.92);
+                          await openManualCropWithDataUrl(url);
+                        } catch { }
+                        setError('No QR found in image. Try cropping to the QR area.');
+                      }
+                    } catch (e: any) {
+                      setError(e?.message || 'Failed to decode image');
+                    } finally {
+                      // reset the input so selecting same file again triggers change
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                />
+                Upload QR Image
+              </label>
+              {mode === 'camera' && (
+                <div className="space-y-2">
+                  {cameraError && <div className="text-rose-600 dark:text-red-400 text-sm">{cameraError}</div>}
+                  <div className="relative">
+                    <video ref={videoRef} className="w-full rounded bg-black" muted playsInline />
+                    {/* Scan guide (center square) */}
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                      <div className="w-[70%] h-[70%] max-w-[420px] max-h-[420px] border-2 border-emerald-400 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]"></div>
+                    </div>
+                    <div className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded">Ready</div>
+                    {torchAvailable && (
+                      <button
+                        type="button"
+                        className="absolute bottom-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded"
+                        onClick={async () => {
+                          try {
+                            const track: any = (videoRef.current?.srcObject as any)?.getVideoTracks?.()[0];
+                            if (!track) return;
+                            await track.applyConstraints({ advanced: [{ torch: !torchOn }] });
+                            setTorchOn((v) => !v);
+                          } catch { }
+                        }}
+                      >
+                        {torchOn ? 'Torch Off' : 'Torch On'}
+                      </button>
+                    )}
                   </div>
-                  <div className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded">Ready</div>
-                  {torchAvailable && (
+                  <canvas ref={canvasRef} className="hidden" />
+                  <div className="flex gap-2">
                     <button
                       type="button"
-                      className="absolute bottom-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded"
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded"
+                      onClick={captureAndDecode}
+                    >
+                      Capture & Decode
+                    </button>
+                    <button
+                      type="button"
+                      className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
                       onClick={async () => {
                         try {
-                          const track: any = (videoRef.current?.srcObject as any)?.getVideoTracks?.()[0];
-                          if (!track) return;
-                          await track.applyConstraints({ advanced: [{ torch: !torchOn }] });
-                          setTorchOn((v) => !v);
-                        } catch {}
+                          const video = videoRef.current;
+                          const canvas = canvasRef.current;
+                          if (!video || !canvas) return;
+                          const vw = video.videoWidth;
+                          const vh = video.videoHeight;
+                          if (!vw || !vh) return;
+                          canvas.width = vw;
+                          canvas.height = vh;
+                          const ctx = canvas.getContext('2d');
+                          if (!ctx) return;
+                          ctx.drawImage(video, 0, 0, vw, vh);
+                          const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                          await openManualCropWithDataUrl(dataUrl);
+                          setError(null);
+                        } catch { }
                       }}
                     >
-                      {torchOn ? 'Torch Off' : 'Torch On'}
+                      Manual Crop
                     </button>
-                  )}
+                  </div>
                 </div>
-                <canvas ref={canvasRef} className="hidden" />
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded"
-                    onClick={captureAndDecode}
-                  >
-                    Capture & Decode
-                  </button>
-                  <button
-                    type="button"
-                    className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
-                    onClick={async () => {
-                      try {
-                        const video = videoRef.current;
-                        const canvas = canvasRef.current;
-                        if (!video || !canvas) return;
-                        const vw = video.videoWidth;
-                        const vh = video.videoHeight;
-                        if (!vw || !vh) return;
-                        canvas.width = vw;
-                        canvas.height = vh;
-                        const ctx = canvas.getContext('2d');
-                        if (!ctx) return;
-                        ctx.drawImage(video, 0, 0, vw, vh);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-                        await openManualCropWithDataUrl(dataUrl);
-                        setError(null);
-                      } catch {}
-                    }}
-                  >
-                    Manual Crop
-                  </button>
-                </div>
+              )}
+              {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
+              <div className="flex gap-2">
+                <button
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded disabled:opacity-60"
+                  disabled={!qrCode || loading !== null}
+                  onClick={() => doScan('checkin')}
+                >
+                  {loading === 'checkin' ? 'Checking in...' : 'Check-in'}
+                </button>
+                <button
+                  className="flex-1 bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 rounded disabled:opacity-60"
+                  disabled={!qrCode || loading !== null}
+                  onClick={() => doScan('checkout')}
+                >
+                  {loading === 'checkout' ? 'Checking out...' : 'Check-out'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-lg p-4 dark:bg-slate-800/40 dark:border-slate-700">
+            <h3 className="font-semibold mb-3 flex items-center justify-between">
+              <span>Currently On-site ({activeVisits.length})</span>
+              <button onClick={() => loadActiveVisits()} className="text-xs text-indigo-600 hover:underline">Refresh</button>
+            </h3>
+            {activeVisits.length === 0 ? (
+              <div className="text-sm text-slate-500 italic">No visitors currently checked in.</div>
+            ) : (
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                {activeVisits.map((visit) => (
+                  <div key={visit.id} className="flex items-start gap-3 text-sm border-b border-slate-100 last:border-0 pb-2 dark:border-slate-700/50">
+                    <div className="w-10 h-10 rounded bg-slate-100 overflow-hidden flex-shrink-0">
+                      {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                      <img src={visit.subject?.photoUrl ? (/^https?:\/\//i.test(visit.subject.photoUrl) ? visit.subject.photoUrl : `${(import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000'}${visit.subject.photoUrl}`) : ''} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{visit.subject?.fullName}</div>
+                      <div className="text-xs text-slate-500">{visit.subject?.role}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">In: {new Date(visit.timeIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                    <button
+                      className="px-2 py-1 text-xs rounded bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 dark:text-rose-300"
+                      onClick={() => {
+                        if (confirm(`Check out ${visit.subject?.fullName}?`)) {
+                          setQrCode(visit.subject?.qrCode);
+                          // We need to wait for state update in a real scenario or pass arg.
+                          // But doScan uses state `qrCode`. So let's wrap doScan to accept an arg or set state and call.
+                          // Easier way: just call api directly or modify doScan.
+                          // let's modify doScan signature slightly or just call api manually here for clarity.
+                          api.post('/api/scan', { qrCode: visit.subject?.qrCode, action: 'checkout' })
+                            .then((res) => {
+                              setResult(res.data);
+                              loadActiveVisits();
+                            })
+                            .catch(err => {
+                              setError(err?.response?.data?.error || 'Checkout failed');
+                            });
+                        }
+                      }}
+                    >
+                      Out
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
-            {error && <div className="text-rose-600 dark:text-red-400 text-sm">{error}</div>}
-            <div className="flex gap-2">
-              <button
-                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded disabled:opacity-60"
-                disabled={!qrCode || loading !== null}
-                onClick={() => doScan('checkin')}
-              >
-                {loading === 'checkin' ? 'Checking in...' : 'Check-in'}
-              </button>
-              <button
-                className="flex-1 bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 rounded disabled:opacity-60"
-                disabled={!qrCode || loading !== null}
-                onClick={() => doScan('checkout')}
-              >
-                {loading === 'checkout' ? 'Checking out...' : 'Check-out'}
-              </button>
-            </div>
           </div>
         </section>
 
         <section className="md:col-span-2">
+          {/* ... (Result section - retained) ... */}
           <h3 className="text-lg font-semibold mb-2">Result</h3>
           {!result && !error && <div className="text-slate-600 dark:text-slate-400 text-sm">No scan yet.</div>}
           {result && (
@@ -394,7 +461,7 @@ export function Scan() {
                   return (
                     <div className={`mb-3 border rounded px-3 py-2 text-sm ${bannerColor}`}>
                       <div className="flex items-start gap-2">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-[2px]"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-[2px]"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             {s.blacklistStatus && (<span className="px-2 py-0.5 text-xs rounded bg-rose-100 text-rose-800">Blacklist</span>)}
@@ -439,7 +506,7 @@ export function Scan() {
                         <div className="text-slate-700 dark:text-slate-400 text-sm mb-1">Photo</div>
                         <div className="w-40 h-40 rounded bg-slate-100 border border-slate-300 overflow-hidden">
                           {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                          <img src={/^https?:\/\//i.test(result.subject.photoUrl) ? result.subject.photoUrl : `${(import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000'}${result.subject.photoUrl}` } className="w-full h-full object-cover" />
+                          <img src={/^https?:\/\//i.test(result.subject.photoUrl) ? result.subject.photoUrl : `${(import.meta as any).env?.VITE_API_BASE || 'http://localhost:4000'}${result.subject.photoUrl}`} className="w-full h-full object-cover" />
                         </div>
                       </div>
                     )}
@@ -465,7 +532,7 @@ export function Scan() {
           )}
         </section>
       </div>
-
+// ... (Crop modal - retained) ...
       {cropOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => setCropOpen(false)} />
@@ -620,7 +687,7 @@ export function Scan() {
                       } else {
                         setError('No QR found in selected crop');
                       }
-                    } catch {}
+                    } catch { }
                   }}
                 >
                   Decode Crop
