@@ -28,6 +28,9 @@ export class VisitLog extends Model<VisitLogAttributes, VisitLogCreation> implem
   declare durationSeconds: number | null | undefined;
   declare purpose: string | null | undefined;
   declare notes: string | null | undefined;
+
+  declare visitor?: Visitor;
+  declare personnel?: Personnel;
 }
 
 VisitLog.init(
@@ -42,10 +45,12 @@ VisitLog.init(
     purpose: { type: DataTypes.STRING(150), allowNull: true },
     notes: { type: DataTypes.TEXT, allowNull: true },
   },
-  { sequelize, tableName: 'visit_logs', underscored: true, indexes: [
-    { fields: ['visitor_id', 'time_in'] },
-    { fields: ['time_in'] }
-  ] }
+  {
+    sequelize, tableName: 'visit_logs', underscored: true, indexes: [
+      { fields: ['visitor_id', 'time_in'] },
+      { fields: ['time_in'] }
+    ]
+  }
 );
 
 VisitLog.belongsTo(Visitor, { foreignKey: 'visitorId', as: 'visitor' });

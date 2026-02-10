@@ -207,6 +207,21 @@ export function Scan() {
 
   // Active Visits Logic
   const [activeVisits, setActiveVisits] = useState<any[]>([]);
+  const [checkoutConfirm, setCheckoutConfirm] = useState<any | null>(null);
+
+  async function handleCheckoutConfirm() {
+    if (!checkoutConfirm) return;
+    const visit = checkoutConfirm;
+    setCheckoutConfirm(null);
+    setQrCode(visit.subject?.qrCode);
+    try {
+      const res = await api.post('/api/scan', { qrCode: visit.subject?.qrCode, action: 'checkout' });
+      setResult(res.data);
+      loadActiveVisits();
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Checkout failed');
+    }
+  }
 
   async function loadActiveVisits() {
     try {
@@ -417,23 +432,7 @@ export function Scan() {
                     </div>
                     <button
                       className="px-2 py-1 text-xs rounded bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 dark:text-rose-300"
-                      onClick={() => {
-                        if (confirm(`Check out ${visit.subject?.fullName}?`)) {
-                          setQrCode(visit.subject?.qrCode);
-                          // We need to wait for state update in a real scenario or pass arg.
-                          // But doScan uses state `qrCode`. So let's wrap doScan to accept an arg or set state and call.
-                          // Easier way: just call api directly or modify doScan.
-                          // let's modify doScan signature slightly or just call api manually here for clarity.
-                          api.post('/api/scan', { qrCode: visit.subject?.qrCode, action: 'checkout' })
-                            .then((res) => {
-                              setResult(res.data);
-                              loadActiveVisits();
-                            })
-                            .catch(err => {
-                              setError(err?.response?.data?.error || 'Checkout failed');
-                            });
-                        }
-                      }}
+                      onClick={() => setCheckoutConfirm(visit)}
                     >
                       Out
                     </button>
@@ -531,8 +530,8 @@ export function Scan() {
             </div>
           )}
         </section>
-      </div>
-// ... (Crop modal - retained) ...
+      </div >
+    // ... (Crop modal - retained) ...
       {cropOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => setCropOpen(false)} />
@@ -696,7 +695,36 @@ export function Scan() {
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+
+      {
+        checkoutConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setCheckoutConfirm(null)} />
+            <div className="relative bg-white border border-slate-200 rounded-lg p-6 shadow-xl z-10 w-full max-w-sm mx-4 dark:bg-slate-900 dark:border-slate-700">
+              <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-slate-100">Confirm Checkout</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
+                Are you sure you want to check out <strong>{checkoutConfirm.subject?.fullName}</strong>?
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  className="px-4 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                  onClick={() => setCheckoutConfirm(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 rounded bg-rose-600 hover:bg-rose-500 text-white shadow-sm"
+                  onClick={handleCheckoutConfirm}
+                >
+                  Check Out
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 }

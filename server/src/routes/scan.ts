@@ -121,4 +121,40 @@ router.post('/', validate(scanSchema), async (req, res) => {
   return res.json({ status: 'ok', event: 'checkout', at: now, logId: openLog.id, subjectType: subject.type, subject, alerts, elapsedSeconds });
 });
 
+/**
+ * GET /api/scan/active
+ * Returns a list of all currently active visits (checked in, not checked out).
+ */
+router.get('/active', async (req, res) => {
+  const activeLogs = await VisitLog.findAll({
+    where: { timeOut: null },
+    include: [
+      { model: Visitor, as: 'visitor' },
+      { model: Personnel, as: 'personnel' },
+    ],
+    order: [['timeIn', 'DESC']],
+  });
+
+  const ActivityList = activeLogs
+    .filter(log => log.visitor || log.personnel)
+    .map((log) => {
+      const isVisitor = !!log.visitor;
+      const subject = isVisitor ? log.visitor! : log.personnel!;
+      return {
+        id: log.id,
+        timeIn: log.timeIn,
+        subjectType: isVisitor ? 'visitor' : 'personnel',
+        subject: {
+          id: subject.id,
+          fullName: subject.fullName,
+          photoUrl: subject.photoUrl,
+          role: isVisitor ? 'Visitor' : (subject as any).roleTitle || 'Personnel',
+          qrCode: (subject as any).qrCode, // inclusive of both Visitor and Personnel models having qrCode
+        },
+      };
+    });
+
+  res.json(ActivityList);
+});
+
 export default router;
