@@ -167,7 +167,7 @@ export function Register() {
             ← Back to Active Visitors
           </button>
         </div>
-        <ArchivedVisitors />
+        <ArchivedVisitors defaultType="regular" hideTypeFilter={true} />
       </div>
     );
   }
@@ -453,7 +453,7 @@ export function Register() {
             {hasRole(['admin', 'staff']) && (
               <button
                 onClick={() => setShowArchived(true)}
-                className="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                className="text-xs px-2 py-1 rounded bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-200 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/50 transition-colors font-medium shadow-sm"
               >
                 View Archived
               </button>
