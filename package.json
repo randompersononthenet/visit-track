@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "setup:ssl": "node scripts/setup-local-ssl.js"
+  },
   "dependencies": {
     "@zxing/browser": "^0.1.5",
     "html-to-image": "^1.11.13"

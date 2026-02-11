@@ -22,6 +22,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { PreRegistrations } from './views/PreRegistrations'
 import { Users } from './views/Users'
 import { AuditLogs } from './views/AuditLogs'
+import { Help } from './views/Help'
 import { isAuthenticated } from './lib/auth'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -106,6 +107,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 </PermissionRoute>
               }
             />
+            <Route path="/help" element={<Help />} />
             {/* Catch all for 404s inside AppShell */}
             <Route path="*" element={<div className="p-8 text-center text-slate-500">Page not found</div>} />
           </Route>

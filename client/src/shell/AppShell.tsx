@@ -28,6 +28,8 @@ function Icon({ name }: { name: string }) {
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
       );
+    case 'help':
+      return (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>);
     default:
       return null;
   }
@@ -91,6 +93,7 @@ export function AppShell() {
     ...(hasPermission('users:manage') ? [{ to: '/users', label: 'Users', icon: 'users' }] : [] as any),
     ...(hasPermission('roles:manage') ? [{ to: '/roles', label: 'Roles', icon: 'users' }] : [] as any),
     ...(hasPermission('audit:view') ? [{ to: '/audit-logs', label: 'Audit Trails', icon: 'logs' }] : [] as any),
+    { to: '/help', label: 'Help', icon: 'help' },
   ];
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex">
