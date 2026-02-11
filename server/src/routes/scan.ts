@@ -135,10 +135,13 @@ router.get('/active', async (req, res) => {
     order: [['timeIn', 'DESC']],
   });
 
+  // Map to a unified structure for the frontend.
+  // We filter out any logs where the subject (visitor/personnel) might be missing (e.g., deleted records).
   const ActivityList = activeLogs
     .filter(log => log.visitor || log.personnel)
     .map((log) => {
       const isVisitor = !!log.visitor;
+      // Force non-null assertion because we filtered above
       const subject = isVisitor ? log.visitor! : log.personnel!;
       return {
         id: log.id,

@@ -3,6 +3,8 @@ import { api } from '../lib/api';
 import { hasRole } from '../lib/auth';
 import { ConfirmModal } from '../components/ConfirmModal';
 
+// Reusable component for displaying archived visitors.
+// Can be used in standalone format or embedded with restricted types (e.g. only 'special' or 'regular')
 export function ArchivedVisitors({ defaultType = 'all', hideTypeFilter = false }: { defaultType?: 'all' | 'regular' | 'special', hideTypeFilter?: boolean }) {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);

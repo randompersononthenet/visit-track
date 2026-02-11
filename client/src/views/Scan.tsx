@@ -22,6 +22,7 @@ export function Scan() {
   const zxingReaderRef = useRef<any | null>(null);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
+  // QR Worker ref for off-main-thread processing to keep UI responsive
   const workerRef = useRef<Worker | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
   const [cropImgUrl, setCropImgUrl] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export function Scan() {
     setCropOpen(true);
   }
 
+  // Offload heavy QR decoding to a web worker
   function decodeViaWorker(imageData: ImageData): Promise<string | null> {
     return new Promise((resolve) => {
       const w = workerRef.current;
@@ -223,6 +225,7 @@ export function Scan() {
     }
   }
 
+  // Fetch the list of visitors currently checked in
   async function loadActiveVisits() {
     try {
       const res = await api.get('/api/scan/active');

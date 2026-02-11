@@ -20,7 +20,14 @@ type VisitLogCreation = Optional<VisitLogAttributes, 'id' | 'timeOut' | 'purpose
 
 export class VisitLog extends Model<VisitLogAttributes, VisitLogCreation> implements VisitLogAttributes {
   declare id: number;
+  /**
+   * Reference to the Visitor. Null if this log is for Personnel.
+   * Only one of `visitorId` or `personnelId` should be set.
+   */
   declare visitorId: number | null | undefined;
+  /**
+   * Reference to the Personnel. Null if this log is for a Visitor.
+   */
   declare personnelId: number | null | undefined;
   declare handledByUserId: number | null | undefined;
   declare timeIn: Date;
