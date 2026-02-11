@@ -3,64 +3,89 @@
 A visitor management and analytics system for facilities. This repository contains the client (React), server (Express/Sequelize), and a public pre-registration microapp.
 
 ## Key Features
+- **Live Visitor Monitoring** — Real-time tracking of on-site visitors and personnel.
 - **Visitor and Personnel Registration** — Capture details, photos, and check-ins.
 - **Visit Logs & Reports** — Searchable logs, trends, and export options.
-- **Role-based Access** — Admin, Staff, Officer, Warden, Analyst.
+- **Role-based Access** — Granular permissions for Admin, Staff, Officer, Warden, Analyst, and custom roles.
 - **Forecasting** — Next-day visitor forecast with Moving Average or Holt–Winters.
+- **Pre-registration** — Public-facing microapp for visitors to pre-register.
 
-## Recently Updated
-- **Sidebar Logo Enhancements (Client)**
-  - Larger VisitTrack logo in the sidebar (`client/src/shell/AppShell.tsx`).
-  - Logo is clickable and redirects to `/dashboard`.
-  - Shows a welcome line with `username` and `role` when expanded.
-- **Admin: Rename Users (Server + Client)**
-  - New endpoint: `PATCH /api/users/:id/username` to rename accounts (admin only).
-  - UI: Rename action and modal in Users management (`client/src/views/Users.tsx`).
-- **Actionable Forecasts (Client + Server)**
-  - Dashboard shows a colored badge and suggestion based on forecast vs baseline (`client/src/views/Dashboard.tsx`).
-  - Legend toggle explains thresholds and colors; badge has an ARIA label for accessibility.
-  - Server returns `baseline`, `confidence`, and `explanation` with the forecast (`server/src/routes/analytics.ts`).
-- **Login UI Fix**
-  - Password visibility icons now correctly reflect the show/hide state (`client/src/views/Login.tsx`).
+## Recent Features
 
-## Forecast Categories (Client)
-Mapping uses the ratio of `nextDayForecast / baseline` (baseline from the latest moving average):
-- **Very Low** — < 60% (slate)
-- **Low** — 60–85% (emerald)
-- **Normal** — 85–115% (indigo)
-- **High** — 115–140% (amber)
-- **Spike** — > 140% (rose)
+### Live Visitor Monitoring
+- **Real-time Dashboard:** View all currently on-site visitors and personnel in the Scan view.
+- **Manual Checkout:** Administrators can manually check out visitors who forgot to scan out.
+- **Active Visits API:** `GET /api/scan/active` retrieves the current list of active visits.
 
-Each category displays a short, actionable suggestion (e.g., add an officer for High; open extra lanes for Spike).
+### Enhanced Role Management
+- **Dynamic Roles:** Create and manage custom roles with specific permissions.
+- **Granular Permissions:** Fine-grained control over access to features (e.g., `scan:perform`, `visitors:view`, `reports:read`).
+- **User Management:** Assign roles to users and manage their access.
 
-## Forecast API Additions (Server)
-`GET /api/analytics/visitor-forecast`
-- Existing: `series`, `movingAverage`, `nextDayForecast`, optional Holt–Winters `smoothed`, `metrics`, etc.
-- New:
-  - `baseline`: number — last moving average value (rounded).
-  - `confidence`: 'high' | 'medium' | 'low' — derived from MAPE.
-  - `explanation`: string — concise method/params summary and fallback note if used.
+### Archived Views
+- **Integrated Archives:** Toggle to view archived visitors and personnel directly within the main management views.
+- **Restoration:** Easily restore archived records.
 
-## Admin: Rename User (Server)
-`PATCH /api/users/:id/username` with body `{ username: string }`
-- Requires admin role.
-- Validates length and uniqueness; writes to audit log.
+### Forecasting & Analytics
+- **Actionable Forecasts:** Dashboard badges indicate expected visitor volume (Low, Normal, High, Spike).
+- **Advanced Metrics:** MAPE confidence levels and baseline comparisons.
 
-## Accessibility
-- Forecast badge includes descriptive `aria-label`.
-- Legend toggle provides a non-color explanation of thresholds.
+## Tech Stack
 
-## Paths Reference
-- Client app shell: `client/src/shell/AppShell.tsx`
-- Dashboard (forecast): `client/src/views/Dashboard.tsx`
-- Login view: `client/src/views/Login.tsx`
-- Users management: `client/src/views/Users.tsx`
-- Forecast route: `server/src/routes/analytics.ts`
-- Users route: `server/src/routes/users.ts`
+### Client (`/client`)
+- **Framework:** React 18 (Vite)
+- **Styling:** Tailwind CSS
+- **State Management:** React Hooks
+- **Routing:** React Router v6
+- **HTTP Client:** Axios
 
-## Development
-- Client: Vite + React + Tailwind.
-- Server: Express + Sequelize (PostgreSQL).
-- Pre-registration microapp: Next.js (`prereg-online/`).
+### Server (`/server`)
+- **Runtime:** Node.js
+- **Framework:** Express
+- **Database:** PostgreSQL (Sequelize ORM)
+- **Authentication:** JWT, bcrypt
+- **Validation:** Zod
 
-Run services as per your existing workflow. Ensure environment variables are configured for the database and JWT.
+### Pre-registration (`/prereg-online`)
+- **Framework:** Next.js
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+- PostgreSQL
+- npm/yarn
+
+### Installation
+
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/randompersononthenet/visit-track.git
+    cd visit-track
+    ```
+
+2.  **Server Setup**
+    ```bash
+    cd server
+    npm install
+    # Configure .env (see .env.example)
+    npm run dev
+    ```
+
+3.  **Client Setup**
+    ```bash
+    cd client
+    npm install
+    # Configure .env (see .env.example)
+    npm run dev
+    ```
+
+4.  **Pre-registration Setup (Optional)**
+    ```bash
+    cd prereg-online
+    npm install
+    npm run dev
+    ```
+
+## License
+[MIT](LICENSE)

@@ -8,7 +8,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<any[]>([]);
   const [trend, setTrend] = useState<{ date: string; count: number }[]>([]);
-  const [forecast, setForecast] = useState<{ window: number; algo?: 'ma'|'hw'; seasonLen?: number; series: { date: string; count: number }[]; movingAverage: { date: string; ma: number }[]; smoothed?: { date: string; value: number }[]; metrics?: { mae: number; rmse: number; mape?: number; ci?: { lo: number; hi: number } }; nextDayForecast: number | null; seriesPersonnel?: { date: string; count: number }[]; movingAveragePersonnel?: { date: string; ma: number }[]; nextDayForecastPersonnel?: number | null; baseline?: number; confidence?: 'high'|'medium'|'low'|string; explanation?: string } | null>(null);
+  const [forecast, setForecast] = useState<{ window: number; algo?: 'ma' | 'hw'; seasonLen?: number; series: { date: string; count: number }[]; movingAverage: { date: string; ma: number }[]; smoothed?: { date: string; value: number }[]; metrics?: { mae: number; rmse: number; mape?: number; ci?: { lo: number; hi: number } }; nextDayForecast: number | null; seriesPersonnel?: { date: string; count: number }[]; movingAveragePersonnel?: { date: string; ma: number }[]; nextDayForecastPersonnel?: number | null; baseline?: number; confidence?: 'high' | 'medium' | 'low' | string; explanation?: string } | null>(null);
   const [showPersonnel, setShowPersonnel] = useState(false);
   const [windowSize, setWindowSize] = useState(7);
   const [loading, setLoading] = useState(true);
@@ -19,7 +19,7 @@ export function Dashboard() {
   const [showPersonnelSeries, setShowPersonnelSeries] = useState(true);
   const [showPersonnelMA, setShowPersonnelMA] = useState(true);
   const [showSeasonal, setShowSeasonal] = useState(true);
-  const [algo, setAlgo] = useState<'ma'|'hw'>('ma');
+  const [algo, setAlgo] = useState<'ma' | 'hw'>('ma');
   const [seasonLen, setSeasonLen] = useState(7);
   const [overlayMA, setOverlayMA] = useState(true);
   const [alpha, setAlpha] = useState(0.3);
@@ -47,7 +47,7 @@ export function Dashboard() {
         setLoading(true);
         const res = await api.get('/api/analytics/summary');
         setData(res.data);
-        const canDeep = hasRole(['admin','staff','warden','analyst']);
+        const canDeep = hasRole(['admin', 'staff', 'warden', 'analyst']);
         if (canDeep) {
           const [logsRes, trendRes] = await Promise.all([
             api.get('/api/visit-logs', { params: { page: 1, pageSize: 10 } }),
@@ -69,7 +69,7 @@ export function Dashboard() {
 
   useEffect(() => {
     (async () => {
-      const canDeep = hasRole(['admin','staff','warden','analyst']);
+      const canDeep = hasRole(['admin', 'staff', 'warden', 'analyst']);
       if (!canDeep) { setForecast(null); setLoadingForecast(false); return; }
       try {
         setLoadingForecast(true);
@@ -87,7 +87,7 @@ export function Dashboard() {
   // Load depth analytics (heatmap and trends)
   useEffect(() => {
     (async () => {
-      const canDeep = hasRole(['admin','staff','warden','analyst']);
+      const canDeep = hasRole(['admin', 'staff', 'warden', 'analyst']);
       if (!canDeep) { setHeatmap(null); setTrendWeek(null); setTrendMonth(null); return; }
       try {
         const [hm, tw, tm] = await Promise.all([
@@ -98,14 +98,14 @@ export function Dashboard() {
         setHeatmap(hm.data || null);
         setTrendWeek(tw.data || null);
         setTrendMonth(tm.data || null);
-      } catch {}
+      } catch { }
     })();
   }, [heatmapDays, weekPeriods, monthPeriods]);
 
   // Load frequent visitors (all-time)
   useEffect(() => {
     (async () => {
-      const canDeep = hasRole(['admin','staff','warden','analyst']);
+      const canDeep = hasRole(['admin', 'staff', 'warden', 'analyst']);
       if (!canDeep) { setFv([]); setLoadingFv(false); return; }
       try {
         setLoadingFv(true);
@@ -134,12 +134,12 @@ export function Dashboard() {
         if (typeof v.showSeasonal === 'boolean') setShowSeasonal(v.showSeasonal);
         if (typeof v.overlayMA === 'boolean') setOverlayMA(v.overlayMA);
       }
-    } catch {}
+    } catch { }
   }, []);
   useEffect(() => {
     try {
       localStorage.setItem('vt_forecast_toggles', JSON.stringify({ showVisitors, showVisitorsMA, showPersonnelSeries, showPersonnelMA, showSeasonal, overlayMA }));
-    } catch {}
+    } catch { }
   }, [showVisitors, showVisitorsMA, showPersonnelSeries, showPersonnelMA, showSeasonal, overlayMA]);
 
   const metrics = useMemo(() => {
@@ -174,13 +174,13 @@ export function Dashboard() {
   // Actionable forecast mapping: baseline from last movingAverage
   const actionable = useMemo(() => {
     if (!forecast || forecast.nextDayForecast == null || !forecast.movingAverage?.length) return null as null | {
-      label: string; category: 'very_low'|'low'|'normal'|'high'|'spike'; color: string; suggestion: string; ratio: number; baseline: number; value: number;
+      label: string; category: 'very_low' | 'low' | 'normal' | 'high' | 'spike'; color: string; suggestion: string; ratio: number; baseline: number; value: number;
     };
     const baselineRaw = forecast.movingAverage[forecast.movingAverage.length - 1]?.ma as any;
     const baseline = typeof baselineRaw === 'number' && !isNaN(baselineRaw) ? Math.max(1, baselineRaw) : 1;
     const value = Math.max(0, forecast.nextDayForecast);
     const ratio = value / baseline;
-    let category: 'very_low'|'low'|'normal'|'high'|'spike' = 'normal';
+    let category: 'very_low' | 'low' | 'normal' | 'high' | 'spike' = 'normal';
     if (ratio < 0.6) category = 'very_low';
     else if (ratio < 0.85) category = 'low';
     else if (ratio <= 1.15) category = 'normal';
@@ -188,22 +188,22 @@ export function Dashboard() {
     else category = 'spike';
     const label = (
       category === 'very_low' ? 'Very Low' :
-      category === 'low' ? 'Low' :
-      category === 'normal' ? 'Normal' :
-      category === 'high' ? 'High' : 'Spike'
+        category === 'low' ? 'Low' :
+          category === 'normal' ? 'Normal' :
+            category === 'high' ? 'High' : 'Spike'
     );
     const color = (
       category === 'very_low' ? 'bg-slate-100 text-slate-700' :
-      category === 'low' ? 'bg-emerald-100 text-emerald-800' :
-      category === 'normal' ? 'bg-indigo-100 text-indigo-800' :
-      category === 'high' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
+        category === 'low' ? 'bg-emerald-100 text-emerald-800' :
+          category === 'normal' ? 'bg-indigo-100 text-indigo-800' :
+            category === 'high' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
     );
     const suggestion = (
       category === 'very_low' ? 'Consider reduced staffing; handle backlog/admin tasks.' :
-      category === 'low' ? 'Normal staffing; schedule trainings/maintenance as needed.' :
-      category === 'normal' ? 'Maintain current staffing; no special actions.' :
-      category === 'high' ? 'Pre-stage queueing; add an extra officer; prep overflow seating.' :
-      'All-hands alert: open extra lanes, notify staff group, prep incident protocols.'
+        category === 'low' ? 'Normal staffing; schedule trainings/maintenance as needed.' :
+          category === 'normal' ? 'Maintain current staffing; no special actions.' :
+            category === 'high' ? 'Pre-stage queueing; add an extra officer; prep overflow seating.' :
+              'All-hands alert: open extra lanes, notify staff group, prep incident protocols.'
     );
     return { label, category, color, suggestion, ratio, baseline: Math.round(baseline), value: Math.round(value) };
   }, [forecast]);
@@ -217,7 +217,7 @@ export function Dashboard() {
       a.href = dataUrl;
       a.download = 'visitor-forecast.png';
       a.click();
-    } catch {}
+    } catch { }
   }
 
   function exportForecastCSV() {
@@ -256,12 +256,12 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl md:text-3xl font-semibold mb-4 flex items-center gap-2">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 13h8V3H3v10zm10 8h8V3h-8v18zM3 21h8v-6H3v6z"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 13h8V3H3v10zm10 8h8V3h-8v18zM3 21h8v-6H3v6z" /></svg>
         Dashboard
       </h2>
       {error && <div className="text-red-400 text-sm mb-3">{error}</div>}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" aria-label="Summary metrics">
-        {[{label:'Total Visitors', value: data?.totals?.visitors},{label:'Total Personnel', value: data?.totals?.personnel},{label:'Today Check-ins', value: data?.today?.checkIns},{label:'Currently Inside', value: data?.inside?.current}].map((m, idx) => {
+        {[{ label: 'Total Visitors', value: data?.totals?.visitors }, { label: 'Total Personnel', value: data?.totals?.personnel }, { label: 'Today Check-ins', value: data?.today?.checkIns }, { label: 'Currently Inside', value: data?.inside?.current }].map((m, idx) => {
           const palette = [
             'bg-emerald-600 dark:bg-emerald-700',
             'bg-indigo-600 dark:bg-indigo-700',
@@ -278,61 +278,61 @@ export function Dashboard() {
         })}
       </div>
       <section>
-      <div className="bg-white border border-slate-200 rounded p-4 lg:col-span-2 mt-6 overflow-hidden dark:bg-slate-800/40 dark:border-slate-700">
-        <div className="flex items-center justify-between mb-2 gap-2">
-          <div className="font-semibold flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/></svg>
-            Visitor Forecast ({algo === 'ma' ? `Moving Average, ${windowSize}-day` : `Holt-Winters, season ${seasonLen}`})
-          </div>
-          <div className="w-full overflow-x-auto">
-            <div className="inline-flex items-center gap-3 text-sm whitespace-nowrap">
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <input type="checkbox" className="accent-indigo-500" checked={showPersonnel} onChange={(e) => setShowPersonnel(e.target.checked)} />
-                Show personnel trend
-              </label>
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="window-size">Window</label>
-              <select id="window-size" aria-label="Forecast window size" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={windowSize} onChange={(e)=> setWindowSize(parseInt(e.target.value) || 7)}>
-                <option value={3}>3</option>
-                <option value={5}>5</option>
-                <option value={7}>7</option>
-                <option value={14}>14</option>
-              </select>
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="algo">Algo</label>
-              <select id="algo" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={algo} onChange={(e)=> setAlgo((e.target.value as 'ma'|'hw') || 'ma')}>
-                <option value="ma">Moving Average</option>
-                <option value="hw">Holt-Winters (seasonal)</option>
-              </select>
-              <div className="flex items-center gap-2">
-                <button onClick={exportForecastCSV} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Export CSV</button>
-                <button onClick={downloadForecastPNG} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Download PNG</button>
-                {algo === 'hw' && (
-                  <button onClick={()=> setShowAdvanced((v)=>!v)} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">{showAdvanced ? 'Hide Advanced' : 'Advanced'}</button>
-                )}
-                <button onClick={()=> setShowLegend((v)=>!v)} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">{showLegend ? 'Hide Legend' : 'Legend'}</button>
+        <div className="bg-white border border-slate-200 rounded p-4 lg:col-span-2 mt-6 overflow-hidden dark:bg-slate-800/40 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <div className="font-semibold flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /></svg>
+              Visitor Forecast ({algo === 'ma' ? `Moving Average, ${windowSize}-day` : `Holt-Winters, season ${seasonLen}`})
+            </div>
+            <div className="w-full overflow-x-auto">
+              <div className="inline-flex items-center gap-3 text-sm whitespace-nowrap">
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <input type="checkbox" className="accent-indigo-500" checked={showPersonnel} onChange={(e) => setShowPersonnel(e.target.checked)} />
+                  Show personnel trend
+                </label>
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="window-size">Window</label>
+                <select id="window-size" aria-label="Forecast window size" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value) || 7)}>
+                  <option value={3}>3</option>
+                  <option value={5}>5</option>
+                  <option value={7}>7</option>
+                  <option value={14}>14</option>
+                </select>
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="algo">Algo</label>
+                <select id="algo" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={algo} onChange={(e) => setAlgo((e.target.value as 'ma' | 'hw') || 'ma')}>
+                  <option value="ma">Moving Average</option>
+                  <option value="hw">Holt-Winters (seasonal)</option>
+                </select>
+                <div className="flex items-center gap-2">
+                  <button onClick={exportForecastCSV} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Export CSV</button>
+                  <button onClick={downloadForecastPNG} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Download PNG</button>
+                  {algo === 'hw' && (
+                    <button onClick={() => setShowAdvanced((v) => !v)} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">{showAdvanced ? 'Hide Advanced' : 'Advanced'}</button>
+                  )}
+                  <button onClick={() => setShowLegend((v) => !v)} className="px-2 py-1.5 rounded border text-xs border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">{showLegend ? 'Hide Legend' : 'Legend'}</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        {algo === 'hw' && showAdvanced && (
-          <div className="mt-2 px-2 py-2 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40">
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="season">Season</label>
-              <input id="season" type="number" min={2} max={14} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={seasonLen} onChange={(e)=> setSeasonLen(Math.max(2, Math.min(14, parseInt(e.target.value)||7)))} />
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="alpha">α</label>
-              <input id="alpha" type="number" step="0.05" min={0.01} max={0.99} className="w-24 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={alpha} onChange={(e)=> setAlpha(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.3)))} />
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="beta">β</label>
-              <input id="beta" type="number" step="0.05" min={0.01} max={0.99} className="w-24 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={beta} onChange={(e)=> setBeta(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.1)))} />
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="gamma">γ</label>
-              <input id="gamma" type="number" step="0.05" min={0.01} max={0.99} className="w-24 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={gamma} onChange={(e)=> setGamma(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value)||0.3)))} />
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <input type="checkbox" className="accent-indigo-500" checked={overlayMA} onChange={(e)=> setOverlayMA(e.target.checked)} /> Overlay MA
-              </label>
-              <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <input type="checkbox" className="accent-indigo-500" checked={showSeasonal} onChange={(e)=> setShowSeasonal(e.target.checked)} /> Seasonal (HW)
-              </label>
+          {algo === 'hw' && showAdvanced && (
+            <div className="mt-2 px-2 py-2 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40">
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="season">Season</label>
+                <input id="season" type="number" min={2} max={14} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={seasonLen} onChange={(e) => setSeasonLen(Math.max(2, Math.min(14, parseInt(e.target.value) || 7)))} />
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="alpha">α</label>
+                <input id="alpha" type="number" step="0.05" min={0.01} max={0.99} className="w-24 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={alpha} onChange={(e) => setAlpha(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value) || 0.3)))} />
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="beta">β</label>
+                <input id="beta" type="number" step="0.05" min={0.01} max={0.99} className="w-24 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={beta} onChange={(e) => setBeta(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value) || 0.1)))} />
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300" htmlFor="gamma">γ</label>
+                <input id="gamma" type="number" step="0.05" min={0.01} max={0.99} className="w-24 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={gamma} onChange={(e) => setGamma(Math.max(0.01, Math.min(0.99, parseFloat(e.target.value) || 0.3)))} />
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <input type="checkbox" className="accent-indigo-500" checked={overlayMA} onChange={(e) => setOverlayMA(e.target.checked)} /> Overlay MA
+                </label>
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <input type="checkbox" className="accent-indigo-500" checked={showSeasonal} onChange={(e) => setShowSeasonal(e.target.checked)} /> Seasonal (HW)
+                </label>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
         <div className="border-t border-slate-200 dark:border-slate-700 my-3" />
         <div className="h-72 overflow-x-auto relative">
@@ -351,7 +351,7 @@ export function Dashboard() {
             )}
             {actionable && (
               <div className="mt-2 text-left">
-                <span className={`inline-block px-2 py-0.5 text-xs rounded ${actionable.color}`} title={`Baseline ${actionable.baseline}, ratio ${(actionable.ratio*100).toFixed(0)}%`} aria-label={`Forecast ${actionable.label}. Baseline ${actionable.baseline}. Ratio ${(actionable.ratio*100).toFixed(0)} percent.`}>
+                <span className={`inline-block px-2 py-0.5 text-xs rounded ${actionable.color}`} title={`Baseline ${actionable.baseline}, ratio ${(actionable.ratio * 100).toFixed(0)}%`} aria-label={`Forecast ${actionable.label}. Baseline ${actionable.baseline}. Ratio ${(actionable.ratio * 100).toFixed(0)} percent.`}>
                   {actionable.label}
                 </span>
                 <div className="mt-1 text-[11px] text-slate-600 dark:text-slate-300 max-w-xs">
@@ -402,148 +402,148 @@ export function Dashboard() {
 
                 const linePath = (pts: { x: number; y: number }[]) => pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${pad.left + p.x} ${pad.top + p.y}`).join(' ');
 
-                  const countPts = data.map((d, i) => ({ x: i * xStep, y: yScale(d.count) }));
-                  const maPts = ma.map((d, i) => ({ x: i * xStep, y: d.ma == null ? null : yScale(d.ma) }));
-                  const maSegments: { x: number; y: number }[][] = [];
-                  let cur: { x: number; y: number }[] = [];
-                  maPts.forEach((p) => {
-                    if (p.y == null) {
-                      if (cur.length) { maSegments.push(cur); cur = []; }
-                    } else {
-                      cur.push({ x: p.x!, y: p.y });
-                    }
-                  });
-                  if (cur.length) maSegments.push(cur);
+                const countPts = data.map((d, i) => ({ x: i * xStep, y: yScale(d.count) }));
+                const maPts = ma.map((d, i) => ({ x: i * xStep, y: d.ma == null ? null : yScale(d.ma) }));
+                const maSegments: { x: number; y: number }[][] = [];
+                let cur: { x: number; y: number }[] = [];
+                maPts.forEach((p) => {
+                  if (p.y == null) {
+                    if (cur.length) { maSegments.push(cur); cur = []; }
+                  } else {
+                    cur.push({ x: p.x!, y: p.y });
+                  }
+                });
+                if (cur.length) maSegments.push(cur);
 
-                  const pCountPts = pdata.map((d, i) => ({ x: i * xStep, y: yScale(d.count) }));
-                  const pmaPts = pma.map((d, i) => ({ x: i * xStep, y: d.ma == null ? null : yScale(d.ma) }));
-                  const pmaSegments: { x: number; y: number }[][] = [];
-                  let pcur: { x: number; y: number }[] = [];
-                  pmaPts.forEach((p) => {
-                    if (p.y == null) {
-                      if (pcur.length) { pmaSegments.push(pcur); pcur = []; }
-                    } else {
-                      pcur.push({ x: p.x!, y: p.y });
-                    }
-                  });
-                  if (pcur.length) pmaSegments.push(pcur);
+                const pCountPts = pdata.map((d, i) => ({ x: i * xStep, y: yScale(d.count) }));
+                const pmaPts = pma.map((d, i) => ({ x: i * xStep, y: d.ma == null ? null : yScale(d.ma) }));
+                const pmaSegments: { x: number; y: number }[][] = [];
+                let pcur: { x: number; y: number }[] = [];
+                pmaPts.forEach((p) => {
+                  if (p.y == null) {
+                    if (pcur.length) { pmaSegments.push(pcur); pcur = []; }
+                  } else {
+                    pcur.push({ x: p.x!, y: p.y });
+                  }
+                });
+                if (pcur.length) pmaSegments.push(pcur);
 
-                  return (
+                return (
+                  <g>
+                    {/* axes */}
+                    <line x1={pad.left} y1={pad.top + height} x2={pad.left + width} y2={pad.top + height} stroke="#475569" />
+                    <line x1={pad.left} y1={pad.top} x2={pad.left} y2={pad.top + height} stroke="#475569" />
+                    {/* counts line */}
+                    {showVisitors && (
+                      <path d={linePath(countPts)} fill="none" stroke="#38bdf8" strokeWidth={2} />
+                    )}
+                    {/* moving average segments */}
+                    {overlayMA && showVisitorsMA && maSegments.map((seg, idx) => (
+                      <path key={idx} d={linePath(seg)} fill="none" stroke="#f59e0b" strokeWidth={2} />
+                    ))}
+                    {/* seasonal smoothed (Holt-Winters) */}
+                    {algo === 'hw' && showSeasonal && (forecast.smoothed || []).length > 0 && (
+                      <path
+                        d={linePath((forecast.smoothed || []).map((d, i) => ({ x: i * xStep, y: yScale(isNaN(d.value as any) ? 0 : (d.value as number)) })))}
+                        fill="none"
+                        stroke="#8b5cf6"
+                        strokeWidth={2}
+                      />
+                    )}
+                    {/* personnel series if enabled */}
+                    {showPersonnel && pCountPts.length > 0 && (
+                      <>
+                        {showPersonnelSeries && (
+                          <path d={linePath(pCountPts)} fill="none" stroke="#22c55e" strokeWidth={2} />
+                        )}
+                        {showPersonnelMA && pmaSegments.map((seg, idx) => (
+                          <path key={`p${idx}`} d={linePath(seg)} fill="none" stroke="#e11d48" strokeWidth={2} />
+                        ))}
+                      </>
+                    )}
+                    {/* x labels (responsive density) */}
+                    {(() => {
+                      // Determine step to avoid overlapping labels based on pixel spacing
+                      const step = xStep >= 40 ? 1 : xStep >= 28 ? 2 : xStep >= 20 ? 3 : xStep >= 16 ? 4 : Math.max(5, Math.ceil(64 / Math.max(1, xStep)));
+                      return data.map((d, i) => {
+                        if (i % step !== 0) return null;
+                        // Shorten label when very tight: show just day-of-month
+                        const label = xStep < 20 ? d.date.slice(8) : d.date.slice(5);
+                        return (
+                          <text key={d.date} x={pad.left + i * xStep} y={pad.top + height + 18} fontSize="11" textAnchor="middle" fill="#94a3b8">{label}</text>
+                        );
+                      });
+                    })()}
+                    {/* hover interaction layer */}
                     <g>
-                      {/* axes */}
-                      <line x1={pad.left} y1={pad.top + height} x2={pad.left + width} y2={pad.top + height} stroke="#475569" />
-                      <line x1={pad.left} y1={pad.top} x2={pad.left} y2={pad.top + height} stroke="#475569" />
-                      {/* counts line */}
-                      {showVisitors && (
-                        <path d={linePath(countPts)} fill="none" stroke="#38bdf8" strokeWidth={2} />
-                      )}
-                      {/* moving average segments */}
-                      {overlayMA && showVisitorsMA && maSegments.map((seg, idx) => (
-                        <path key={idx} d={linePath(seg)} fill="none" stroke="#f59e0b" strokeWidth={2} />
-                      ))}
-                      {/* seasonal smoothed (Holt-Winters) */}
-                      {algo === 'hw' && showSeasonal && (forecast.smoothed || []).length > 0 && (
-                        <path
-                          d={linePath((forecast.smoothed || []).map((d, i) => ({ x: i * xStep, y: yScale(isNaN(d.value as any) ? 0 : (d.value as number)) })))}
-                          fill="none"
-                          stroke="#8b5cf6"
-                          strokeWidth={2}
+                      {data.map((d, i) => (
+                        <rect
+                          key={`h${i}`}
+                          x={pad.left + i * xStep - xStep / 2}
+                          y={pad.top}
+                          width={Math.max(5, xStep)}
+                          height={height}
+                          fill="transparent"
+                          onMouseEnter={() => setHoverIdx(i)}
                         />
+                      ))}
+                      {hoverIdx != null && hoverIdx >= 0 && hoverIdx < data.length && (
+                        <g>
+                          <line x1={pad.left + hoverIdx * xStep} y1={pad.top} x2={pad.left + hoverIdx * xStep} y2={pad.top + height} stroke="#94a3b8" strokeDasharray="4 4" />
+                          {/* tooltip */}
+                          {(() => {
+                            const dx = pad.left + hoverIdx * xStep + 8;
+                            const dy = pad.top + 8;
+                            const a = data[hoverIdx].count;
+                            const mv = ma[hoverIdx]?.ma ?? null;
+                            return (
+                              <g>
+                                <rect x={dx} y={dy} width={140} height={46} rx={6} fill="#0f172a" opacity="0.9" stroke="#334155" />
+                                <text x={dx + 8} y={dy + 16} fontSize="11" fill="#e2e8f0">{data[hoverIdx].date}</text>
+                                <text x={dx + 8} y={dy + 30} fontSize="11" fill="#38bdf8">Visitors: {a}</text>
+                                {mv != null && <text x={dx + 8} y={dy + 44} fontSize="11" fill="#f59e0b">MA: {Math.round(mv)}</text>}
+                              </g>
+                            );
+                          })()}
+                        </g>
                       )}
-                      {/* personnel series if enabled */}
-                      {showPersonnel && pCountPts.length > 0 && (
+                    </g>
+                    {/* legend (toggleable) */}
+                    <g>
+                      <g role="button" onClick={() => setShowVisitors((v) => !v)} className="cursor-pointer">
+                        <rect x={pad.left} y={pad.top} width="10" height="2" fill="#38bdf8" opacity={showVisitors ? 1 : 0.3} />
+                        <text x={pad.left + 16} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showVisitors ? 1 : 0.5}>Visitors</text>
+                      </g>
+                      <g role="button" onClick={() => setShowVisitorsMA((v) => !v)} className="cursor-pointer">
+                        <rect x={pad.left + 90} y={pad.top} width="10" height="2" fill="#f59e0b" opacity={showVisitorsMA ? 1 : 0.3} />
+                        <text x={pad.left + 106} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showVisitorsMA ? 1 : 0.5}>Visitors MA</text>
+                      </g>
+                      {algo === 'hw' && (
+                        <g role="button" onClick={() => setShowSeasonal((v) => !v)} className="cursor-pointer">
+                          <rect x={pad.left + 170} y={pad.top} width="10" height="2" fill="#8b5cf6" opacity={showSeasonal ? 1 : 0.3} />
+                          <text x={pad.left + 186} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showSeasonal ? 1 : 0.5}>Seasonal (HW)</text>
+                        </g>
+                      )}
+                      {showPersonnel && (
                         <>
-                          {showPersonnelSeries && (
-                            <path d={linePath(pCountPts)} fill="none" stroke="#22c55e" strokeWidth={2} />
-                          )}
-                          {showPersonnelMA && pmaSegments.map((seg, idx) => (
-                            <path key={`p${idx}`} d={linePath(seg)} fill="none" stroke="#e11d48" strokeWidth={2} />
-                          ))}
+                          <g role="button" onClick={() => setShowPersonnelSeries((v) => !v)} className="cursor-pointer">
+                            <rect x={pad.left + 280} y={pad.top} width="10" height="2" fill="#22c55e" opacity={showPersonnelSeries ? 1 : 0.3} />
+                            <text x={pad.left + 296} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelSeries ? 1 : 0.5}>Personnel</text>
+                          </g>
+                          <g role="button" onClick={() => setShowPersonnelMA((v) => !v)} className="cursor-pointer">
+                            <rect x={pad.left + 370} y={pad.top} width="10" height="2" fill="#e11d48" opacity={showPersonnelMA ? 1 : 0.3} />
+                            <text x={pad.left + 386} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelMA ? 1 : 0.5}>Personnel MA</text>
+                          </g>
                         </>
                       )}
-                      {/* x labels (responsive density) */}
-                      {(() => {
-                        // Determine step to avoid overlapping labels based on pixel spacing
-                        const step = xStep >= 40 ? 1 : xStep >= 28 ? 2 : xStep >= 20 ? 3 : xStep >= 16 ? 4 : Math.max(5, Math.ceil(64 / Math.max(1, xStep)));
-                        return data.map((d, i) => {
-                          if (i % step !== 0) return null;
-                          // Shorten label when very tight: show just day-of-month
-                          const label = xStep < 20 ? d.date.slice(8) : d.date.slice(5);
-                          return (
-                            <text key={d.date} x={pad.left + i * xStep} y={pad.top + height + 18} fontSize="11" textAnchor="middle" fill="#94a3b8">{label}</text>
-                          );
-                        });
-                      })()}
-                      {/* hover interaction layer */}
-                      <g>
-                        {data.map((d, i) => (
-                          <rect
-                            key={`h${i}`}
-                            x={pad.left + i * xStep - xStep / 2}
-                            y={pad.top}
-                            width={Math.max(5, xStep)}
-                            height={height}
-                            fill="transparent"
-                            onMouseEnter={() => setHoverIdx(i)}
-                          />
-                        ))}
-                        {hoverIdx != null && hoverIdx >= 0 && hoverIdx < data.length && (
-                          <g>
-                            <line x1={pad.left + hoverIdx * xStep} y1={pad.top} x2={pad.left + hoverIdx * xStep} y2={pad.top + height} stroke="#94a3b8" strokeDasharray="4 4" />
-                            {/* tooltip */}
-                            {(() => {
-                              const dx = pad.left + hoverIdx * xStep + 8;
-                              const dy = pad.top + 8;
-                              const a = data[hoverIdx].count;
-                              const mv = ma[hoverIdx]?.ma ?? null;
-                              return (
-                                <g>
-                                  <rect x={dx} y={dy} width={140} height={46} rx={6} fill="#0f172a" opacity="0.9" stroke="#334155" />
-                                  <text x={dx + 8} y={dy + 16} fontSize="11" fill="#e2e8f0">{data[hoverIdx].date}</text>
-                                  <text x={dx + 8} y={dy + 30} fontSize="11" fill="#38bdf8">Visitors: {a}</text>
-                                  {mv != null && <text x={dx + 8} y={dy + 44} fontSize="11" fill="#f59e0b">MA: {Math.round(mv)}</text>}
-                                </g>
-                              );
-                            })()}
-                          </g>
-                        )}
-                      </g>
-                      {/* legend (toggleable) */}
-                      <g>
-                        <g role="button" onClick={() => setShowVisitors((v) => !v)} className="cursor-pointer">
-                          <rect x={pad.left} y={pad.top} width="10" height="2" fill="#38bdf8" opacity={showVisitors ? 1 : 0.3} />
-                          <text x={pad.left + 16} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showVisitors ? 1 : 0.5}>Visitors</text>
-                        </g>
-                        <g role="button" onClick={() => setShowVisitorsMA((v) => !v)} className="cursor-pointer">
-                          <rect x={pad.left + 90} y={pad.top} width="10" height="2" fill="#f59e0b" opacity={showVisitorsMA ? 1 : 0.3} />
-                          <text x={pad.left + 106} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showVisitorsMA ? 1 : 0.5}>Visitors MA</text>
-                        </g>
-                        {algo === 'hw' && (
-                          <g role="button" onClick={() => setShowSeasonal((v) => !v)} className="cursor-pointer">
-                            <rect x={pad.left + 170} y={pad.top} width="10" height="2" fill="#8b5cf6" opacity={showSeasonal ? 1 : 0.3} />
-                            <text x={pad.left + 186} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showSeasonal ? 1 : 0.5}>Seasonal (HW)</text>
-                          </g>
-                        )}
-                        {showPersonnel && (
-                          <>
-                            <g role="button" onClick={() => setShowPersonnelSeries((v) => !v)} className="cursor-pointer">
-                              <rect x={pad.left + 280} y={pad.top} width="10" height="2" fill="#22c55e" opacity={showPersonnelSeries ? 1 : 0.3} />
-                              <text x={pad.left + 296} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelSeries ? 1 : 0.5}>Personnel</text>
-                            </g>
-                            <g role="button" onClick={() => setShowPersonnelMA((v) => !v)} className="cursor-pointer">
-                              <rect x={pad.left + 370} y={pad.top} width="10" height="2" fill="#e11d48" opacity={showPersonnelMA ? 1 : 0.3} />
-                              <text x={pad.left + 386} y={pad.top + 3} fontSize="10" fill="#cbd5e1" opacity={showPersonnelMA ? 1 : 0.5}>Personnel MA</text>
-                            </g>
-                          </>
-                        )}
-                      </g>
                     </g>
-                  );
-                })()}
-              </svg>
-            ) : (
-              <div className="text-slate-600 dark:text-slate-400 text-sm">No forecast data available for the selected window.</div>
-            )}
+                  </g>
+                );
+              })()}
+            </svg>
+          ) : (
+            <div className="text-slate-600 dark:text-slate-400 text-sm">No forecast data available for the selected window.</div>
+          )}
         </div>
         {showLegend && (
           <div className="mt-2 px-2 py-2 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-[12px] text-slate-700 dark:text-slate-300">
@@ -576,209 +576,217 @@ export function Dashboard() {
             )}
           </div>
         )}
-      
-      {/* Heatmap moved higher */}
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
-          <div className="font-semibold mb-3 flex items-center justify-between">
-            <span>Visitor Check-ins Heatmap</span>
-            <div className="flex items-center gap-2 text-xs">
-              <label htmlFor="hm-days" className="text-slate-600 dark:text-slate-300">Days</label>
-              <input id="hm-days" type="number" min={7} max={120} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={heatmapDays} onChange={(e)=> setHeatmapDays(Math.max(7, Math.min(120, parseInt(e.target.value)||30)))} />
-            </div>
-          </div>
-          {heatmap ? (
-            <div className="overflow-auto max-h-96">
-              <div className="grid" style={{ gridTemplateColumns: `repeat(25, minmax(0,1fr))` }}>
-                <div></div>
-                {Array.from({ length: 24 }).map((_, h) => (
-                  <div key={h} className="text-[10px] text-center text-slate-500">{h}</div>
-                ))}
-                {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, r) => (
-                  <React.Fragment key={d}>
-                    <div className="text-[10px] text-right pr-1 text-slate-500">{d}</div>
-                    {Array.from({ length: 24 }).map((_, c) => {
-                      const v = heatmap.grid[r][c];
-                      const intensity = Math.min(1, v / Math.max(1, ...heatmap.grid.flat()));
-                      const bg = `rgba(99,102,241,${0.1 + 0.6*intensity})`;
-                      return <div key={`${r}-${c}`} className="h-5 border border-slate-100 dark:border-slate-700" style={{ backgroundColor: bg }} title={`${d} ${c}:00 — ${v}`} />;
-                    })}
-                  </React.Fragment>
-                ))}
+
+        {/* Heatmap moved higher */}
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
+            <div className="font-semibold mb-3 flex items-center justify-between">
+              <span>Visitor Check-ins Heatmap</span>
+              <div className="flex items-center gap-2 text-xs">
+                <label htmlFor="hm-days" className="text-slate-600 dark:text-slate-300">Days</label>
+                <input id="hm-days" type="number" min={7} max={120} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={heatmapDays} onChange={(e) => setHeatmapDays(Math.max(7, Math.min(120, parseInt(e.target.value) || 30)))} />
               </div>
             </div>
-          ) : (
-            <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
-          )}
-          {/* heatmap legend */}
-          <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-500">
-            <span>Low</span>
-            <div className="h-2 w-32 bg-gradient-to-r from-indigo-200 to-indigo-600 rounded"></div>
-            <span>High</span>
-          </div>
-        </div>
-        {/* Frequent Visitors (Top rankers, all-time) */}
-        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
-          <div className="font-semibold mb-3 flex items-center justify-between text-slate-900 dark:text-slate-100 text-lg">
-            <span className="flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-              Frequent Visitors
-            </span>
-            <div className="flex items-center gap-2 text-xs">
-              <label htmlFor="fv-min" className="text-slate-600 dark:text-slate-300">Min Visits</label>
-              <input id="fv-min" type="number" min={1} max={50} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={fvMinVisits} onChange={(e)=> setFvMinVisits(Math.max(1, Math.min(50, parseInt(e.target.value)||2)))} />
-              <label htmlFor="fv-limit" className="text-slate-600 dark:text-slate-300">Top</label>
-              <select id="fv-limit" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={fvLimit} onChange={(e)=> setFvLimit(Math.max(1, Math.min(50, parseInt(e.target.value)||10)))}>
-                {[5,10,15,20].map(n => (<option key={n} value={n}>{n}</option>))}
-              </select>
-            </div>
-          </div>
-          {fvError && <div className="text-red-500 text-sm mb-2">{fvError}</div>}
-          <div className="overflow-x-auto">
-            {loadingFv ? (
-              <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
-            ) : fv.length === 0 ? (
-              <div className="text-slate-600 dark:text-slate-400 text-sm">No frequent visitors found for the selected window.</div>
-            ) : (
-              <table className="min-w-full text-sm" aria-label="Frequent visitors table">
-                <thead className="text-slate-700 dark:text-slate-300 font-medium">
-                  <tr>
-                    <th className="text-left py-1.5">Visitor</th>
-                    <th className="text-left py-1.5">Visits</th>
-                    <th className="text-left py-1.5">Days</th>
-                    <th className="text-left py-1.5">Last Visit</th>
-                    <th className="text-left py-1.5">Avg Duration</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(Array.isArray(fv) ? fv : []).map((row) => (
-                    <tr key={row.visitorId} className="border-t border-slate-200 dark:border-slate-700">
-                      <td className="py-1.5 pr-3">{row.fullName}</td>
-                      <td className="py-1.5 pr-3">{row.visits}</td>
-                      <td className="py-1.5 pr-3">{row.daysVisited}</td>
-                      <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{row.lastVisit ? new Date(row.lastVisit).toLocaleString() : '-'}</td>
-                      <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-400">{formatDuration(row.avgDurationSeconds)}</td>
-                    </tr>
+            {heatmap ? (
+              <div className="overflow-auto max-h-96">
+                <div className="grid" style={{ gridTemplateColumns: `repeat(25, minmax(0,1fr))` }}>
+                  <div></div>
+                  {Array.from({ length: 24 }).map((_, h) => (
+                    <div key={h} className="text-[10px] text-center text-slate-500">{h}</div>
                   ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
-          <div className="font-semibold mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100 text-lg">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v4H4zM4 12h16v8H4z"/></svg>
-            Recent Activity
-          </div>
-          <div className="overflow-x-auto">
-            {loading ? (
-              <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" aria-busy="true" aria-label="Loading recent activity" />
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, r) => (
+                    <React.Fragment key={d}>
+                      {/*
+                      Render the grid using CSS Grid.
+                      Columns: 1 label column + 24 hour columns = 25 columns.
+                      Rows: 7 days of the week.
+                    */}
+                      <div className="text-[10px] text-right pr-1 text-slate-500">{d}</div>
+                      {Array.from({ length: 24 }).map((_, c) => {
+                        const v = heatmap.grid[r][c];
+                        // Calculate intensity (0.0 to 1.0) based on max value in the entire grid to normalize colors.
+                        // Adjust alpha transparency: min 0.1, max 0.7 for readability.
+                        const maxVal = Math.max(1, ...heatmap.grid.flat());
+                        const intensity = Math.min(1, v / maxVal);
+                        const bg = `rgba(99,102,241,${0.1 + 0.6 * intensity})`;
+                        return <div key={`${r}-${c}`} className="h-5 border border-slate-100 dark:border-slate-700" style={{ backgroundColor: bg }} title={`${d} ${c}:00 — ${v} check-ins`} />;
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
             ) : (
-            <table className="min-w-full text-sm" aria-label="Recent activity table">
-              <thead className="text-slate-700 dark:text-slate-300 font-medium">
-                <tr>
-                  <th className="text-left py-1.5">Subject</th>
-                  <th className="text-left py-1.5">Type</th>
-                  <th className="text-left py-1.5">Time In</th>
-                  <th className="text-left py-1.5">Time Out</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((r) => {
-                  const type = r.visitorId ? 'Visitor' : (r.personnelId ? 'Personnel' : '');
-                  const subject = r.visitor?.fullName || r.personnel?.fullName || '';
-                  return (
-                    <tr key={r.id} className="border-t border-slate-200 dark:border-slate-700">
-                      <td className="py-1.5 pr-3">{subject}</td>
-                      <td className="py-1.5 pr-3">{type}</td>
-                      <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{r.timeIn ? new Date(r.timeIn).toLocaleString() : '-'}</td>
-                      <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-400">{r.timeOut ? new Date(r.timeOut).toLocaleString() : '-'}</td>
+              <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+            )}
+            {/* heatmap legend */}
+            <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-500">
+              <span>Low</span>
+              <div className="h-2 w-32 bg-gradient-to-r from-indigo-200 to-indigo-600 rounded"></div>
+              <span>High</span>
+            </div>
+          </div>
+          {/* Frequent Visitors (Top rankers, all-time) */}
+          <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
+            <div className="font-semibold mb-3 flex items-center justify-between text-slate-900 dark:text-slate-100 text-lg">
+              <span className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></svg>
+                Frequent Visitors
+              </span>
+              <div className="flex items-center gap-2 text-xs">
+                <label htmlFor="fv-min" className="text-slate-600 dark:text-slate-300">Min Visits</label>
+                <input id="fv-min" type="number" min={1} max={50} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={fvMinVisits} onChange={(e) => setFvMinVisits(Math.max(1, Math.min(50, parseInt(e.target.value) || 2)))} />
+                <label htmlFor="fv-limit" className="text-slate-600 dark:text-slate-300">Top</label>
+                <select id="fv-limit" className="bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={fvLimit} onChange={(e) => setFvLimit(Math.max(1, Math.min(50, parseInt(e.target.value) || 10)))}>
+                  {[5, 10, 15, 20].map(n => (<option key={n} value={n}>{n}</option>))}
+                </select>
+              </div>
+            </div>
+            {fvError && <div className="text-red-500 text-sm mb-2">{fvError}</div>}
+            <div className="overflow-x-auto">
+              {loadingFv ? (
+                <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+              ) : fv.length === 0 ? (
+                <div className="text-slate-600 dark:text-slate-400 text-sm">No frequent visitors found for the selected window.</div>
+              ) : (
+                <table className="min-w-full text-sm" aria-label="Frequent visitors table">
+                  <thead className="text-slate-700 dark:text-slate-300 font-medium">
+                    <tr>
+                      <th className="text-left py-1.5">Visitor</th>
+                      <th className="text-left py-1.5">Visits</th>
+                      <th className="text-left py-1.5">Days</th>
+                      <th className="text-left py-1.5">Last Visit</th>
+                      <th className="text-left py-1.5">Avg Duration</th>
                     </tr>
-                  );
-                })}
-                {recent.length === 0 && (
-                  <tr><td className="py-4 text-slate-600 dark:text-slate-400" colSpan={4}>No recent activity to display.</td></tr>
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {(Array.isArray(fv) ? fv : []).map((row) => (
+                      <tr key={row.visitorId} className="border-t border-slate-200 dark:border-slate-700">
+                        <td className="py-1.5 pr-3">{row.fullName}</td>
+                        <td className="py-1.5 pr-3">{row.visits}</td>
+                        <td className="py-1.5 pr-3">{row.daysVisited}</td>
+                        <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{row.lastVisit ? new Date(row.lastVisit).toLocaleString() : '-'}</td>
+                        <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-400">{formatDuration(row.avgDurationSeconds)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 lg:col-span-2">
+            <div className="font-semibold mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100 text-lg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v4H4zM4 12h16v8H4z" /></svg>
+              Recent Activity
+            </div>
+            <div className="overflow-x-auto">
+              {loading ? (
+                <div className="h-32 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" aria-busy="true" aria-label="Loading recent activity" />
+              ) : (
+                <table className="min-w-full text-sm" aria-label="Recent activity table">
+                  <thead className="text-slate-700 dark:text-slate-300 font-medium">
+                    <tr>
+                      <th className="text-left py-1.5">Subject</th>
+                      <th className="text-left py-1.5">Type</th>
+                      <th className="text-left py-1.5">Time In</th>
+                      <th className="text-left py-1.5">Time Out</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recent.map((r) => {
+                      const type = r.visitorId ? 'Visitor' : (r.personnelId ? 'Personnel' : '');
+                      const subject = r.visitor?.fullName || r.personnel?.fullName || '';
+                      return (
+                        <tr key={r.id} className="border-t border-slate-200 dark:border-slate-700">
+                          <td className="py-1.5 pr-3">{subject}</td>
+                          <td className="py-1.5 pr-3">{type}</td>
+                          <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{r.timeIn ? new Date(r.timeIn).toLocaleString() : '-'}</td>
+                          <td className="py-1.5 pr-3 text-slate-600 dark:text-slate-400">{r.timeOut ? new Date(r.timeOut).toLocaleString() : '-'}</td>
+                        </tr>
+                      );
+                    })}
+                    {recent.length === 0 && (
+                      <tr><td className="py-4 text-slate-600 dark:text-slate-400" colSpan={4}>No recent activity to display.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+          {/* Weekly & Monthly Trends moved up and collapsible */}
+          <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 row-span-2">
+            <div className="font-semibold mb-3 flex items-center justify-between">
+              <span>Weekly & Monthly Trends</span>
+              <div className="flex items-center gap-2 text-xs">
+                <button onClick={() => setTrendsOpen((v) => !v)} className="px-2 py-1 rounded border border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
+                  {trendsOpen ? 'Hide' : 'Show'}
+                </button>
+                <label htmlFor="wk" className="text-slate-600 dark:text-slate-300">Weeks</label>
+                <input id="wk" type="number" min={4} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={weekPeriods} onChange={(e) => setWeekPeriods(Math.max(4, Math.min(24, parseInt(e.target.value) || 12)))} />
+                <label htmlFor="mo" className="text-slate-600 dark:text-slate-300">Months</label>
+                <input id="mo" type="number" min={6} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={monthPeriods} onChange={(e) => setMonthPeriods(Math.max(6, Math.min(24, parseInt(e.target.value) || 12)))} />
+              </div>
+            </div>
+            {trendsOpen && (
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">Weekly (last {weekPeriods} weeks)</div>
+                  <div className="overflow-x-auto">
+                    {trendWeek ? (
+                      <table className="min-w-full text-xs">
+                        <thead>
+                          <tr>
+                            <th className="text-left py-1 pr-4">Week</th>
+                            <th className="text-left py-1">Count</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {trendWeek.series.map((r) => (
+                            <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
+                              <td className="py-1 pr-4">{r.label}</td>
+                              <td className="py-1">{r.count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">Monthly (last {monthPeriods} months)</div>
+                  <div className="overflow-x-auto">
+                    {trendMonth ? (
+                      <table className="min-w-full text-xs">
+                        <thead>
+                          <tr>
+                            <th className="text-left py-1 pr-4">Month</th>
+                            <th className="text-left py-1">Count</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {trendMonth.series.map((r) => (
+                            <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
+                              <td className="py-1 pr-4">{r.label}</td>
+                              <td className="py-1">{r.count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
-        {/* Weekly & Monthly Trends moved up and collapsible */}
-        <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded p-4 row-span-2">
-          <div className="font-semibold mb-3 flex items-center justify-between">
-            <span>Weekly & Monthly Trends</span>
-            <div className="flex items-center gap-2 text-xs">
-              <button onClick={() => setTrendsOpen((v)=>!v)} className="px-2 py-1 rounded border border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
-                {trendsOpen ? 'Hide' : 'Show'}
-              </button>
-              <label htmlFor="wk" className="text-slate-600 dark:text-slate-300">Weeks</label>
-              <input id="wk" type="number" min={4} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={weekPeriods} onChange={(e)=> setWeekPeriods(Math.max(4, Math.min(24, parseInt(e.target.value)||12)))} />
-              <label htmlFor="mo" className="text-slate-600 dark:text-slate-300">Months</label>
-              <input id="mo" type="number" min={6} max={24} className="w-20 bg-white border border-slate-300 text-slate-900 rounded px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={monthPeriods} onChange={(e)=> setMonthPeriods(Math.max(6, Math.min(24, parseInt(e.target.value)||12)))} />
-            </div>
-          </div>
-          {trendsOpen && (
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <div className="text-xs text-slate-500 mb-1">Weekly (last {weekPeriods} weeks)</div>
-                <div className="overflow-x-auto">
-                  {trendWeek ? (
-                    <table className="min-w-full text-xs">
-                      <thead>
-                        <tr>
-                          <th className="text-left py-1 pr-4">Week</th>
-                          <th className="text-left py-1">Count</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {trendWeek.series.map((r) => (
-                          <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
-                            <td className="py-1 pr-4">{r.label}</td>
-                            <td className="py-1">{r.count}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-slate-500 mb-1">Monthly (last {monthPeriods} months)</div>
-                <div className="overflow-x-auto">
-                  {trendMonth ? (
-                    <table className="min-w-full text-xs">
-                      <thead>
-                        <tr>
-                          <th className="text-left py-1 pr-4">Month</th>
-                          <th className="text-left py-1">Count</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {trendMonth.series.map((r) => (
-                          <tr key={r.label} className="border-t border-slate-200 dark:border-slate-700">
-                            <td className="py-1 pr-4">{r.label}</td>
-                            <td className="py-1">{r.count}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="h-24 bg-slate-100 animate-pulse rounded dark:bg-slate-800/40" />
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Depth: placeholder for future lower sections */}
+        {/* Depth: placeholder for future lower sections */}
       </section>
     </div>
   );

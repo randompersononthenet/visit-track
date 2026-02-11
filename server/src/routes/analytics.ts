@@ -252,13 +252,22 @@ router.get('/hourly-heatmap', requirePermission('analytics:view'), async (req, r
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
   const end = new Date();
+  // Initialize a 7x24 grid (7 days x 24 hours) with zeros.
+  // Row index: 0=Sunday, 1=Monday, ..., 6=Saturday
+  // Column index: 0=00:00-01:00, ..., 23=23:00-00:00
   const grid: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+
+  // Fetch all logs within the range to aggregate them in memory.
+  // Note: For very large datasets, a SQL GROUP BY query would be more efficient,
+  // but for typical facility traffic (<100k logs/month), in-memory aggregation is fast enough.
   const logs = await VisitLog.findAll({ where: { timeIn: { [Op.gte]: start, [Op.lte]: end } }, attributes: ['timeIn'] });
   for (const l of logs) {
     const t = new Date((l as any).timeIn);
-    const dow = t.getDay();
-    const hour = t.getHours();
-    grid[dow][hour] += 1;
+    const dow = t.getDay(); // 0-6
+    const hour = t.getHours(); // 0-23
+    if (grid[dow] && grid[dow][hour] !== undefined) {
+      grid[dow][hour] += 1;
+    }
   }
   res.json({ days, grid });
 });
