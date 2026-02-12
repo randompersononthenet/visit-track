@@ -177,12 +177,28 @@ router.get('/personnel.csv', async (req, res) => {
   res.send(csv);
 });
 
-// PDF endpoints (stubs for now, Phase 5 will wire PDFKit)
-router.get('/visitors.pdf', (_req, res) => {
-  res.status(501).json({ error: 'PDF export not implemented yet' });
+import { pdfService } from '../services/pdfService';
+
+// PDF endpoints
+router.get('/visitors.pdf', async (req, res) => {
+  const filters = req.query;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="visitors.pdf"');
+  await pdfService.generateVisitorsReport(res, filters);
 });
-router.get('/personnel.pdf', (_req, res) => {
-  res.status(501).json({ error: 'PDF export not implemented yet' });
+
+router.get('/personnel.pdf', async (req, res) => {
+  const filters = req.query;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="personnel.pdf"');
+  await pdfService.generatePersonnelReport(res, filters);
+});
+
+router.get('/visit-logs.pdf', async (req, res) => {
+  const filters = req.query;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="visit-logs.pdf"');
+  await pdfService.generateVisitLogReport(res, filters);
 });
 
 export default router;
